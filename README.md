@@ -10,13 +10,16 @@ One command. Full scaffold. No build step.
 
 ## What It Does
 
-Applies the [Harness Engineering](https://openai.com/index/harness-engineering/) methodology to your project:
+Applies every practice from the [Harness Engineering](https://openai.com/index/harness-engineering/) article to your project:
 
 - **CLAUDE.md as table of contents** (~100 lines) pointing to deeper docs
-- **`docs/` as system of record** — architecture, quality grades, design docs, exec plans
+- **`docs/` as system of record** — architecture, quality grades, design docs, exec plans, core beliefs, tech debt tracker
+- **Custom linters as hooks** — file size, naming, structured logging, architecture direction, boundary validation
 - **Rules enforced mechanically** — architecture boundaries, testing conventions, doc maintenance
 - **Project-embedded skills** — `/sync`, `/review`, `/plan`, `/quality`
 - **Specialized agents** — `@reviewer`, `@architect`, `@gardener`
+- **Agent-to-agent review loop** (Ralph Wiggum Loop) — iterate until all reviewers satisfied
+- **Garbage collection** — recurring scan for drift, dead code, stale docs
 - **Progressive disclosure** — small entry point, pointers to depth
 
 ## Install
@@ -50,30 +53,85 @@ This analyzes your project (language, framework, structure) and generates:
 docs/
 ├── ARCHITECTURE.md        # Module boundaries, dependency rules
 ├── QUALITY.md             # Quality grades per domain
-├── design-docs/           # Design decisions
-├── exec-plans/            # Active + completed plans
-├── product-specs/         # Product specs
-├── references/            # External reference material
+├── design-docs/
+│   ├── index.md
+│   └── core-beliefs.md    # Agent-first operating principles
+├── exec-plans/
+│   ├── active/
+│   ├── completed/
+│   └── tech-debt-tracker.md
+├── generated/             # Auto-generated docs (db schema, API endpoints)
+├── product-specs/
+├── references/            # External llms.txt and API docs
 └── encyclopedia/          # Auto-generated codebase knowledge
 ```
 
-### Ongoing Maintenance
+### Skills
 
 | Command | What it does |
 |---------|-------------|
+| `/setup-harness` | One-liner scaffold generation |
 | `/harness-sync` | Re-analyze and update stale docs |
 | `/harness-review` | Architecture-aware code review |
 | `/harness-plan <task>` | Create structured execution plan |
 | `/harness-quality` | Grade quality per domain |
 | `/harness-learn` | Generate skills from conversation history |
+| `/harness-loop` | Agent-to-agent review loop (Ralph Wiggum Loop) |
+| `/harness-gc` | Garbage collection — scan for drift and fix |
 
 ### Agents
 
 | Agent | When to use |
 |-------|-------------|
-| `@reviewer` | Delegate code review |
-| `@architect` | Analyze architecture health |
-| `@gardener` | Find stale docs and quality drift |
+| `@reviewer` | Delegate code review with architecture awareness |
+| `@architect` | Analyze architecture health, map dependencies |
+| `@gardener` | Find stale docs, dead references, quality drift |
+
+## Custom Linters (from the article)
+
+These run automatically after every `Edit`/`Write` via PostToolUse hooks:
+
+| Linter | Article Quote | What It Checks |
+|--------|---------------|----------------|
+| **lint-file-size** | "file size limits" | Source files > 300 lines |
+| **lint-naming** | "naming conventions for schemas and types" | kebab-case file names |
+| **lint-structured-log** | "we statically enforce structured logging" | No console.log/print |
+| **lint-architecture** | "strictly validated dependency directions" | Import direction: Types→Config→Repo→Service→Runtime→UI |
+| **lint-boundaries** | "parse data shapes at the boundary" | Unvalidated JSON.parse/json.loads |
+
+Additional scripts (run by skills, not hooks):
+
+| Script | What It Does |
+|--------|-------------|
+| **validate-docs** | Check knowledge base structure, cross-links, freshness |
+| **grade-quality** | Automated quality metrics per domain (file count, test ratio, etc.) |
+
+All linter error messages **inject remediation instructions into agent context** — exactly as described in the article: "we write the error messages to inject remediation instructions into agent context."
+
+## Every Article Practice Implemented
+
+| # | Article Practice | Implementation |
+|---|---|---|
+| 1 | CLAUDE.md as table of contents (~100 lines) | Template + lint-file-size validates it stays under 100 |
+| 2 | `docs/` as structured knowledge base | Templates for ARCHITECTURE, QUALITY, design-docs, exec-plans, product-specs, references, encyclopedia, generated |
+| 3 | Core beliefs document | `docs/design-docs/core-beliefs.md` template |
+| 4 | Custom linters for dependency direction | `lint-architecture.sh` hook |
+| 5 | Structural tests (architecture constraints) | `@architect` agent + `/harness-review` skill |
+| 6 | Structured logging enforcement | `lint-structured-log.sh` hook |
+| 7 | Naming convention enforcement | `lint-naming.sh` hook |
+| 8 | File size limit enforcement | `lint-file-size.sh` hook |
+| 9 | Lint error messages as agent remediation | All scripts write remediation to stderr |
+| 10 | Knowledge base linters (up-to-date, cross-linked) | `validate-docs.sh` script |
+| 11 | Doc-gardening agent | `@gardener` agent |
+| 12 | Quality grading per domain | `grade-quality.sh` + `/harness-quality` skill |
+| 13 | Execution plans as first-class artifacts | `docs/exec-plans/` + `/harness-plan` skill |
+| 14 | Tech debt tracker | `docs/exec-plans/tech-debt-tracker.md` template |
+| 15 | Parse at boundaries enforcement | `lint-boundaries.sh` hook |
+| 16 | Agent-to-agent review loop (Ralph Wiggum Loop) | `/harness-loop` skill |
+| 17 | Recurring garbage collection | `/harness-gc` skill |
+| 18 | Progressive disclosure | CLAUDE.md → ARCHITECTURE.md → domain docs → design docs |
+| 19 | Generated docs (db-schema, etc.) | `docs/generated/` directory |
+| 20 | Agent legibility optimization | All templates structured for Claude's reasoning |
 
 ## The 10 Principles
 
@@ -87,22 +145,6 @@ docs/
 8. **Increasing autonomy** — each capability unlocks the next
 9. **Parse at boundaries** — validate external data at entry, trust internally
 10. **Give a map, not a manual** — small map pointing to deeper sources
-
-## What Gets Generated vs What's in the Plugin
-
-**Plugin provides** (installed once, used across projects):
-- `/setup-harness` — the generator skill
-- `/harness-sync`, `/harness-review`, `/harness-plan`, `/harness-quality`, `/harness-learn` — maintenance skills
-- `@reviewer`, `@architect`, `@gardener` — specialized agents
-- Templates and references
-
-**Generated into your project** (committed to your repo):
-- `.claude/CLAUDE.md` — customized for YOUR project
-- `.claude/settings.json` — permissions for YOUR stack
-- `.claude/rules/` — rules adapted to YOUR language
-- `.claude/skills/` — skills with YOUR build/test commands
-- `.claude/agents/` — agents configured for YOUR project
-- `docs/` — knowledge base for YOUR codebase
 
 ## Works With
 

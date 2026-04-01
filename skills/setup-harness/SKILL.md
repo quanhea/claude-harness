@@ -40,6 +40,9 @@ Read ALL of these templates. They contain the exact content to generate, with `{
 5. [templates/rules.md](templates/rules.md) — Architecture, testing, documentation rules
 6. [templates/skills.md](templates/skills.md) — Project-embedded skills (sync, review, plan, quality)
 7. [templates/agents.md](templates/agents.md) — Subagents (reviewer, architect, gardener)
+8. [templates/core-beliefs.md](templates/core-beliefs.md) — Agent-first operating principles
+9. [templates/tech-debt-tracker.md](templates/tech-debt-tracker.md) — Technical debt tracking
+10. [templates/generated-docs.md](templates/generated-docs.md) — Auto-generated docs directory
 
 ## Instructions
 
@@ -77,10 +80,13 @@ Read each template file, fill in all `{{placeholders}}` with real project values
 2. `.claude/settings.json` — from settings.json.md template (pick correct language variant)
 3. `docs/ARCHITECTURE.md` — from ARCHITECTURE.md.md template
 4. `docs/QUALITY.md` and all docs/ files — from docs-structure.md template
-5. `.claude/rules/architecture.md`, `.claude/rules/testing.md`, `.claude/rules/documentation.md` — from rules.md template
-6. `.claude/skills/sync/SKILL.md`, `.claude/skills/review/SKILL.md`, `.claude/skills/plan/SKILL.md`, `.claude/skills/quality/SKILL.md` — from skills.md template
-7. `.claude/agents/reviewer.md`, `.claude/agents/architect.md`, `.claude/agents/gardener.md` — from agents.md template
-8. Update `.gitignore` — add `.claude/settings.local.json` if not already present
+5. `docs/design-docs/core-beliefs.md` — from core-beliefs.md template
+6. `docs/exec-plans/tech-debt-tracker.md` — from tech-debt-tracker.md template
+7. `docs/generated/README.md` — from generated-docs.md template
+8. `.claude/rules/architecture.md`, `.claude/rules/testing.md`, `.claude/rules/documentation.md` — from rules.md template
+9. `.claude/skills/sync/SKILL.md`, `.claude/skills/review/SKILL.md`, `.claude/skills/plan/SKILL.md`, `.claude/skills/quality/SKILL.md` — from skills.md template
+10. `.claude/agents/reviewer.md`, `.claude/agents/architect.md`, `.claude/agents/gardener.md` — from agents.md template
+11. Update `.gitignore` — add `.claude/settings.local.json` if not already present
 
 ### Step 4: Verify
 
@@ -96,4 +102,8 @@ After generating all files, verify:
 Print a summary:
 - List all generated files
 - Note any files that were skipped (already existed)
-- Suggest next steps: "Run `/sync` to analyze your codebase in depth" and "Run `/quality` to grade each domain"
+- Suggest next steps:
+  - "Run `/harness-quality` to grade each domain"
+  - "Run `/harness-gc` for a first garbage collection pass"
+  - "Run `/harness-loop` before merging to run the agent review loop"
+  - "The linter hooks are active — they'll check every file you edit"
