@@ -34,38 +34,63 @@ through the domain's public API (index file).
 
 ## Layers
 
-Dependencies flow in one direction within each domain:
+Within each business domain, dependencies flow forward through these layers:
 
 ```
-Types → Config → Repository → Service → Runtime → UI
+┌─────────────────────────────────────────────────┐
+│                                                 │
+│  Utils  ──────────────────────┐                 │
+│  (outside business domain)    │                 │
+│                               ▼                 │
+│  ┌──────────── Business Logic Domain ────────┐  │
+│  │                                           │  │
+│  │  Types → Config → Repo                    │  │
+│  │                    │                      │  │
+│  │                    ▼                      │  │
+│  │  Providers → Service → Runtime → UI       │  │
+│  │  (cross-cutting)           │              │  │
+│  │                            ▼              │  │
+│  │                     App Wiring + UI       │  │
+│  └───────────────────────────────────────────┘  │
+└─────────────────────────────────────────────────┘
 ```
 
 | Layer | Responsibility | Example |
 |-------|---------------|---------|
-| Types | Data shapes, interfaces, enums | `types/user.ts` |
-| Config | Environment, feature flags | `config/app.ts` |
-| Repository | Data access, API clients | `repo/user-repo.ts` |
-| Service | Business logic, orchestration | `service/auth-service.ts` |
-| Runtime | Server setup, middleware, providers | `runtime/server.ts` |
-| UI | Components, pages, layouts | `components/`, `pages/` |
+| **Types** | Data shapes, interfaces, enums | `types/user.ts` |
+| **Config** | Environment, feature flags | `config/app.ts` |
+| **Repo** | Data access, API clients, ORM | `repo/user-repo.ts` |
+| **Providers** | Cross-cutting interfaces: auth, logging, metrics, feature flags, connectors | `providers/auth.ts`, `providers/telemetry.ts` |
+| **Service** | Business logic, orchestration | `service/auth-service.ts` |
+| **Runtime** | Server setup, middleware, request handling | `runtime/server.ts` |
+| **UI** | Components, pages, layouts | `components/`, `pages/` |
+| **App Wiring** | Application entry, dependency injection, route registration | `app.ts`, `main.ts` |
+| **Utils** | Pure utilities, shared helpers (OUTSIDE business domain) | `utils/`, `lib/` |
 
-Cross-cutting concerns (auth, logging, metrics, feature flags) enter through
-explicit provider interfaces, never direct imports.
+### Cross-Cutting via Providers
+
+Cross-cutting concerns (auth, logging, metrics, feature flags, external connectors)
+enter the business domain through a single explicit interface: **Providers**.
+Other layers NEVER import these concerns directly — they receive them via
+the Providers layer.
 
 ## Dependency Rules
 
 ### What's allowed
 
-- A module may depend on modules to its LEFT in the layer chain above
-- A module may depend on shared `types/` and `utils/`
-- Cross-domain dependencies go through explicit interfaces
+- A layer may depend on layers ABOVE it in the diagram
+- Types, Config, Repo feed into Service
+- Service depends on Providers for cross-cutting concerns
+- Utils may be imported by any layer (it's outside the business domain)
+- Cross-domain dependencies go through explicit public APIs
 
 ### What's NOT allowed
 
 - Circular dependencies between domains
-- UI importing directly from Repository layer
-- Service layer depending on UI components
-- Implicit globals or singletons (use dependency injection)
+- UI importing directly from Repo layer (must go through Service)
+- Service importing directly from auth/logging (must go through Providers)
+- Providers importing from Service, Runtime, or UI
+- Implicit globals or singletons (use dependency injection via Providers)
 
 ## Conventions
 

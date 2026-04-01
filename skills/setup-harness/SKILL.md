@@ -43,6 +43,8 @@ Read ALL of these templates. They contain the exact content to generate, with `{
 8. [templates/core-beliefs.md](templates/core-beliefs.md) — Agent-first operating principles
 9. [templates/tech-debt-tracker.md](templates/tech-debt-tracker.md) — Technical debt tracking
 10. [templates/generated-docs.md](templates/generated-docs.md) — Auto-generated docs directory
+11. [templates/knowledge-docs.md](templates/knowledge-docs.md) — DESIGN, FRONTEND, PLANS, PRODUCT_SENSE, RELIABILITY, SECURITY docs + llms.txt reference guide
+12. [templates/observability.md](templates/observability.md) — Observability stack setup (apps only)
 
 ## Instructions
 
@@ -83,10 +85,14 @@ Read each template file, fill in all `{{placeholders}}` with real project values
 5. `docs/design-docs/core-beliefs.md` — from core-beliefs.md template
 6. `docs/exec-plans/tech-debt-tracker.md` — from tech-debt-tracker.md template
 7. `docs/generated/README.md` — from generated-docs.md template
-8. `.claude/rules/architecture.md`, `.claude/rules/testing.md`, `.claude/rules/documentation.md` — from rules.md template
-9. `.claude/skills/sync/SKILL.md`, `.claude/skills/review/SKILL.md`, `.claude/skills/plan/SKILL.md`, `.claude/skills/quality/SKILL.md` — from skills.md template
-10. `.claude/agents/reviewer.md`, `.claude/agents/architect.md`, `.claude/agents/gardener.md` — from agents.md template
-11. Update `.gitignore` — add `.claude/settings.local.json` if not already present
+8. `docs/PLANS.md`, `docs/PRODUCT_SENSE.md`, `docs/RELIABILITY.md`, `docs/SECURITY.md` — from knowledge-docs.md template (always)
+9. `docs/DESIGN.md`, `docs/FRONTEND.md` — from knowledge-docs.md template (only if project has a frontend)
+10. `docs/references/README.md` — from knowledge-docs.md template (replaces simple index.md)
+11. `docs/OBSERVABILITY.md` + optionally `docker-compose.observability.yml` — from observability.md template (only for apps, not libraries)
+12. `.claude/rules/architecture.md`, `.claude/rules/testing.md`, `.claude/rules/documentation.md` — from rules.md template
+13. `.claude/skills/sync/SKILL.md`, `.claude/skills/review/SKILL.md`, `.claude/skills/plan/SKILL.md`, `.claude/skills/quality/SKILL.md` — from skills.md template
+14. `.claude/agents/reviewer.md`, `.claude/agents/architect.md`, `.claude/agents/gardener.md` — from agents.md template
+15. Update `.gitignore` — add `.claude/settings.local.json` if not already present
 
 ### Step 4: Verify
 

@@ -30,20 +30,27 @@ get_layer() {
   local file="$1"
   local rel="${file#$ROOT/}"
   # Map directory names to layer indices (lower = earlier in chain)
-  # Types(0) → Config(1) → Repo(2) → Service(3) → Runtime(4) → UI(5)
+  # Utils(-1, special) | Types(0) → Config(1) → Repo(2) → Providers(3) → Service(4) → Runtime(5) → UI(6) → App Wiring(7)
+  # Utils can be imported by anything. Providers are the cross-cutting interface.
   case "$rel" in
+    */utils/*|*/util/*|*/lib/*|*/helpers/*|*/common/*|*/shared/*)
+      echo -2 ;; # Utils — can be imported by any layer, skip checks
     */types/*|*/type/*|*/models/*|*/model/*|*/interfaces/*|*/schemas/*|*/schema/*|*/dto/*)
       echo 0 ;;
     */config/*|*/configs/*|*/configuration/*)
       echo 1 ;;
     */repo/*|*/repository/*|*/repositories/*|*/dal/*|*/data/*|*/db/*)
       echo 2 ;;
-    */service/*|*/services/*|*/domain/*|*/business/*|*/use-case/*|*/usecases/*)
+    */provider/*|*/providers/*|*/connectors/*|*/connector/*)
       echo 3 ;;
-    */runtime/*|*/server/*|*/app/*|*/middleware/*|*/controller/*|*/controllers/*|*/handler/*|*/handlers/*|*/routes/*|*/api/*)
+    */service/*|*/services/*|*/domain/*|*/business/*|*/use-case/*|*/usecases/*)
       echo 4 ;;
-    */ui/*|*/components/*|*/pages/*|*/views/*|*/screens/*|*/layouts/*)
+    */runtime/*|*/server/*|*/middleware/*|*/controller/*|*/controllers/*|*/handler/*|*/handlers/*|*/routes/*|*/api/*)
       echo 5 ;;
+    */ui/*|*/components/*|*/pages/*|*/views/*|*/screens/*|*/layouts/*)
+      echo 6 ;;
+    */app/*|*/wiring/*|*/bootstrap/*)
+      echo 7 ;;
     *)
       echo -1 ;; # Unknown layer — don't lint
   esac
@@ -51,12 +58,12 @@ get_layer() {
 
 MY_LAYER=$(get_layer "$FILE_PATH")
 
-# If we can't determine the layer, skip
-if [ "$MY_LAYER" = "-1" ]; then
+# If we can't determine the layer, or it's Utils (-2), skip
+if [ "$MY_LAYER" = "-1" ] || [ "$MY_LAYER" = "-2" ]; then
   exit 0
 fi
 
-LAYER_NAMES=("types" "config" "repo" "service" "runtime" "ui")
+LAYER_NAMES=("types" "config" "repo" "providers" "service" "runtime" "ui" "app-wiring")
 MY_LAYER_NAME="${LAYER_NAMES[$MY_LAYER]}"
 
 # Check imports in the file for backward dependencies
@@ -84,7 +91,7 @@ while IFS= read -r line; do
   [ -z "$line" ] && continue
 
   # Check if the imported path points to a higher layer
-  for higher_idx in $(seq $((MY_LAYER + 1)) 5); do
+  for higher_idx in $(seq $((MY_LAYER + 1)) 7); do
     HIGHER_NAME="${LAYER_NAMES[$higher_idx]}"
     # Check if import contains a higher-layer directory name
     if echo "$line" | grep -qiE "/(${HIGHER_NAME}|$(echo "$HIGHER_NAME" | sed 's/s$//')s?)/" 2>/dev/null; then
@@ -97,9 +104,10 @@ done < <(check_imports "$FILE_PATH")
 if [ -n "$VIOLATIONS" ]; then
   remediate "File '$FILE_PATH' (${MY_LAYER_NAME} layer) has backward dependency violations:${VIOLATIONS}
 
-Architecture rule: dependencies flow Types → Config → Repo → Service → Runtime → UI.
+Architecture rule: dependencies flow Types → Config → Repo → Providers → Service → Runtime → UI → App Wiring.
 A '${MY_LAYER_NAME}' file must NOT import from layers to its right.
-Move the shared code to the correct layer or extract an interface.
+Cross-cutting concerns (auth, logging, metrics) must go through the Providers layer.
+Utils can be imported by any layer. Move shared code to Utils or extract a Provider interface.
 See docs/ARCHITECTURE.md for the full dependency rules."
 fi
 
