@@ -1,0 +1,8 @@
+node_modules/
+dist/
+*.tsbuildinfo
+.DS_Store
+
+# Claude Code local settings (personal, not shared)
+.claude/settings.local.json
+.playwright-mcp/

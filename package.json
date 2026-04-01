@@ -1,0 +1,54 @@
+{
+  "name": "claude-harness",
+  "version": "0.1.0",
+  "description": "Scaffold any project for agent-first development with Claude Code",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "bin": {
+    "claude-harness": "./dist/cli.js"
+  },
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "tsc --noEmit",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "claude",
+    "claude-code",
+    "ai",
+    "agent",
+    "scaffolding",
+    "developer-tools"
+  ],
+  "author": "",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "commander": "^13.1.0",
+    "glob": "^11.0.2"
+  },
+  "optionalDependencies": {
+    "@anthropic-ai/claude-agent-sdk": "^0.2.89"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.3",
+    "tsup": "^8.4.0",
+    "typescript": "^5.8.3",
+    "vitest": "^3.1.2"
+  }
+}
