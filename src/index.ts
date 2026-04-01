@@ -1,5 +1,0 @@
-export { init } from './commands/init.js'
-export { sync } from './commands/sync.js'
-export { learn } from './commands/learn.js'
-export type { ProjectAnalysis } from './analyzers/project.js'
-export type { HarnessOptions } from './types.js'

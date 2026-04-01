@@ -1,0 +1,10 @@
+{
+  "name": "claude-harness",
+  "description": "Scaffold any project for agent-first development with Claude Code. Generates CLAUDE.md, architecture docs, rules, skills, and agents following the Harness Engineering methodology.",
+  "version": "0.1.0",
+  "author": {
+    "name": "Community",
+    "url": "https://github.com/anthropics/claude-harness"
+  },
+  "keywords": ["scaffolding", "agent-first", "harness", "setup", "architecture"]
+}
