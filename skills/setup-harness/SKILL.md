@@ -99,10 +99,10 @@ Read each template file, fill in all `{{placeholders}}` with real project values
 Export this project's conversation history, then read the conversations to identify reusable workflows that should become project skills.
 
 ```bash
-node ${CLAUDE_PLUGIN_ROOT}/scripts/export-conversations.mjs "$(pwd)" .harness/conversations
+NODE_PATH="${CLAUDE_PLUGIN_DATA}/node_modules" node "${CLAUDE_PLUGIN_ROOT}/scripts/export-conversations.mjs" .harness/conversations 30
 ```
 
-This writes one `.txt` file per session to `.harness/conversations/`.
+This writes one `.json` file per session to `.harness/conversations/`, each containing the full message array in the exact SDK format (same as Claude Code's internal Message type).
 
 Then:
 1. Read each exported conversation file in `.harness/conversations/`

@@ -1,6 +1,16 @@
 {
-  "description": "Harness Engineering linters — run after every file edit to enforce architecture, file size, naming, structured logging, and boundary validation. Error messages inject remediation instructions into agent context.",
+  "description": "Harness Engineering — auto-install deps on session start, run linters after every file edit.",
   "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "diff -q \"${CLAUDE_PLUGIN_ROOT}/package.json\" \"${CLAUDE_PLUGIN_DATA}/package.json\" >/dev/null 2>&1 || (cd \"${CLAUDE_PLUGIN_DATA}\" && cp \"${CLAUDE_PLUGIN_ROOT}/package.json\" . && npm install --production 2>&1 | tail -3) || rm -f \"${CLAUDE_PLUGIN_DATA}/package.json\""
+          }
+        ]
+      }
+    ],
     "PostToolUse": [
       {
         "matcher": "Edit|Write",
