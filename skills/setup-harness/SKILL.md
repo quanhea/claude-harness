@@ -102,23 +102,33 @@ Export this project's conversation history, then read the conversations to ident
 NODE_PATH="${CLAUDE_PLUGIN_DATA}/node_modules" node "${CLAUDE_PLUGIN_ROOT}/scripts/export-conversations.mjs" .harness/conversations 30
 ```
 
-This writes one `.json` file per session to `.harness/conversations/`, each containing the full message array in the exact SDK format (same as Claude Code's internal Message type).
+This writes one `.json` file per session to `.harness/conversations/`, each containing the full message array in the exact SDK format.
 
-Then:
-1. Read each exported conversation file in `.harness/conversations/`
-2. For each conversation, identify the user's goal and how it was solved
-3. Look for **recurring patterns** across conversations — same type of task done 3+ times
-4. For each recurring pattern, evaluate its **reusability**:
-   - How often was this done? (frequency)
-   - Is it generalizable? (not tied to one specific file/bug)
-   - Is it multi-step? (worth codifying, vs a one-liner)
-5. For patterns scoring high on reusability, generate a project skill at `.claude/skills/<name>/SKILL.md`
+**CRITICAL: How to read each conversation correctly.**
 
-Each generated skill MUST have:
+For each session JSON file, trace the conversation like this:
+
+1. **Focus on USER messages only first.** Read every message where `type="user"` and `message.content` is a string (skip tool_result messages). These are the user's actual requests and corrections. This is the INTENT.
+
+2. **Pay close attention to user CORRECTIONS.** When a user says "no", "wrong", "not that", "wait", "actually", "instead", or interrupts — everything BEFORE that correction is the WRONG approach. Ignore it. The correct approach starts AFTER the correction.
+
+3. **Find the LAST SUCCESSFUL RUN.** In each conversation, the final sequence of tool calls that completed without user correction is the one that worked. Earlier attempts that the user rejected or interrupted are failed approaches — do NOT use them as the basis for a skill.
+
+4. **The skill should encode the FINAL WORKING version**, not the first attempt. If Claude tried approach A, user said "no", then Claude did approach B which succeeded — the skill should encode approach B.
+
+**Pattern identification:**
+
+- Read through all sessions, focusing on user queries and the final successful resolution
+- Group sessions by what the user was trying to accomplish (not by what tools were used)
+- A pattern is reusable if the SAME TYPE of user request appears 3+ times
+- For each pattern, extract the steps from the LAST SUCCESSFUL attempt in the most recent session
+
+**For each pattern with 3+ occurrences, generate a skill at `.claude/skills/<name>/SKILL.md`:**
+
 - `description` under 250 chars, action verb first
-- Concrete steps extracted from how the task was actually solved in conversations
-- Project-specific file paths and commands (not generic)
-- The project's actual test/build commands
+- Steps extracted from the FINAL WORKING approach (after all user corrections)
+- Project-specific commands and paths from the successful runs
+- Include the user's corrections as guardrails (e.g., "Do NOT do X, instead do Y")
 
 Add `.harness/` to `.gitignore` (conversation exports are ephemeral, not committed).
 
