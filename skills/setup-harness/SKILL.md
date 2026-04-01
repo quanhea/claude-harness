@@ -94,22 +94,39 @@ Read each template file, fill in all `{{placeholders}}` with real project values
 14. `.claude/agents/reviewer.md`, `.claude/agents/architect.md`, `.claude/agents/gardener.md` — from agents.md template
 15. Update `.gitignore` — add `.claude/settings.local.json` if not already present
 
-### Step 4: Verify
+### Step 4: Generate Skills from Conversation History
 
-After generating all files, verify:
-- `.claude/CLAUDE.md` is under 100 lines
-- All `{{placeholders}}` are replaced with real values
-- No template instructions remain in the output files
-- `docs/ARCHITECTURE.md` lists actually discovered domains, not hypothetical ones
-- `.claude/settings.json` is valid JSON
+Export this project's conversation history, then read the conversations to identify reusable workflows that should become project skills.
 
-### Step 5: Report
+```bash
+node ${CLAUDE_PLUGIN_ROOT}/scripts/export-conversations.mjs "$(pwd)" .harness/conversations
+```
 
-Print a summary:
-- List all generated files
-- Note any files that were skipped (already existed)
-- Suggest next steps:
-  - "Run `/harness-quality` to grade each domain"
-  - "Run `/harness-gc` for a first garbage collection pass"
-  - "Run `/harness-loop` before merging to run the agent review loop"
+This writes one `.txt` file per session to `.harness/conversations/`.
+
+Then:
+1. Read each exported conversation file in `.harness/conversations/`
+2. For each conversation, identify the user's goal and how it was solved
+3. Look for **recurring patterns** across conversations — same type of task done 3+ times
+4. For each recurring pattern, evaluate its **reusability**:
+   - How often was this done? (frequency)
+   - Is it generalizable? (not tied to one specific file/bug)
+   - Is it multi-step? (worth codifying, vs a one-liner)
+5. For patterns scoring high on reusability, generate a project skill at `.claude/skills/<name>/SKILL.md`
+
+Each generated skill MUST have:
+- `description` under 250 chars, action verb first
+- Concrete steps extracted from how the task was actually solved in conversations
+- Project-specific file paths and commands (not generic)
+- The project's actual test/build commands
+
+Add `.harness/` to `.gitignore` (conversation exports are ephemeral, not committed).
+
+### Step 5: Verify & Report
+
+- Confirm `.claude/CLAUDE.md` is under 100 lines
+- Confirm `.claude/settings.json` is valid JSON
+- List all generated files and any skipped (already existed)
+- List generated skills from conversation analysis with their reusability score
+- Suggest: "The linter hooks are now active — they check every file edit"
   - "The linter hooks are active — they'll check every file you edit"
