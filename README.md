@@ -66,26 +66,37 @@ docs/
 └── encyclopedia/          # Auto-generated codebase knowledge
 ```
 
-### Skills
+### Plugin Skill
 
-| Command | What it does |
-|---------|-------------|
-| `/setup-harness` | One-liner scaffold generation |
-| `/harness-sync` | Re-analyze and update stale docs |
-| `/harness-review` | Architecture-aware code review |
-| `/harness-plan <task>` | Create structured execution plan |
-| `/harness-quality` | Grade quality per domain |
-| `/harness-learn` | Generate skills from conversation history |
-| `/harness-loop` | Agent-to-agent review loop (Ralph Wiggum Loop) |
-| `/harness-gc` | Garbage collection — scan for drift and fix |
+The plugin provides ONE skill:
 
-### Agents
+```
+/setup-harness
+```
+
+This generates everything. After setup, your project has its own embedded skills and agents.
+
+### Generated Project Skills
+
+These are created in YOUR repo by `/setup-harness`:
+
+| Skill | What it does |
+|-------|-------------|
+| `/sync` | Re-analyze and update stale docs |
+| `/review` | Architecture-aware code review |
+| `/plan <task>` | Create structured execution plan |
+| `/quality` | Grade quality per domain |
+| `/ci-check` | Check CI status, diagnose failures |
+
+Plus custom skills generated from your conversation history.
+
+### Generated Agents
 
 | Agent | When to use |
 |-------|-------------|
-| `@reviewer` | Delegate code review with architecture awareness |
-| `@architect` | Analyze architecture health, map dependencies |
-| `@gardener` | Find stale docs, dead references, quality drift |
+| `@reviewer` | Delegate code review |
+| `@architect` | Analyze architecture health |
+| `@gardener` | Find stale docs, quality drift, PR feedback patterns |
 
 ## Custom Linters (from the article)
 
