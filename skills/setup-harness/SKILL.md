@@ -92,7 +92,8 @@ Read each template file, fill in all `{{placeholders}}` with real project values
 12. `.claude/rules/architecture.md`, `.claude/rules/testing.md`, `.claude/rules/documentation.md` — from rules.md template
 13. `.claude/skills/sync/SKILL.md`, `.claude/skills/review/SKILL.md`, `.claude/skills/plan/SKILL.md`, `.claude/skills/quality/SKILL.md` — from skills.md template
 14. `.claude/agents/reviewer.md`, `.claude/agents/architect.md`, `.claude/agents/gardener.md` — from agents.md template
-15. Update `.gitignore` — add `.claude/settings.local.json` if not already present
+15. Read `${CLAUDE_PLUGIN_ROOT}/skills/setup-harness/templates/worktree.md` → write `.worktreeinclude` + `docs/WORKTREE.md` + merge `worktree` section into `.claude/settings.json` (only for apps, not libraries)
+16. Update `.gitignore` — add `.claude/settings.local.json` and `.harness/` if not already present
 
 ### Step 4: Generate Skills from Conversation History
 
