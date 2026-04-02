@@ -100,24 +100,23 @@ Plus custom skills generated from your conversation history.
 
 ## Custom Linters (from the article)
 
-These run automatically after every `Edit`/`Write` via PostToolUse hooks:
+`/setup-harness` generates **project-specific linter scripts** based on what it discovers in YOUR codebase. No hardcoded rules — every check comes from your project's actual conventions.
 
-| Linter | Article Quote | What It Checks |
-|--------|---------------|----------------|
-| **lint-file-size** | "file size limits" | Source files > 300 lines |
-| **lint-naming** | "naming conventions for schemas and types" | kebab-case file names |
-| **lint-structured-log** | "we statically enforce structured logging" | No console.log/print |
-| **lint-architecture** | "strictly validated dependency directions" | Import direction: Types→Config→Repo→Service→Runtime→UI |
-| **lint-boundaries** | "parse data shapes at the boundary" | Unvalidated JSON.parse/json.loads |
+Linters are generated at `.claude/hooks/` and wired into `.claude/settings.json` PostToolUse hooks. They run after every `Edit`/`Write` and inject remediation into agent context.
 
-Additional scripts (run by skills, not hooks):
+What gets generated depends on your project:
+- **File size** — if your project has a convention (discovered from existing lint config or file size patterns)
+- **Naming** — if your project has consistent naming (discovered by scanning existing files)
+- **Structured logging** — if your project uses a structured logger and bans raw print/console
+- **Architecture deps** — if your project has layer boundaries documented in ARCHITECTURE.md
+- **Boundary validation** — if your project uses schema validation at entry points
+
+Additional scripts bundled with the plugin (not project-specific):
 
 | Script | What It Does |
 |--------|-------------|
-| **validate-docs** | Check knowledge base structure, cross-links, freshness |
-| **grade-quality** | Automated quality metrics per domain (file count, test ratio, etc.) |
-
-All linter error messages **inject remediation instructions into agent context** — exactly as described in the article: "we write the error messages to inject remediation instructions into agent context."
+| **validate-docs.sh** | Check knowledge base structure, cross-links, freshness |
+| **grade-quality.sh** | Automated quality metrics per domain |
 
 ## Every Article Practice Implemented
 
