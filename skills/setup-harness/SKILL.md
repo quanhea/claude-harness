@@ -21,6 +21,10 @@ Detect the project's language, framework, package manager, and structure:
 - Existing CLAUDE.md: !`cat .claude/CLAUDE.md 2>/dev/null || cat CLAUDE.md 2>/dev/null || echo "no CLAUDE.md"`
 - Source file extensions: !`find . -maxdepth 4 -type f \( -name "*.ts" -o -name "*.tsx" -o -name "*.js" -o -name "*.jsx" -o -name "*.py" -o -name "*.rs" -o -name "*.go" -o -name "*.java" -o -name "*.rb" -o -name "*.php" -o -name "*.swift" -o -name "*.kt" -o -name "*.cs" \) -not -path "*/node_modules/*" -not -path "*/.git/*" -not -path "*/dist/*" -not -path "*/build/*" -not -path "*/target/*" -not -path "*/__pycache__/*" -not -path "*/venv/*" 2>/dev/null | sed 's/.*\.//' | sort | uniq -c | sort -rn | head -10`
 - Top-level directories: !`find . -maxdepth 2 -type d -not -path "*/node_modules/*" -not -path "*/.git/*" -not -path "*/dist/*" -not -path "*/.next/*" 2>/dev/null | head -30`
+- Infrastructure files: !`ls -1 Dockerfile docker-compose*.yml .github/workflows/*.yml .gitlab-ci.yml Jenkinsfile bitbucket-pipelines.yml *.tf terraform.tfvars helmfile.yaml chart.yaml skaffold.yaml 2>/dev/null || echo "none found"`
+- IaC directories: !`ls -d k8s/ helm/ charts/ terraform/ infra/ infrastructure/ deploy/ .github/workflows/ 2>/dev/null || echo "none found"`
+- Env secrets pattern: !`grep -l 'SENTRY_DSN\|DATADOG\|GRAFANA\|PAGERDUTY\|STRIPE\|SENDGRID\|TWILIO\|SLACK_TOKEN\|NOTION_TOKEN\|LINEAR_API' .env .env.* 2>/dev/null || echo "none found"`
+- Existing MCP config: !`cat .mcp.json 2>/dev/null || echo "no .mcp.json"`
 
 ## Principles
 
@@ -94,6 +98,39 @@ Read each template file, fill in all `{{placeholders}}` with real project values
 14. `.claude/agents/reviewer.md`, `.claude/agents/architect.md`, `.claude/agents/gardener.md` — from agents.md template
 15. Read `${CLAUDE_PLUGIN_ROOT}/skills/setup-harness/templates/worktree.md` → write `.worktreeinclude` + `docs/WORKTREE.md` + merge `worktree` section into `.claude/settings.json` (only for apps, not libraries)
 16. Update `.gitignore` — add `.claude/settings.local.json` and `.harness/` if not already present
+
+### Step 3b: Infrastructure Legibility & MCP Setup
+
+Read `${CLAUDE_PLUGIN_ROOT}/skills/setup-harness/templates/infrastructure.md` and `${CLAUDE_PLUGIN_ROOT}/skills/setup-harness/references/mcp-catalog.md`.
+
+**Scan the project for infrastructure:**
+1. Read ALL detected infrastructure files (CI/CD workflows, Dockerfiles, Terraform, k8s manifests, Helm charts)
+2. Read docker-compose files to map the service topology
+3. Check .env files for external service references (Sentry DSN, Datadog keys, etc.)
+
+**Generate docs/INFRASTRUCTURE.md:**
+- Summarize every detected service, CI/CD pipeline, cloud resource, database, and external integration
+- This is the agent's map to infrastructure — encode everything found
+
+**Generate or merge .mcp.json:**
+- For each detected external system that HAS an MCP server, add an entry
+- Read the MCP catalog reference for the correct server config
+- If `.mcp.json` already exists, MERGE — don't overwrite
+
+**Print MCP Setup Checklist to the user:**
+
+After generating files, print a checklist with two sections:
+
+1. **Auto-detected** — MCP servers for systems found in the project (with install commands)
+2. **Hidden sources** — Ask the user: "Does your team use any of these? Setting up the MCP server makes that knowledge visible to the agent:"
+   - Slack (team decisions, incident threads)
+   - Notion (product specs, knowledge base)
+   - Google Drive (shared documents)
+   - Figma (design files, component specs)
+   - Jira (if using instead of detected tracker)
+   - Linear (if using instead of detected tracker)
+
+3. **No MCP available** — Systems documented in docs/INFRASTRUCTURE.md instead (CI/CD, Docker, Helm)
 
 ### Step 4: Generate Skills from Conversation History
 
