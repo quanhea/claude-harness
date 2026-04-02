@@ -45,7 +45,7 @@ detect_database() {
   local dir="${1:-.}"
 
   # Check docker-compose files for database images
-  for compose in "$dir"/docker-compose*.yml "$dir"/docker-compose*.yaml "$dir"/compose*.yml "$dir"/compose*.yaml; do
+  for compose in $(find "$dir" -maxdepth 1 -name "docker-compose*.yml" -o -name "docker-compose*.yaml" -o -name "compose*.yml" -o -name "compose*.yaml" 2>/dev/null); do
     [ -f "$compose" ] || continue
     if grep -qiE 'postgres|postgresql' "$compose" 2>/dev/null; then
       echo "postgresql"; return
