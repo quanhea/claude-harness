@@ -1,127 +1,64 @@
 # Template: Formatting Rules
 
 > Article: "initial scaffold—repository structure, CI configuration, formatting rules"
-> Formatting rules are part of the initial scaffold. Generate the right config for the detected language.
+> For existing projects: discover the formatter already in use. Do NOT overwrite.
+> For greenfield: research current best practices for the language.
+> NEVER hardcode formatter config values.
 
 ---
 
-## Variant: Node.js / TypeScript
+## How to Generate
 
-### File: .prettierrc
+### For EXISTING projects:
 
-```json
-{
-  "semi": true,
-  "singleQuote": true,
-  "trailingComma": "all",
-  "printWidth": 100,
-  "tabWidth": 2
-}
+**Launch an Explore agent** to discover existing formatting:
+
+```
+Agent(subagent_type: "Explore", prompt: "Find the formatting/linting setup in this project:
+1. Is there a formatter config? (.prettierrc, .prettierrc.js, prettier.config.js,
+   ruff.toml, pyproject.toml [tool.ruff], rustfmt.toml, .editorconfig,
+   .rubocop.yml, .clang-format, gofmt, etc.)
+2. Is there a linter config? (.eslintrc, eslint.config.js, ruff, pylint, golangci-lint, clippy)
+3. What format/lint commands exist in package.json scripts or Makefile?
+4. Is there a pre-commit hook for formatting?
+5. What's the indentation style? (tabs vs spaces, how many?)
+6. What's the line length limit?
+Report all config file paths and their contents.")
 ```
 
-### File: .editorconfig
+**If a formatter config already exists**: Do NOT create a new one. Just document the
+existing format command in `.claude/CLAUDE.md` Commands section.
 
-```ini
-root = true
+**If NO formatter config exists**: Proceed to generate one.
 
-[*]
-indent_style = space
-indent_size = 2
-end_of_line = lf
-charset = utf-8
-trim_trailing_whitespace = true
-insert_final_newline = true
+### For GREENFIELD projects (or existing without formatter):
 
-[*.md]
-trim_trailing_whitespace = false
+**Launch a research agent** to find current best practices:
+
+```
+Agent(subagent_type: "general-purpose", prompt: "Search the web for the current
+recommended formatter and config for {{language}} {{framework}} projects as of {{year}}.
+Find:
+1. The most popular formatter tool
+2. The recommended default config
+3. Common .editorconfig settings
+Search for '{{language}} formatter recommended config {{year}}'")
 ```
 
-**Command**: `npx prettier --write .` or `npm run format`
+Generate the config based on research findings.
 
 ---
 
-## Variant: Python
+## Output
 
-### File: pyproject.toml (append [tool.ruff] section if pyproject.toml exists, else create ruff.toml)
-
-```toml
-[tool.ruff]
-line-length = 100
-target-version = "py311"
-
-[tool.ruff.lint]
-select = ["E", "F", "I", "N", "W", "UP"]
-
-[tool.ruff.format]
-quote-style = "double"
-```
-
-**Command**: `ruff check --fix . && ruff format .`
-
----
-
-## Variant: Go
-
-No config file needed — `gofmt` is built-in and has no options.
-
-**Command**: `gofmt -w .` or `goimports -w .`
-
----
-
-## Variant: Rust
-
-### File: rustfmt.toml
-
-```toml
-max_width = 100
-tab_spaces = 4
-edition = "2021"
-```
-
-**Command**: `cargo fmt`
-
----
-
-## Variant: Java
-
-### File: .editorconfig
-
-```ini
-root = true
-
-[*]
-indent_style = space
-indent_size = 4
-end_of_line = lf
-charset = utf-8
-trim_trailing_whitespace = true
-insert_final_newline = true
-```
-
-**Command**: project-dependent (Checkstyle, Spotless, google-java-format)
-
----
-
-## Variant: Ruby
-
-### File: .rubocop.yml
-
-```yaml
-AllCops:
-  NewCops: enable
-  TargetRubyVersion: 3.2
-
-Layout/LineLength:
-  Max: 100
-```
-
-**Command**: `rubocop -a`
-
----
+1. Write the formatter config file based on discovery or research
+2. Write `.editorconfig` if one doesn't exist (research the right values)
+3. Add the format command to `.claude/CLAUDE.md` Commands section
+4. If there's a lint command, add it too
 
 ## Adaptation Instructions
 
-1. Only generate for the detected language — don't create configs for languages not used
-2. If a formatter config ALREADY EXISTS, do NOT overwrite — the project has its own style
-3. Add the format command to `.claude/CLAUDE.md` Commands section
-4. If using the formatting config, add it to the lint step in `.claude/rules/architecture.md`
+1. ALWAYS check for existing formatter config first — never overwrite
+2. For greenfield, use research results, not hardcoded defaults
+3. Add the format command to the project's CLAUDE.md Commands section
+4. If the project has a pre-commit hook for formatting, document it in rules

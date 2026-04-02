@@ -78,9 +78,10 @@ Otherwise, review the current unstaged changes: !`git diff`
 ## Review Checklist
 
 ### 1. Architecture Compliance
-- Check that imports respect layer boundaries (Types → Config → Repo → Service → Runtime → UI)
+- Read `docs/ARCHITECTURE.md` for the project's layer boundaries and dependency rules
+- Check that imports respect the documented dependency direction
 - No circular dependencies between domains
-- Cross-cutting concerns use provider interfaces
+- Cross-cutting concerns follow the documented pattern
 
 ### 2. Boundary Validation
 - External data (API responses, user input, file reads) is parsed/validated at entry

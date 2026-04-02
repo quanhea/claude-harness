@@ -1,90 +1,93 @@
 # Template: .claude/CLAUDE.md
 
-> This is a TEMPLATE. Adapt it to the specific project. Replace all {{placeholders}}.
-> The final file MUST be under 100 lines. It is a TABLE OF CONTENTS, not an encyclopedia.
+> This generates the table-of-contents CLAUDE.md.
+> It MUST be concise (the article says ~100 lines but discover the right size for this project).
+> It points to deeper docs — it does not contain details itself.
+> NEVER hardcode conventions — discover them from the project.
 
 ---
+
+## How to Generate
+
+### For EXISTING projects:
+
+**Launch an Explore agent** to discover the project essentials:
+
+```
+Agent(subagent_type: "Explore", prompt: "Find the essential project info for CLAUDE.md:
+1. Project name (from package.json, Cargo.toml, go.mod, pyproject.toml, or directory name)
+2. Language and framework
+3. Package manager
+4. Test framework and test command
+5. Build command
+6. Lint/format command
+7. Dev server command
+8. Top-level domains/modules
+9. Whether it's a monorepo
+10. Any existing CLAUDE.md or README with project conventions
+Report all findings.")
+```
+
+### For GREENFIELD projects:
+
+Use the detected language/framework from the shell injection context. Propose commands
+based on the framework's standard tooling (research if unsure).
+
+---
+
+## Output Structure
+
+Write `.claude/CLAUDE.md` — concise, pointers only:
 
 ```markdown
 # {{project-name}}
 
-> This file is a table of contents. For deep context, follow the pointers below.
-> Keep this under 100 lines. Details belong in `docs/`.
+> Table of contents. Follow pointers for depth. Keep this concise.
 
 ## Quick Reference
 
-- **Language**: {{primary-language}}
-- **Framework**: {{framework-or-none}}
-- **Package manager**: {{package-manager}}
-- **Test framework**: {{test-framework-or-none}}
+- **Language**: {{discovered}}
+- **Framework**: {{discovered}}
+- **Package manager**: {{discovered}}
+- **Test framework**: {{discovered}}
 
 ## Commands
 
-- **Build**: `{{build-command}}`
-- **Test**: `{{test-command}}`
-- **Lint**: `{{lint-command}}`
+{{discovered — only list commands that actually exist in the project:}}
+- **Build**: `{{discovered build command}}`
+- **Test**: `{{discovered test command}}`
+- **Lint**: `{{discovered lint command}}`
+- **Dev**: `{{discovered dev server command}}`
 
 ## Architecture
 
-See `docs/ARCHITECTURE.md` for the full architecture map including:
-- Module/domain boundaries and dependency rules
-- Data flow overview
-- Key abstractions and patterns
+See `docs/ARCHITECTURE.md` for module boundaries and dependency rules.
 
 ## Knowledge Base
 
-All project knowledge lives in `docs/`:
-
 | Path | What's there |
 |------|-------------|
-| `docs/ARCHITECTURE.md` | Architecture map, module boundaries, dependency rules |
+| `docs/ARCHITECTURE.md` | Architecture map, dependency rules |
 | `docs/QUALITY.md` | Quality grades per domain |
 | `docs/design-docs/` | Design documents and decisions |
 | `docs/exec-plans/` | Execution plans (active + completed) |
 | `docs/product-specs/` | Product specifications |
 | `docs/references/` | External reference material |
-| `docs/encyclopedia/` | Auto-generated codebase knowledge |
-
-## Rules
-
-Architecture rules are enforced in `.claude/rules/`. Key rules:
-- **architecture.md** — Module boundaries, dependency direction, layer constraints
-- **testing.md** — Test conventions (loaded when editing test files)
-- **documentation.md** — Documentation maintenance rules
-
-## Skills
-
-| Skill | What it does |
-|-------|-------------|
-| `/sync` | Re-analyze project and update docs |
-| `/review` | Architecture-aware code review |
-| `/plan` | Create an execution plan for a task |
-| `/quality` | Grade quality per domain |
-
-## Agents
-
-| Agent | Role |
-|-------|------|
-| `@reviewer` | Code review with architecture awareness |
-| `@architect` | Architecture analysis and recommendations |
-| `@gardener` | Find and fix stale docs, dead code, quality issues |
+| `docs/INFRASTRUCTURE.md` | Services, CI/CD, cloud, databases |
 
 ## Principles
 
-1. **Repository is the system of record** — if it's not in the repo, it doesn't exist
-2. **Progressive disclosure** — start here, follow pointers to depth
-3. **Enforce mechanically** — rules are in code, not prose
-4. **Agent legibility** — optimize for Claude's reasoning, not human aesthetics
-5. **Correct > clever** — boring, composable, well-tested code wins
+1. Repository is the system of record — if it's not in the repo, it doesn't exist
+2. Progressive disclosure — start here, follow pointers to depth
+3. Enforce mechanically — rules are in code, not prose
+4. Agent legibility — optimize for reasoning, not aesthetics
+5. Correct > clever — well-tested, composable code wins
 ```
 
 ## Adaptation Instructions
 
-When generating this file for a real project:
-
-1. Fill in all `{{placeholders}}` from detected project info
-2. Remove any rows from Commands that don't apply (e.g., no lint command)
-3. Add project-specific domains if detected (e.g., `## Domains` section)
-4. For monorepos, add a note about package structure
-5. If the project already has a CLAUDE.md, MERGE — don't overwrite
-6. The final file must stay under 100 lines
+1. ALL commands must come from actual project config — never invent commands
+2. Only list knowledge base paths for docs that were actually generated
+3. If the project already has CLAUDE.md, READ it first and MERGE — preserve user content
+4. If monorepo, add a note about package structure
+5. Remove any rows from the knowledge table that don't apply

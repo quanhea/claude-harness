@@ -7,7 +7,7 @@
 
 ### 1. CLAUDE.md Is a Table of Contents, Not an Encyclopedia
 
-**Rule**: Keep CLAUDE.md under 100 lines. It points to deeper docs — it does not contain them.
+**Rule**: Keep CLAUDE.md concise (the article uses ~100 lines as a guideline). It points to deeper docs — it does not contain them.
 
 **Why**: Context is a scarce resource. A giant instruction file crowds out the task, the code,
 and relevant docs. The agent either misses key constraints or optimizes for wrong ones.
@@ -78,7 +78,7 @@ Run these regularly, not on "cleanup Fridays."
 multipliers: once encoded, they apply everywhere at once.
 
 **How**: Golden principles live in `.claude/rules/`. They are specific, mechanical, and
-verifiable. Not "write clean code" but "one concept per file, max ~300 lines" and
+verifiable. Not "write clean code" but "one concept per file, keep files focused" and
 "parse external data at boundaries with schema validation."
 
 ### 8. Increasing Autonomy
@@ -118,25 +118,17 @@ independently, each mechanically verifiable.
 
 ## The Layered Architecture Pattern
 
-Within each business domain, code dependencies flow in one direction:
+The article describes a layered architecture where dependencies flow in one direction.
+The specific layers vary by project — they must be DISCOVERED from the actual codebase
+(for existing projects) or RESEARCHED for the language/framework (for greenfield).
 
-```
-Types → Config → Repository → Service → Runtime → UI
-```
+The universal rules are:
+- Dependencies flow in ONE direction (no backward imports)
+- Cross-cutting concerns enter through explicit interfaces (not scattered direct imports)
+- Circular dependencies between domains are never allowed
 
-Cross-cutting concerns (auth, logging, metrics, feature flags) enter through explicit
-provider interfaces — never direct imports.
-
-**What's allowed**:
-- A module depends on modules to its LEFT in the chain
-- A module depends on shared `types/` and `utils/`
-- Cross-domain dependencies go through explicit interfaces
-
-**What's NOT allowed**:
-- Circular dependencies between domains
-- UI importing directly from Repository layer
-- Service layer depending on UI components
-- Implicit globals or singletons
+The specific layer names, order, and structure are project-specific.
+See `docs/ARCHITECTURE.md` for this project's actual layer definitions.
 
 ## The Knowledge Base Layout
 

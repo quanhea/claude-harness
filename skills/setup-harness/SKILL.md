@@ -52,20 +52,40 @@ Read ALL of these templates. They contain the exact content to generate, with `{
 
 ## Instructions
 
-You are generating a scaffold for an EXISTING project. Follow these steps exactly:
+### Step 0: Determine Project Mode
+
+From the shell injection context above, determine if this is:
+- **EXISTING project**: Has source files, has a package manager config, has git history
+- **GREENFIELD project**: Empty or near-empty, just initialized
+
+This distinction is CRITICAL — it changes how every template is generated:
+- **Existing**: Launch Explore agents to DISCOVER conventions. Never impose opinions.
+- **Greenfield**: Launch research agents to find CURRENT best practices for the language/framework. Mention the current year in searches.
 
 ### Step 1: Analyze
 
-From the context above, determine:
-- **Project name** (from package.json, Cargo.toml, go.mod, or directory name)
-- **Primary language** (from file extension counts)
-- **Framework** (from dependencies — Next.js, React, Django, FastAPI, Rails, etc.)
-- **Package manager** (from lockfile — npm, pnpm, yarn, bun, pip, poetry, uv, cargo, go)
-- **Test framework** (from devDependencies or config files — vitest, jest, pytest, etc.)
-- **Build/test/lint commands** (from package.json scripts, Makefile, etc.)
-- **Domains** (from top-level directories under src/ or packages/)
-- **Entry points** (src/index.ts, main.py, main.go, etc.)
-- **Whether it's a monorepo** (packages/, apps/, lerna.json, pnpm-workspace.yaml)
+From the shell injection context, extract the basics:
+- **Project name**, **Primary language**, **Framework**, **Package manager**
+- **Whether it's a monorepo**
+
+Then **launch an Explore agent** for deep discovery (EXISTING projects only):
+
+```
+Agent(subagent_type: "Explore", prompt: "Thoroughly analyze this project:
+1. Test framework and test command (check config files and scripts)
+2. Build, lint, format commands (check package.json scripts, Makefile, pyproject.toml)
+3. Top-level domains/modules and what each contains
+4. Entry points (main files)
+5. Architecture patterns (how are imports organized? what are the layers?)
+6. Naming conventions (scan actual file names, class names, function names)
+7. Error handling patterns
+8. Existing documentation (README, docs/, CLAUDE.md, CONTRIBUTING.md)
+9. Existing formatting/linting config
+10. CI/CD setup
+Report everything with specific file paths.")
+```
+
+For **GREENFIELD projects**: Skip the Explore agent. Instead note what needs to be researched.
 
 ### Step 2: Check Existing Setup
 

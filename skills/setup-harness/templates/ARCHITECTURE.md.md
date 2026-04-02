@@ -1,130 +1,115 @@
 # Template: docs/ARCHITECTURE.md
 
-> This is a TEMPLATE. Adapt it to the specific project. Replace all {{placeholders}}.
-> This file is the source of truth for module boundaries and dependency rules.
+> This template generates the architecture map. It MUST NOT contain hardcoded conventions.
+> For existing projects: discover conventions via Explore agents.
+> For greenfield: research current best practices via WebSearch.
 
 ---
+
+## How to Generate
+
+### For EXISTING projects:
+
+**Launch an Explore agent** to discover the actual architecture:
+
+```
+Agent(subagent_type: "Explore", prompt: "Analyze the architecture of this project:
+1. Map all top-level directories and what each contains
+2. Trace the import/dependency graph — which modules import which
+3. Identify the actual layer structure (are there types/, services/, controllers/, etc.?)
+4. Find the naming conventions already in use (file naming, class naming, variable naming)
+5. Find the test organization pattern (co-located? separate test dir? naming convention?)
+6. Find the error handling pattern (exceptions? Result types? error codes?)
+7. Find how cross-cutting concerns are handled (auth, logging, metrics)
+8. Identify the entry points
+Report all findings with specific file paths and examples.")
+```
+
+Use the Explore agent's findings to fill in every section below. Do NOT invent conventions — describe what already exists.
+
+### For GREENFIELD projects:
+
+**Launch a research agent** to find current best practices:
+
+```
+Agent(subagent_type: "general-purpose", prompt: "Search the web for current best practices 
+in {{year}} for {{language}} {{framework}} project architecture. Find:
+1. Recommended directory structure
+2. Layer/module organization patterns
+3. Naming conventions (files, types, functions)
+4. Test organization patterns
+5. Error handling patterns
+6. Dependency direction rules
+Search for '{{language}} {{framework}} project structure best practices {{year}}'
+and '{{language}} clean architecture {{year}}'")
+```
+
+Use the research to propose an architecture. The user can modify it.
+
+---
+
+## Output Structure
+
+Write `docs/ARCHITECTURE.md` with these sections. Every section must be filled from
+discovery (existing project) or research (greenfield) — never hardcoded defaults.
 
 ```markdown
 # Architecture
 
-> Architecture map for {{project-name}}. This is the source of truth for module
-> boundaries, dependency rules, and structural constraints. Keep this up to date.
+> Architecture map for {{project-name}}. Source of truth for module boundaries,
+> dependency rules, and structural constraints.
 
 ## Overview
 
-- **Language**: {{primary-language}}
-- **Framework**: {{framework}}
-- **Package manager**: {{package-manager}}
-- **Structure**: {{single-package or monorepo}}
+- **Language**: {{discovered}}
+- **Framework**: {{discovered}}
+- **Package manager**: {{discovered}}
+- **Structure**: {{discovered — single package / monorepo / etc.}}
 
 ## Entry Points
 
-{{list-entry-points-discovered, e.g.:}}
-- `src/index.ts` — Application entry
-- `src/server.ts` — HTTP server
+{{discovered from Explore agent — list actual entry files with descriptions}}
 
-## Domains
+## Domains / Modules
 
-{{for-each-detected-domain:}}
-- **`{{domain-name}}/`** — {{one-line description of responsibility}}
-
-Each domain owns its types, services, and tests. Cross-domain imports must go
-through the domain's public API (index file).
+{{discovered from Explore agent — list actual top-level modules with their responsibility}}
 
 ## Layers
 
-Within each business domain, dependencies flow forward through these layers:
-
-```
-┌─────────────────────────────────────────────────┐
-│                                                 │
-│  Utils  ──────────────────────┐                 │
-│  (outside business domain)    │                 │
-│                               ▼                 │
-│  ┌──────────── Business Logic Domain ────────┐  │
-│  │                                           │  │
-│  │  Types → Config → Repo                    │  │
-│  │                    │                      │  │
-│  │                    ▼                      │  │
-│  │  Providers → Service → Runtime → UI       │  │
-│  │  (cross-cutting)           │              │  │
-│  │                            ▼              │  │
-│  │                     App Wiring + UI       │  │
-│  └───────────────────────────────────────────┘  │
-└─────────────────────────────────────────────────┘
-```
-
-| Layer | Responsibility | Example |
-|-------|---------------|---------|
-| **Types** | Data shapes, interfaces, enums | `types/user.ts` |
-| **Config** | Environment, feature flags | `config/app.ts` |
-| **Repo** | Data access, API clients, ORM | `repo/user-repo.ts` |
-| **Providers** | Cross-cutting interfaces: auth, logging, metrics, feature flags, connectors | `providers/auth.ts`, `providers/telemetry.ts` |
-| **Service** | Business logic, orchestration | `service/auth-service.ts` |
-| **Runtime** | Server setup, middleware, request handling | `runtime/server.ts` |
-| **UI** | Components, pages, layouts | `components/`, `pages/` |
-| **App Wiring** | Application entry, dependency injection, route registration | `app.ts`, `main.ts` |
-| **Utils** | Pure utilities, shared helpers (OUTSIDE business domain) | `utils/`, `lib/` |
-
-### Cross-Cutting via Providers
-
-Cross-cutting concerns (auth, logging, metrics, feature flags, external connectors)
-enter the business domain through a single explicit interface: **Providers**.
-Other layers NEVER import these concerns directly — they receive them via
-the Providers layer.
+{{discovered or researched — the actual layer structure this project uses.
+Show a diagram and table. Base this on what EXISTS in the codebase,
+not on a hardcoded template.}}
 
 ## Dependency Rules
 
-### What's allowed
+{{discovered from import graph analysis — what imports what.
+State the rules as they actually are, then note any violations found.}}
 
-- A layer may depend on layers ABOVE it in the diagram
-- Types, Config, Repo feed into Service
-- Service depends on Providers for cross-cutting concerns
-- Utils may be imported by any layer (it's outside the business domain)
-- Cross-domain dependencies go through explicit public APIs
+### What's allowed
+{{list actual allowed dependency directions}}
 
 ### What's NOT allowed
-
-- Circular dependencies between domains
-- UI importing directly from Repo layer (must go through Service)
-- Service importing directly from auth/logging (must go through Providers)
-- Providers importing from Service, Runtime, or UI
-- Implicit globals or singletons (use dependency injection via Providers)
+{{list the inverse — what would be a violation}}
 
 ## Conventions
 
 ### File Organization
-
-- One concept per file. If a file grows beyond ~300 lines, split it
-- Co-locate tests next to source: `foo.ts` → `foo.test.ts`
-- Index files re-export public API only — no logic in index files
+{{discovered — how files are actually organized in this project.
+What's the max file size trend? Are tests co-located or separate?}}
 
 ### Naming
-
-- Files: kebab-case (`user-service.ts`)
-- Types/Classes: PascalCase (`UserService`)
-- Functions/variables: camelCase (`getUser`)
-- Constants: UPPER_SNAKE_CASE (`MAX_RETRIES`)
+{{discovered — the actual naming conventions in use.
+Scan existing files to determine: file naming, type naming, function naming, constant naming.}}
 
 ### Error Handling
-
-- Parse/validate at boundaries (API inputs, external data)
-- Use typed errors, not string messages
-- Let internal code trust validated data — no redundant checks
+{{discovered — how errors are actually handled in this project.
+Are exceptions used? Result types? Error codes? Is there boundary validation?}}
 ```
 
 ## Adaptation Instructions
 
-When generating this file for a real project:
-
-1. Fill in `{{placeholders}}` from project analysis
-2. Adapt the Layers table to match the project's actual architecture:
-   - Backend API: Types → Config → Repo → Service → Controller → Middleware
-   - CLI tool: Types → Config → Commands → Handlers
-   - Library: Types → Core → Public API
-3. List actually discovered domains, not hypothetical ones
-4. For monorepos, add a package dependency graph section
-5. Adapt Naming conventions to match existing project style
-6. Adapt the Error Handling section to the project's language (e.g., Result types for Rust, exceptions for Python)
-7. If the project already has an ARCHITECTURE.md, MERGE with it
+1. NEVER use hardcoded examples — every section filled from Explore agent or research
+2. For existing projects: describe what IS, not what should be
+3. For greenfield: propose based on research, clearly mark as "proposed"
+4. If the project already has ARCHITECTURE.md, read it first and MERGE
+5. The layer diagram should reflect the ACTUAL project structure

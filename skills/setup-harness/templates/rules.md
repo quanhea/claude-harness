@@ -1,7 +1,9 @@
 # Template: .claude/rules/
 
-> Generate these rule files in the user's `.claude/rules/` directory.
-> Rules are loaded by Claude Code automatically. Path-scoped rules only load when relevant.
+> Rules are loaded by Claude Code automatically every session.
+> For existing projects: rules MUST reflect the project's actual conventions (use Explore agent).
+> For greenfield: rules should reflect researched best practices.
+> NEVER hardcode conventions — discover or research them.
 
 ---
 
@@ -9,31 +11,41 @@
 
 This rule has NO frontmatter (loads every session).
 
+### How to Generate
+
+**Launch an Explore agent** to discover the architecture rules:
+
+```
+Agent(subagent_type: "Explore", prompt: "Analyze this project's architecture rules:
+1. What is the dependency direction? Which modules import which?
+2. Are there layers (types, services, controllers, etc.)? What's the allowed direction?
+3. How are cross-cutting concerns handled (auth, logging, metrics)?
+4. What's the file organization pattern? Max file size trend?
+5. Are tests co-located or in a separate directory? What's the naming pattern?
+6. What boundary validation exists? Are external inputs parsed/validated at entry?
+7. Are there any existing lint configs or architecture rules already documented?
+Report specific findings with file paths.")
+```
+
+Write the rule based on findings. Structure:
+
 ```markdown
 # Architecture Rules
 
 ## Dependency Direction
 
-Dependencies MUST flow in one direction within each domain:
-Types → Config → Repository → Service → Runtime → UI
-
-Never:
-- Import UI from Service/Repository layers
-- Create circular dependencies between domains
-- Use implicit globals — pass dependencies explicitly
+{{discovered — state the actual dependency direction rule.
+If no clear rule exists, propose one based on the import graph analysis.}}
 
 ## Boundaries
 
-- Parse and validate ALL external data at system boundaries
-- Internal code trusts already-validated data — no redundant checks
-- Cross-domain communication goes through explicit public APIs
-- Cross-cutting concerns (auth, logging, metrics) use provider interfaces
+{{discovered — how external data is handled at boundaries.
+If no pattern exists, state the principle: validate at entry, trust internally.}}
 
 ## File Organization
 
-- One concept per file, max ~300 lines
-- Co-locate tests: `foo.{{ext}}` → `foo.test.{{ext}}`
-- Index files export public API only — no logic
+{{discovered — actual file organization conventions.
+How are files sized? How are tests organized? What do index files contain?}}
 
 ## When Adding New Code
 
@@ -45,42 +57,19 @@ Never:
 
 ### Language-specific additions
 
-**For TypeScript/JavaScript projects**, append:
-```markdown
-## TypeScript/JavaScript
+**Launch an Explore agent** to discover language-specific conventions:
 
-- Prefer `const` over `let`, never `var`
-- Use strict TypeScript — no `any` unless truly necessary
-- Parse external data with a schema validator (Zod, etc.) at boundaries
-- Prefer named exports over default exports
+```
+Agent(subagent_type: "Explore", prompt: "Find language-specific coding conventions in this project:
+1. Import style (named vs default exports, absolute vs relative)
+2. Type system usage (strict types? any/unknown usage?)
+3. Data validation approach (what library? where is it used?)
+4. Async patterns (promises, async/await, callbacks?)
+5. Error handling specifics (custom error classes? error codes?)
+Report with examples from actual code.")
 ```
 
-**For Python projects**, append:
-```markdown
-## Python
-
-- Use type hints on all public functions
-- Use Pydantic or dataclasses for data shapes
-- Validate external input at boundaries with schema validation
-```
-
-**For Go projects**, append:
-```markdown
-## Go
-
-- Handle all errors explicitly — no blank `_` for error returns
-- Use interfaces for dependency injection
-- Keep packages focused — one responsibility per package
-```
-
-**For Rust projects**, append:
-```markdown
-## Rust
-
-- Prefer Result over panic for recoverable errors
-- Use strong types for domain concepts (newtypes)
-- Derive traits where possible
-```
+Append language-specific conventions discovered to the rule.
 
 ---
 
@@ -88,58 +77,65 @@ Never:
 
 This rule IS path-scoped (only loads when editing test files).
 
+### How to Generate
+
+**Launch an Explore agent** to discover testing conventions:
+
+```
+Agent(subagent_type: "Explore", prompt: "Analyze this project's testing conventions:
+1. What test framework is used? What's the test command?
+2. Where do test files live? (co-located? separate dir? naming pattern?)
+3. How are tests structured? (describe blocks? test classes? flat?)
+4. What mocking approach is used? (jest.mock? dependency injection? factories?)
+5. What fixture/setup patterns are used? (beforeEach? factories? builders?)
+6. Are there integration tests vs unit tests? How are they separated?
+Read 3-5 existing test files and extract the patterns.
+Report with specific examples from actual test files.")
+```
+
+Write the frontmatter with discovered path patterns:
+
 ```yaml
 ---
 paths:
-  - "**/*.test.*"
-  - "**/*.spec.*"
-  - "**/__tests__/**"
-  - "**/test/**"
-  - "**/tests/**"
+  {{discovered test file patterns — e.g.:}}
+  {{- "**/*.test.*"}}
+  {{- "**/*.spec.*"}}
+  {{- "**/__tests__/**"}}
+  {{- "**/test/**"}}
 ---
 ```
+
+Write the rule body based on findings:
 
 ```markdown
 # Testing Rules
 
 ## Framework
 
-Use {{test-framework}}. Run tests with: `{{test-command}}`
+{{discovered — test framework and test command}}
 
 ## Conventions
 
-- Test files live next to source: `foo.{{ext}}` → `foo.test.{{ext}}`
-- Each test file tests one module
-- Use descriptive test names that explain the behavior, not the implementation
-- Group related tests with describe/context blocks
+{{discovered — from actual test files, not hardcoded examples.
+How are tests organized? What patterns are used? What should new tests look like?}}
 
 ## What to Test
 
-- Public API of each module
-- Edge cases and error paths
-- Integration points (API boundaries, database queries)
-- Business logic — especially conditional behavior
+{{discovered — what the project actually tests.
+Look at existing test coverage to determine the testing philosophy.}}
 
 ## What NOT to Test
 
-- Private implementation details
-- Framework internals
-- Simple getters/setters with no logic
-- Type-only code
-
-## Test Quality
-
-- Tests should be independent — no shared mutable state
-- Tests should be fast — mock external services, not internal code
-- Each test should have a single assertion focus
-- Prefer real implementations over mocks for internal dependencies
+{{discovered — are there patterns the project explicitly avoids testing?}}
 ```
 
 ---
 
 ## File: .claude/rules/documentation.md
 
-This rule has NO frontmatter (loads every session).
+This rule has NO frontmatter (loads every session). This one is less project-specific
+and more about the harness methodology, so it can be more prescriptive:
 
 ```markdown
 # Documentation Rules
@@ -155,19 +151,17 @@ If knowledge isn't in the repo, it doesn't exist for agents.
 - **New pattern/convention**: Add to relevant architecture docs
 - **Design decision**: Create a design doc in `docs/design-docs/`
 - **API change**: Update relevant product specs
-- **Quality change**: Reflected in `docs/QUALITY.md` by quality scans
 
 ## Documentation Quality
 
 - Be specific and mechanical — agents can't interpret vague prose
 - Use examples, not abstract descriptions
 - Link to source files when referencing code
-- Keep docs under 200 lines — split large docs into focused sub-documents
 - Remove stale information rather than marking it as outdated
 
 ## Progressive Disclosure
 
-- CLAUDE.md is the table of contents (~100 lines)
+- CLAUDE.md is the table of contents
 - Architecture docs provide the structural map
 - Design docs go deep on specific decisions
 - Don't duplicate — link to the source of truth
@@ -177,7 +171,8 @@ If knowledge isn't in the repo, it doesn't exist for agents.
 
 ## Adaptation Instructions
 
-1. Fill in `{{ext}}`, `{{test-framework}}`, `{{test-command}}` from project detection
-2. Add the appropriate language-specific section to architecture.md
-3. For the testing rule, adjust path patterns if the project uses a different convention
-4. If `.claude/rules/` already exists, don't overwrite — only add missing files
+1. ALWAYS launch Explore agents to discover conventions before writing rules
+2. For existing projects: rules describe what IS, not what should be
+3. For greenfield: launch a research agent to find best practices for the language/framework
+4. Test path patterns must match the project's actual test file naming
+5. If `.claude/rules/` already exists, read existing rules and MERGE
