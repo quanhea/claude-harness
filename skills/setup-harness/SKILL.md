@@ -94,10 +94,13 @@ Read each template file, fill in all `{{placeholders}}` with real project values
 10. `docs/references/README.md` — from knowledge-docs.md template (replaces simple index.md)
 11. `docs/OBSERVABILITY.md` + optionally `docker-compose.observability.yml` — from observability.md template (only for apps, not libraries)
 12. `.claude/rules/architecture.md`, `.claude/rules/testing.md`, `.claude/rules/documentation.md` — from rules.md template
-13. `.claude/skills/sync/SKILL.md`, `.claude/skills/review/SKILL.md`, `.claude/skills/plan/SKILL.md`, `.claude/skills/quality/SKILL.md` — from skills.md template
+13. `.claude/skills/sync/SKILL.md`, `.claude/skills/review/SKILL.md`, `.claude/skills/plan/SKILL.md`, `.claude/skills/quality/SKILL.md`, `.claude/skills/ci-check/SKILL.md` — from skills.md template
 14. `.claude/agents/reviewer.md`, `.claude/agents/architect.md`, `.claude/agents/gardener.md` — from agents.md template
 15. Read `${CLAUDE_PLUGIN_ROOT}/skills/setup-harness/templates/worktree.md` → write `.worktreeinclude` + `docs/WORKTREE.md` + merge `worktree` section into `.claude/settings.json` (only for apps, not libraries)
-16. Update `.gitignore` — add `.claude/settings.local.json` and `.harness/` if not already present
+16. Read `${CLAUDE_PLUGIN_ROOT}/skills/setup-harness/templates/formatting.md` → write formatter config (`.prettierrc`, `ruff.toml`, etc.) for the detected language. SKIP if a formatter config already exists.
+17. Read `${CLAUDE_PLUGIN_ROOT}/skills/setup-harness/templates/ci.md` → write `.github/workflows/harness-validate.yml` (or GitLab equivalent). SKIP if this workflow already exists.
+18. Read `${CLAUDE_PLUGIN_ROOT}/skills/setup-harness/templates/structural-tests.md` → write `tests/architecture.test.ts` (or `tests/test_architecture.py` etc.) for the detected language. SKIP if architecture tests already exist.
+19. Update `.gitignore` — add `.claude/settings.local.json` and `.harness/` if not already present
 
 ### Step 3b: Infrastructure Legibility & MCP Setup
 

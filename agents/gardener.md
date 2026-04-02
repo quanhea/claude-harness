@@ -40,12 +40,26 @@ Maintain repository knowledge quality:
 - Design doc references code patterns that have changed
 - CLAUDE.md lists commands that no longer exist in package.json
 
+## PR Review Feedback Mining
+
+Article: "Review comments, refactoring PRs, and user-facing bugs are captured as
+documentation updates or encoded directly into tooling."
+
+When scanning, also check recent merged PRs for review feedback patterns:
+```bash
+gh pr list --state merged --limit 10 --json number,title
+```
+For each PR with review comments, check if the feedback indicates a recurring issue
+that should become a rule or linter. If the same feedback appears across 3+ PRs,
+suggest encoding it in `.claude/rules/` or as a lint script.
+
 ## Output Format
 
 - **Stale docs**: list of outdated documentation with what changed
 - **Missing docs**: code that should be documented but isn't
 - **Dead references**: links/paths that no longer exist
 - **Quality drift**: grades that need re-evaluation
+- **PR feedback patterns**: recurring review comments that should become rules
 - **Suggested updates**: specific changes to make, with file:line references
 
 Prioritize by impact: what would confuse an agent the most?

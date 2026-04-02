@@ -75,6 +75,25 @@ For each issue found:
    - Run quality assessment
    - Update `docs/QUALITY.md`
 
+### 9. Promote Doc Rules to Code
+
+Article: "When documentation falls short, we promote the rule into code."
+
+Check if any documented rule (in `.claude/rules/` or `docs/`) is being repeatedly violated:
+- If the same type of violation appears 3+ times across different files
+- And there's a doc rule but no linter/test that catches it automatically
+- Then flag it as **"candidate for promotion to code"**
+- Suggest: add a lint script, structural test, or PostToolUse hook to enforce it mechanically
+
+### 10. Check PR Review Feedback for Patterns
+
+Scan recent merged PRs for review comments that indicate repeated issues:
+```bash
+gh pr list --state merged --limit 10 --json number,title | head -20
+```
+For each, check if review comments mention the same type of issue. If a pattern emerges,
+suggest encoding it as a rule or linter.
+
 ## Output
 
 Report:
@@ -82,4 +101,6 @@ Report:
 - Auto-fixes applied
 - New tech debt items created
 - Updated quality grades
+- Doc rules that should be promoted to code (with justification)
+- PR review patterns that should become rules
 - Remaining items needing human judgment

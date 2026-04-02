@@ -94,6 +94,14 @@ Check if the validation passes:
 - Issues found and fixes applied per round
 - Final verdict: **VALIDATED** or **NEEDS MANUAL CHECK**
 
+## Video Recording
+
+The article says agents "record a video demonstrating the failure" and "a second video
+demonstrating the resolution." If Playwright is available:
+- Use `browser_take_screenshot` for before/after snapshots
+- For actual video, configure Playwright with `recordVideo: { dir: '.harness/videos/' }`
+- Reference videos in PR descriptions as evidence of fix validation
+
 ## Note
 
 This skill works best when a Playwright MCP server is configured in `.mcp.json`.

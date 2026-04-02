@@ -26,9 +26,58 @@ Files in this directory are generated from the codebase:
 Run `/sync` to regenerate all docs, or ask the `@gardener` agent.
 ```
 
+---
+
+## File: docs/generated/eval-harness.md
+
+```markdown
+# Evaluation Harness
+
+> Article: agents produce "Evaluation harnesses" as part of the codebase.
+> An eval harness validates that agent-produced output meets quality standards.
+
+## What Is an Eval Harness?
+
+An eval harness is a set of tests that validate agent output quality — not just
+correctness (unit tests do that), but alignment with project standards:
+
+- Does generated code follow the architecture rules?
+- Does it pass structural tests?
+- Does it include appropriate tests?
+- Does the documentation stay up to date?
+- Does the knowledge base remain cross-linked and structured?
+
+## How to Build One
+
+1. **Architecture eval**: Run structural tests (layer violations, circular deps)
+2. **Quality eval**: Run `/quality` and check grades haven't degraded
+3. **Docs eval**: Run `validate-docs.sh` to check knowledge base integrity
+4. **Test coverage eval**: Compare test count before/after to ensure new code is tested
+5. **Lint eval**: Run all linters and check for zero violations
+
+## Running the Eval
+
+```bash
+# Run all evals
+{{test-command}}                        # Unit tests pass
+validate-docs.sh .                      # Knowledge base valid
+# Structural tests (included in test suite)
+# Lint (included in CI)
+```
+
+## When to Run
+
+- Before merging any agent-produced PR
+- As part of CI (see `.github/workflows/harness-validate.yml`)
+- Periodically via `/harness-gc` to detect drift
+```
+
+---
+
 ## Adaptation Instructions
 
 1. Create `docs/generated/README.md` with the content above
-2. The `/sync` and `/quality` skills will populate this directory over time
-3. If the project has a database, generate `docs/generated/db-schema.md`
-4. If the project has an API, generate `docs/generated/api-endpoints.md`
+2. Create `docs/generated/eval-harness.md` with the eval harness template
+3. The `/sync` and `/quality` skills will populate this directory over time
+4. If the project has a database, generate `docs/generated/db-schema.md`
+5. If the project has an API, generate `docs/generated/api-endpoints.md`

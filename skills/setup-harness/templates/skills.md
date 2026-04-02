@@ -238,9 +238,57 @@ List the top 3 most impactful improvements for each domain.
 
 ---
 
+## File: .claude/skills/ci-check/SKILL.md
+
+```yaml
+---
+name: ci-check
+description: Check CI status for recent runs, diagnose failures, and suggest or apply fixes. Use after pushing or when CI fails.
+allowed-tools: Bash, Read, Grep, Edit
+---
+```
+
+```markdown
+# CI Check
+
+Check CI status and auto-investigate any failures.
+
+## Steps
+
+1. **Check recent CI runs:**
+   ```bash
+   gh run list --limit 5 --json status,conclusion,name,headBranch,databaseId
+   ```
+
+2. **If any failed**, get the failure logs:
+   ```bash
+   gh run view <run-id> --log-failed 2>&1 | tail -100
+   ```
+
+3. **Diagnose the failure:**
+   - Read the failing test or build step output
+   - Identify the root cause (test failure, lint error, build error, flaky test)
+   - Read the relevant source files
+
+4. **Apply fix or report:**
+   - If it's a test failure: fix the test or source code
+   - If it's a lint error: run the formatter/linter
+   - If it's a flaky test: note it for follow-up, don't block
+   - If it's a build error: read the build config and fix
+
+5. **Re-push if fixed:**
+   ```bash
+   git add <fixed-files>
+   git commit -m "[c] Fix CI failure: <description>"
+   git push
+   ```
+```
+
+---
+
 ## Adaptation Instructions
 
 1. Replace `{{test-command}}` with the project's actual test command
-2. In the review skill, the `!`git diff`` injects live git context
-3. The `@path` syntax tells Claude Code to load that file as context
-4. If `.claude/skills/` already exists, don't overwrite — only add missing skills
+2. The `!` backtick syntax in the review skill injects live git context before Claude sees it
+3. If `.claude/skills/` already exists, don't overwrite — only add missing skills
+4. The ci-check skill requires `gh` CLI to be installed and authenticated

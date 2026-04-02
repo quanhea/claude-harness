@@ -89,6 +89,14 @@ See `docs/exec-plans/completed/` for past work with decision logs.
 ## Technical Debt
 
 See `docs/exec-plans/tech-debt-tracker.md` for known debt items.
+
+## Merge Philosophy
+
+- **Minimal blocking merge gates.** PRs are short-lived. Don't let perfect be the enemy of shipped.
+- **Corrections are cheap, waiting is expensive.** In a system where agent throughput exceeds human attention, it's better to fix a mistake quickly than to prevent all mistakes slowly.
+- **Test flakes get follow-up runs**, not blocking gates. If a test flakes, open a follow-up to fix the flake — don't block the PR.
+- **Small refactoring PRs can auto-merge.** Use `gh pr merge --auto --squash` for cleanup PRs that only touch formatting, dead code, or doc fixes.
+- **Every PR should be reviewable in under 5 minutes.** If it's bigger, split it.
 ```
 
 Generate for all projects.
