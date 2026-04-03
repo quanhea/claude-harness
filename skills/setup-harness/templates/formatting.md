@@ -27,7 +27,7 @@ Report all config file paths and their contents.")
 ```
 
 **If a formatter config already exists**: Do NOT create a new one. Just document the
-existing format command in `.claude/CLAUDE.md` Commands section.
+existing format command in `CLAUDE.md` Commands section.
 
 **If NO formatter config exists**: Proceed to generate one.
 
@@ -53,7 +53,7 @@ Generate the config based on research findings.
 
 1. Write the formatter config file based on discovery or research
 2. Write `.editorconfig` if one doesn't exist (research the right values)
-3. Add the format command to `.claude/CLAUDE.md` Commands section
+3. Add the format command to `CLAUDE.md` Commands section
 4. If there's a lint command, add it too
 
 ## Adaptation Instructions

@@ -37,14 +37,14 @@ Current quality grades:
 3. **Update** these files if they've drifted:
    - `ARCHITECTURE.md` — module map, dependency graph, entry points
    - `QUALITY_SCORE.md` — re-grade each domain (Architecture, Testing, Docs, Reliability)
-   - `.claude/CLAUDE.md` — update if domains or commands changed
+   - `CLAUDE.md` — update if domains or commands changed
 4. **Report** what changed and what needs human attention
 
 ## Important
 
 - Preserve user-written content (descriptions, decisions, notes)
 - Only update structural/factual information that has drifted
-- Keep `.claude/CLAUDE.md` under 100 lines
+- Keep `CLAUDE.md` under 100 lines
 - Grade quality honestly — don't inflate grades
 ```
 

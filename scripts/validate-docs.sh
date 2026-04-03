@@ -22,7 +22,7 @@ check_required() {
   fi
 }
 
-check_required ".claude/CLAUDE.md" "Table of contents"
+check_required "CLAUDE.md" "Table of contents"
 check_required "ARCHITECTURE.md" "Architecture map"
 check_required "QUALITY_SCORE.md" "Quality grades"
 check_required "docs/design-docs/index.md" "Design docs index"
@@ -30,10 +30,10 @@ check_required "docs/product-specs/index.md" "Product specs index"
 check_required "docs/references/index.md" "References index"
 
 # 2. Check CLAUDE.md is under 100 lines
-if [ -f "$ROOT/.claude/CLAUDE.md" ]; then
-  LINES=$(wc -l < "$ROOT/.claude/CLAUDE.md" | tr -d ' ')
+if [ -f "$ROOT/CLAUDE.md" ]; then
+  LINES=$(wc -l < "$ROOT/CLAUDE.md" | tr -d ' ')
   if [ "$LINES" -gt 100 ]; then
-    ISSUES="${ISSUES}\n⚠️ .claude/CLAUDE.md is ${LINES} lines (max 100). Move details to docs/."
+    ISSUES="${ISSUES}\n⚠️ CLAUDE.md is ${LINES} lines (max 100). Move details to docs/."
     ISSUE_COUNT=$((ISSUE_COUNT + 1))
   fi
 fi

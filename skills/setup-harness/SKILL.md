@@ -18,7 +18,7 @@ Detect the project's language, framework, package manager, and structure:
 - Git status: !`git rev-parse --is-inside-work-tree 2>/dev/null && echo "git: yes" || echo "git: no"`
 - Existing .claude/ setup: !`ls -1 .claude/ 2>/dev/null || echo "no .claude/ directory"`
 - Existing docs/: !`ls -1 docs/ 2>/dev/null || echo "no docs/ directory"`
-- Existing CLAUDE.md: !`cat .claude/CLAUDE.md 2>/dev/null || cat CLAUDE.md 2>/dev/null || echo "no CLAUDE.md"`
+- Existing CLAUDE.md: !`cat CLAUDE.md 2>/dev/null || cat CLAUDE.md 2>/dev/null || echo "no CLAUDE.md"`
 - Source file extensions: !`find . -maxdepth 4 -type f \( -name "*.ts" -o -name "*.tsx" -o -name "*.js" -o -name "*.jsx" -o -name "*.py" -o -name "*.rs" -o -name "*.go" -o -name "*.java" -o -name "*.rb" -o -name "*.php" -o -name "*.swift" -o -name "*.kt" -o -name "*.cs" \) -not -path "*/node_modules/*" -not -path "*/.git/*" -not -path "*/dist/*" -not -path "*/build/*" -not -path "*/target/*" -not -path "*/__pycache__/*" -not -path "*/venv/*" 2>/dev/null | sed 's/.*\.//' | sort | uniq -c | sort -rn | head -10`
 - Top-level directories: !`find . -maxdepth 2 -type d -not -path "*/node_modules/*" -not -path "*/.git/*" -not -path "*/dist/*" -not -path "*/.next/*" 2>/dev/null | head -30`
 - Infrastructure files: !`ls -1 Dockerfile docker-compose*.yml .github/workflows/*.yml .gitlab-ci.yml Jenkinsfile bitbucket-pipelines.yml *.tf terraform.tfvars helmfile.yaml chart.yaml skaffold.yaml 2>/dev/null || echo "none found"`
@@ -89,7 +89,7 @@ For **GREENFIELD projects**: Skip the Explore agent. Instead note what needs to 
 
 ### Step 2: Check Existing Setup
 
-- If `.claude/CLAUDE.md` or `CLAUDE.md` already exists, read it and MERGE your additions — don't overwrite the user's content
+- If `CLAUDE.md` or `CLAUDE.md` already exists, read it and MERGE your additions — don't overwrite the user's content
 - If `.claude/settings.json` exists, read it and MERGE — add missing permissions, keep existing ones
 - If `docs/` exists, only create MISSING files
 - If `.claude/rules/` exists, only add MISSING rules
@@ -102,7 +102,7 @@ The `$ARGUMENTS` may contain `--force` — if so, overwrite everything.
 
 Read each template file, fill in all `{{placeholders}}` with real project values, and write the output. Generate in this order:
 
-1. `.claude/CLAUDE.md` — from CLAUDE.md.md template (MUST be under 100 lines)
+1. `CLAUDE.md` — from CLAUDE.md.md template (MUST be under 100 lines)
 2. `.claude/settings.json` — from settings.json.md template (pick correct language variant)
 3. `ARCHITECTURE.md` — from ARCHITECTURE.md.md template
 4. `QUALITY_SCORE.md` and all docs/ files — from docs-structure.md template
@@ -197,7 +197,7 @@ Add `.harness/` to `.gitignore` (conversation exports are ephemeral, not committ
 
 ### Step 5: Verify & Report
 
-- Confirm `.claude/CLAUDE.md` is under 100 lines
+- Confirm `CLAUDE.md` is under 100 lines
 - Confirm `.claude/settings.json` is valid JSON
 - List all generated files and any skipped (already existed)
 - List generated skills from conversation analysis with their reusability score

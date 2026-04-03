@@ -18,7 +18,7 @@ or documented beliefs in this project:
 1. README.md — any 'Philosophy' or 'Principles' section?
 2. CONTRIBUTING.md — any stated conventions?
 3. docs/ — any existing design principles or core beliefs?
-4. .claude/CLAUDE.md — any stated principles?
+4. CLAUDE.md — any stated principles?
 5. Code comments — any 'we do X because Y' patterns?
 6. Git history — any commit messages revealing conventions?
 Report all findings.")

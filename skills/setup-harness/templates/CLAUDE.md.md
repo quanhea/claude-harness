@@ -1,4 +1,4 @@
-# Template: .claude/CLAUDE.md
+# Template: CLAUDE.md
 
 > This is the MOST IMPORTANT file in the harness. It's the ONE file always loaded
 > into context every session. It MUST reference EVERYTHING the agent might need.
@@ -41,7 +41,7 @@ based on the framework's standard tooling (research if unsure).
 
 ## Output Structure
 
-Write `.claude/CLAUDE.md` — concise, pointers only. Include ALL sections below.
+Write `CLAUDE.md` — concise, pointers only. Include ALL sections below.
 Only include rows/sections for files that were actually generated.
 
 ```markdown

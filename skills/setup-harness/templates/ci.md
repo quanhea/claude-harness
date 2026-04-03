@@ -28,14 +28,14 @@ jobs:
       - name: Validate knowledge base
         run: |
           # Check required harness files exist
-          test -f .claude/CLAUDE.md || { echo "❌ Missing .claude/CLAUDE.md"; exit 1; }
+          test -f CLAUDE.md || { echo "❌ Missing CLAUDE.md"; exit 1; }
           test -f ARCHITECTURE.md || { echo "❌ Missing ARCHITECTURE.md"; exit 1; }
           test -f QUALITY_SCORE.md || { echo "❌ Missing QUALITY_SCORE.md"; exit 1; }
 
           # Check CLAUDE.md is under 100 lines
-          lines=$(wc -l < .claude/CLAUDE.md)
+          lines=$(wc -l < CLAUDE.md)
           if [ "$lines" -gt 100 ]; then
-            echo "❌ .claude/CLAUDE.md is $lines lines (max 100)"
+            echo "❌ CLAUDE.md is $lines lines (max 100)"
             exit 1
           fi
 
@@ -84,12 +84,12 @@ jobs:
 harness-validate:
   stage: test
   script:
-    - test -f .claude/CLAUDE.md || { echo "❌ Missing .claude/CLAUDE.md"; exit 1; }
+    - test -f CLAUDE.md || { echo "❌ Missing CLAUDE.md"; exit 1; }
     - test -f ARCHITECTURE.md || { echo "❌ Missing ARCHITECTURE.md"; exit 1; }
     - |
-      lines=$(wc -l < .claude/CLAUDE.md)
+      lines=$(wc -l < CLAUDE.md)
       if [ "$lines" -gt 100 ]; then
-        echo "❌ .claude/CLAUDE.md is $lines lines (max 100)"
+        echo "❌ CLAUDE.md is $lines lines (max 100)"
         exit 1
       fi
     - echo "✅ Harness validation passed"
