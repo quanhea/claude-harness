@@ -121,7 +121,8 @@ Read each template file, fill in all `{{placeholders}}` with real project values
 17. Read `${CLAUDE_PLUGIN_ROOT}/skills/setup-harness/templates/ci.md` → write `.github/workflows/harness-validate.yml` (or GitLab equivalent). SKIP if this workflow already exists.
 18. Read `${CLAUDE_PLUGIN_ROOT}/skills/setup-harness/templates/structural-tests.md` → write architecture test file matching the project's test framework. SKIP if architecture tests already exist.
 19. Read `${CLAUDE_PLUGIN_ROOT}/skills/setup-harness/templates/custom-linters.md` → generate project-specific linter scripts at `.claude/hooks/` based on Explore agent discoveries (naming, logging, boundaries, architecture, file size). Wire them into `.claude/settings.json` PostToolUse hooks. Only generate linters for conventions the project ACTUALLY has.
-20. Update `.gitignore` — add `.claude/settings.local.json` and `.harness/` if not already present
+20. Read `${CLAUDE_PLUGIN_ROOT}/skills/setup-harness/templates/git-workflow.md` → launch Explore agent to discover the git process (branching, commits, PRs, merge strategy, environments, releases) → write `docs/GIT_WORKFLOW.md` + `.claude/rules/git-workflow.md`
+21. Update `.gitignore` — add `.claude/settings.local.json` and `.harness/` if not already present
 
 ### Step 3b: Infrastructure Legibility & MCP Setup
 
