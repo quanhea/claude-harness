@@ -105,23 +105,23 @@ Read each template file, fill in all `{{placeholders}}` with real project values
 1. `.claude/CLAUDE.md` — from CLAUDE.md.md template (MUST be under 100 lines)
 2. `.claude/settings.json` — from settings.json.md template (pick correct language variant)
 3. `ARCHITECTURE.md` — from ARCHITECTURE.md.md template
-4. `docs/QUALITY_SCORE.md` and all docs/ files — from docs-structure.md template
+4. `QUALITY_SCORE.md` and all docs/ files — from docs-structure.md template
 5. `docs/design-docs/core-beliefs.md` — from core-beliefs.md template
 6. `docs/exec-plans/tech-debt-tracker.md` — from tech-debt-tracker.md template
 7. `docs/generated/README.md` — from generated-docs.md template
-8. `docs/PLANS.md`, `docs/PRODUCT_SENSE.md`, `docs/RELIABILITY.md`, `docs/SECURITY.md` — from knowledge-docs.md template (always)
-9. `docs/DESIGN.md`, `docs/FRONTEND.md` — from knowledge-docs.md template (only if project has a frontend)
+8. `PLANS.md`, `PRODUCT_SENSE.md`, `RELIABILITY.md`, `SECURITY.md` — from knowledge-docs.md template (always)
+9. `DESIGN.md`, `FRONTEND.md` — from knowledge-docs.md template (only if project has a frontend)
 10. `docs/references/README.md` — from knowledge-docs.md template (replaces simple index.md)
-11. `docs/OBSERVABILITY.md` + optionally `docker-compose.observability.yml` — from observability.md template (only for apps, not libraries)
+11. `OBSERVABILITY.md` + optionally `docker-compose.observability.yml` — from observability.md template (only for apps, not libraries)
 12. `.claude/rules/architecture.md`, `.claude/rules/testing.md`, `.claude/rules/documentation.md` — from rules.md template
 13. `.claude/skills/sync/SKILL.md`, `.claude/skills/review/SKILL.md`, `.claude/skills/plan/SKILL.md`, `.claude/skills/quality/SKILL.md`, `.claude/skills/ci-check/SKILL.md` — from skills.md template
 14. `.claude/agents/reviewer.md`, `.claude/agents/architect.md`, `.claude/agents/gardener.md` — from agents.md template
-15. Read `${CLAUDE_PLUGIN_ROOT}/skills/setup-harness/templates/worktree.md` → write `.worktreeinclude` + `docs/WORKTREE.md` + merge `worktree` section into `.claude/settings.json` (only for apps, not libraries)
+15. Read `${CLAUDE_PLUGIN_ROOT}/skills/setup-harness/templates/worktree.md` → write `.worktreeinclude` + `WORKTREE.md` + merge `worktree` section into `.claude/settings.json` (only for apps, not libraries)
 16. Read `${CLAUDE_PLUGIN_ROOT}/skills/setup-harness/templates/formatting.md` → write formatter config (`.prettierrc`, `ruff.toml`, etc.) for the detected language. SKIP if a formatter config already exists.
 17. Read `${CLAUDE_PLUGIN_ROOT}/skills/setup-harness/templates/ci.md` → write `.github/workflows/harness-validate.yml` (or GitLab equivalent). SKIP if this workflow already exists.
 18. Read `${CLAUDE_PLUGIN_ROOT}/skills/setup-harness/templates/structural-tests.md` → write architecture test file matching the project's test framework. SKIP if architecture tests already exist.
 19. Read `${CLAUDE_PLUGIN_ROOT}/skills/setup-harness/templates/custom-linters.md` → generate project-specific linter scripts at `.claude/hooks/` based on Explore agent discoveries (naming, logging, boundaries, architecture, file size). Wire them into `.claude/settings.json` PostToolUse hooks. Only generate linters for conventions the project ACTUALLY has.
-20. Read `${CLAUDE_PLUGIN_ROOT}/skills/setup-harness/templates/git-workflow.md` → launch Explore agent to discover the git process (branching, commits, PRs, merge strategy, environments, releases) → write `docs/GIT_WORKFLOW.md` + `.claude/rules/git-workflow.md`
+20. Read `${CLAUDE_PLUGIN_ROOT}/skills/setup-harness/templates/git-workflow.md` → launch Explore agent to discover the git process (branching, commits, PRs, merge strategy, environments, releases) → write `GIT_WORKFLOW.md` + `.claude/rules/git-workflow.md`
 21. Update `.gitignore` — add `.claude/settings.local.json` and `.harness/` if not already present
 
 ### Step 3b: Infrastructure Legibility & MCP Setup
@@ -133,7 +133,7 @@ Read `${CLAUDE_PLUGIN_ROOT}/skills/setup-harness/templates/infrastructure.md` an
 2. Read docker-compose files to map the service topology
 3. Check .env files for external service references (Sentry DSN, Datadog keys, etc.)
 
-**Generate docs/INFRASTRUCTURE.md:**
+**Generate INFRASTRUCTURE.md:**
 - Summarize every detected service, CI/CD pipeline, cloud resource, database, and external integration
 - This is the agent's map to infrastructure — encode everything found
 
@@ -155,7 +155,7 @@ After generating files, print a checklist with two sections:
    - Jira (if using instead of detected tracker)
    - Linear (if using instead of detected tracker)
 
-3. **No MCP available** — Systems documented in docs/INFRASTRUCTURE.md instead (CI/CD, Docker, Helm)
+3. **No MCP available** — Systems documented in INFRASTRUCTURE.md instead (CI/CD, Docker, Helm)
 
 ### Step 4: Generate Skills from Conversation History
 

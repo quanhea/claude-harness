@@ -4,13 +4,13 @@
 > while running effectively doesn't exist."
 >
 > This template makes ALL project infrastructure legible to the agent:
-> 1. Generate docs/INFRASTRUCTURE.md documenting what exists
+> 1. Generate INFRASTRUCTURE.md documenting what exists
 > 2. Generate .mcp.json recommending MCP servers for external systems
 > 3. Flag hidden knowledge sources the user needs to set up
 
 ---
 
-## File: docs/INFRASTRUCTURE.md
+## File: INFRASTRUCTURE.md
 
 ```markdown
 # Infrastructure
@@ -150,7 +150,7 @@ of these, setting up the MCP server makes that knowledge legible:
 ### No MCP Available (encoded in repo instead)
 
 {{for-each-detected-system-without-mcp:}}
-- [x] **{{system}}** — documented in `docs/INFRASTRUCTURE.md`
+- [x] **{{system}}** — documented in `INFRASTRUCTURE.md`
   {{what-was-encoded: CI/CD pipeline, Docker topology, Helm charts, etc.}}
 ```
 

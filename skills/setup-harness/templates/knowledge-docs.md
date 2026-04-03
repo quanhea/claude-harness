@@ -5,7 +5,7 @@
 
 ---
 
-## File: docs/DESIGN.md
+## File: DESIGN.md
 
 ```markdown
 # Design
@@ -34,7 +34,7 @@ Only generate this if the project has a frontend (React, Vue, Angular, Svelte, N
 
 ---
 
-## File: docs/FRONTEND.md
+## File: FRONTEND.md
 
 ```markdown
 # Frontend
@@ -65,7 +65,7 @@ Only generate this if the project has a frontend.
 
 ---
 
-## File: docs/PLANS.md
+## File: PLANS.md
 
 ```markdown
 # Plans
@@ -92,7 +92,7 @@ See `docs/exec-plans/tech-debt-tracker.md` for known debt items.
 
 ## Git Workflow
 
-See `docs/GIT_WORKFLOW.md` for the complete git workflow including branching strategy,
+See `GIT_WORKFLOW.md` for the complete git workflow including branching strategy,
 commit conventions, PR process, merge strategy, and release process.
 ```
 
@@ -100,7 +100,7 @@ Generate for all projects.
 
 ---
 
-## File: docs/PRODUCT_SENSE.md
+## File: PRODUCT_SENSE.md
 
 ```markdown
 # Product Sense
@@ -141,7 +141,7 @@ Generate for all projects.
 
 ---
 
-## File: docs/RELIABILITY.md
+## File: RELIABILITY.md
 
 ```markdown
 # Reliability
@@ -186,7 +186,7 @@ Generate for all projects.
 
 ---
 
-## File: docs/SECURITY.md
+## File: SECURITY.md
 
 ```markdown
 # Security

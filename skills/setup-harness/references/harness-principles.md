@@ -133,15 +133,19 @@ See `ARCHITECTURE.md` for this project's actual layer definitions.
 ## The Knowledge Base Layout
 
 ```
-ARCHITECTURE.md              # Top-level architecture map (root level)
+ARCHITECTURE.md              # Architecture map
+DESIGN.md                    # Design system and principles
+FRONTEND.md                  # Frontend architecture
+GIT_WORKFLOW.md              # Branching, commits, PRs, merge strategy
+INFRASTRUCTURE.md            # Services, CI/CD, cloud, databases
+OBSERVABILITY.md             # Logging, metrics, traces
+PLANS.md                     # Planning conventions
+PRODUCT_SENSE.md             # Product context and domain language
+QUALITY_SCORE.md             # Quality grades per domain
+RELIABILITY.md               # SLAs, error handling
+SECURITY.md                  # Auth, data protection, secrets
+WORKTREE.md                  # Parallel worktree isolation
 docs/
-├── QUALITY_SCORE.md               # Quality grades per domain
-├── GIT_WORKFLOW.md          # Branching, commits, PRs, merge strategy
-├── INFRASTRUCTURE.md        # Services, CI/CD, cloud, databases
-├── PLANS.md                 # Planning conventions
-├── PRODUCT_SENSE.md         # Product context and domain language
-├── RELIABILITY.md           # SLAs, error handling, observability
-├── SECURITY.md              # Auth, data protection, secrets
 ├── design-docs/             # Design decisions with verification status
 │   ├── index.md
 │   └── core-beliefs.md

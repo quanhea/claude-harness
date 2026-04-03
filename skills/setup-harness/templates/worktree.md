@@ -9,7 +9,7 @@
 
 ---
 
-## File: docs/WORKTREE.md
+## File: WORKTREE.md
 
 ```markdown
 # Worktree Isolation

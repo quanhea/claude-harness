@@ -28,7 +28,7 @@ Current architecture doc:
 
 Current quality grades:
 
-@docs/QUALITY_SCORE.md
+@QUALITY_SCORE.md
 
 ## Steps
 
@@ -36,7 +36,7 @@ Current quality grades:
 2. **Compare** documented state in `ARCHITECTURE.md` vs actual code
 3. **Update** these files if they've drifted:
    - `ARCHITECTURE.md` — module map, dependency graph, entry points
-   - `docs/QUALITY_SCORE.md` — re-grade each domain (Architecture, Testing, Docs, Reliability)
+   - `QUALITY_SCORE.md` — re-grade each domain (Architecture, Testing, Docs, Reliability)
    - `.claude/CLAUDE.md` — update if domains or commands changed
 4. **Report** what changed and what needs human attention
 
@@ -126,7 +126,7 @@ Create a structured execution plan for: $ARGUMENTS
 ## Context
 
 @ARCHITECTURE.md
-@docs/QUALITY_SCORE.md
+@QUALITY_SCORE.md
 
 Check `docs/exec-plans/active/` for related active plans.
 
@@ -195,7 +195,7 @@ Scan the codebase and grade each domain's quality.
 
 ## Current Grades
 
-@docs/QUALITY_SCORE.md
+@QUALITY_SCORE.md
 
 ## Architecture Reference
 
@@ -233,7 +233,7 @@ For each domain in `ARCHITECTURE.md`:
 
 ## Output
 
-Update `docs/QUALITY_SCORE.md` with new grades and notes.
+Update `QUALITY_SCORE.md` with new grades and notes.
 List the top 3 most impactful improvements for each domain.
 ```
 

@@ -9,7 +9,7 @@
 
 ---
 
-## File: docs/OBSERVABILITY.md
+## File: OBSERVABILITY.md
 
 ```markdown
 # Observability

@@ -47,15 +47,15 @@ Used by setup-harness to generate .mcp.json recommendations.
 ### CI/CD (NO MCP — encode in repo)
 | Signal | What to do |
 |--------|-----------|
-| `.github/workflows/` | Read workflows, encode deployment strategy in docs/INFRASTRUCTURE.md |
-| `.gitlab-ci.yml` | Read pipeline, encode in docs/INFRASTRUCTURE.md |
-| `Jenkinsfile` | Read pipeline, encode in docs/INFRASTRUCTURE.md |
-| `bitbucket-pipelines.yml` | Read pipeline, encode in docs/INFRASTRUCTURE.md |
-| `.circleci/config.yml` | Read pipeline, encode in docs/INFRASTRUCTURE.md |
+| `.github/workflows/` | Read workflows, encode deployment strategy in INFRASTRUCTURE.md |
+| `.gitlab-ci.yml` | Read pipeline, encode in INFRASTRUCTURE.md |
+| `Jenkinsfile` | Read pipeline, encode in INFRASTRUCTURE.md |
+| `bitbucket-pipelines.yml` | Read pipeline, encode in INFRASTRUCTURE.md |
+| `.circleci/config.yml` | Read pipeline, encode in INFRASTRUCTURE.md |
 
 ### Containers (NO MCP — encode in repo)
 | Signal | What to do |
 |--------|-----------|
-| `Dockerfile` | Read and document build strategy in docs/INFRASTRUCTURE.md |
-| `docker-compose*.yml` | Read and document service topology in docs/INFRASTRUCTURE.md |
-| `Helm charts (chart.yaml)` | Read and document deployment strategy in docs/INFRASTRUCTURE.md |
+| `Dockerfile` | Read and document build strategy in INFRASTRUCTURE.md |
+| `docker-compose*.yml` | Read and document service topology in INFRASTRUCTURE.md |
+| `Helm charts (chart.yaml)` | Read and document deployment strategy in INFRASTRUCTURE.md |

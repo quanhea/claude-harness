@@ -30,7 +30,7 @@ jobs:
           # Check required harness files exist
           test -f .claude/CLAUDE.md || { echo "❌ Missing .claude/CLAUDE.md"; exit 1; }
           test -f ARCHITECTURE.md || { echo "❌ Missing ARCHITECTURE.md"; exit 1; }
-          test -f docs/QUALITY_SCORE.md || { echo "❌ Missing docs/QUALITY_SCORE.md"; exit 1; }
+          test -f QUALITY_SCORE.md || { echo "❌ Missing QUALITY_SCORE.md"; exit 1; }
 
           # Check CLAUDE.md is under 100 lines
           lines=$(wc -l < .claude/CLAUDE.md)

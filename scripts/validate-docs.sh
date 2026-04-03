@@ -24,7 +24,7 @@ check_required() {
 
 check_required ".claude/CLAUDE.md" "Table of contents"
 check_required "ARCHITECTURE.md" "Architecture map"
-check_required "docs/QUALITY_SCORE.md" "Quality grades"
+check_required "QUALITY_SCORE.md" "Quality grades"
 check_required "docs/design-docs/index.md" "Design docs index"
 check_required "docs/product-specs/index.md" "Product specs index"
 check_required "docs/references/index.md" "References index"

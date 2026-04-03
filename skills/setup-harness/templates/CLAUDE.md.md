@@ -69,8 +69,8 @@ Only include rows/sections for files that were actually generated.
 ## How to Work in This Repo
 
 **Before writing code**: Read `ARCHITECTURE.md` for module boundaries.
-**Before committing**: Read `docs/GIT_WORKFLOW.md` for branching and commit conventions.
-**Before creating a PR**: Follow the PR process in `docs/GIT_WORKFLOW.md`.
+**Before committing**: Read `GIT_WORKFLOW.md` for branching and commit conventions.
+**Before creating a PR**: Follow the PR process in `GIT_WORKFLOW.md`.
 **When touching a new domain**: Read that domain's section in `ARCHITECTURE.md`.
 **When making a design decision**: Check `docs/design-docs/` for prior decisions.
 
@@ -81,17 +81,17 @@ Don't load all of these. Read the one relevant to your current task.
 | Path | When to read it |
 |------|----------------|
 | `ARCHITECTURE.md` | Before adding code — module boundaries, layers, dependency rules |
-| `docs/GIT_WORKFLOW.md` | Before branching, committing, or creating PRs |
-| `docs/QUALITY_SCORE.md` | When assessing or grading code quality per domain |
-| `docs/INFRASTRUCTURE.md` | When working with services, CI/CD, cloud, databases |
-| `docs/RELIABILITY.md` | When handling errors, SLAs, or observability |
-| `docs/SECURITY.md` | When touching auth, data handling, or secrets |
-| `docs/PRODUCT_SENSE.md` | When making UX decisions or using domain terminology |
-| `docs/PLANS.md` | When planning work or checking active/completed plans |
-| `docs/DESIGN.md` | When working on frontend design or component patterns |
-| `docs/FRONTEND.md` | When working on frontend architecture or data fetching |
-| `docs/OBSERVABILITY.md` | When adding logging, metrics, or tracing |
-| `docs/WORKTREE.md` | When working in parallel worktrees |
+| `GIT_WORKFLOW.md` | Before branching, committing, or creating PRs |
+| `QUALITY_SCORE.md` | When assessing or grading code quality per domain |
+| `INFRASTRUCTURE.md` | When working with services, CI/CD, cloud, databases |
+| `RELIABILITY.md` | When handling errors, SLAs, or observability |
+| `SECURITY.md` | When touching auth, data handling, or secrets |
+| `PRODUCT_SENSE.md` | When making UX decisions or using domain terminology |
+| `PLANS.md` | When planning work or checking active/completed plans |
+| `DESIGN.md` | When working on frontend design or component patterns |
+| `FRONTEND.md` | When working on frontend architecture or data fetching |
+| `OBSERVABILITY.md` | When adding logging, metrics, or tracing |
+| `WORKTREE.md` | When working in parallel worktrees |
 | `docs/design-docs/` | For specific design decisions and core beliefs |
 | `docs/design-docs/core-beliefs.md` | For the team's operating principles |
 | `docs/exec-plans/active/` | For currently in-progress plans |

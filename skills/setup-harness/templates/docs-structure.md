@@ -4,7 +4,7 @@
 
 ---
 
-## File: docs/QUALITY_SCORE.md
+## File: QUALITY_SCORE.md
 
 ```markdown
 # Quality Grades

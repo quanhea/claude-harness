@@ -58,9 +58,9 @@ Report ALL findings with specific examples from the actual git history.")
 
 ---
 
-## Output: docs/GIT_WORKFLOW.md
+## Output: GIT_WORKFLOW.md
 
-Write `docs/GIT_WORKFLOW.md` based on discoveries:
+Write `GIT_WORKFLOW.md` based on discoveries:
 
 ```markdown
 # Git Workflow
@@ -153,13 +153,13 @@ Write `.claude/rules/git-workflow.md` (no frontmatter — loads every session):
 
 ## Also: Replace hardcoded Merge Philosophy in PLANS.md
 
-The Merge Philosophy section in `docs/PLANS.md` (from knowledge-docs.md template) should be
-REMOVED and replaced with a reference to `docs/GIT_WORKFLOW.md`:
+The Merge Philosophy section in `PLANS.md` (from knowledge-docs.md template) should be
+REMOVED and replaced with a reference to `GIT_WORKFLOW.md`:
 
 ```markdown
 ## Merge Philosophy
 
-See `docs/GIT_WORKFLOW.md` for the complete git workflow including branching,
+See `GIT_WORKFLOW.md` for the complete git workflow including branching,
 committing, PR process, and merge strategy.
 ```
 
