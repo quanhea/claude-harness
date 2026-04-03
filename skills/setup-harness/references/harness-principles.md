@@ -135,7 +135,7 @@ See `ARCHITECTURE.md` for this project's actual layer definitions.
 ```
 ARCHITECTURE.md              # Top-level architecture map (root level)
 docs/
-├── QUALITY.md               # Quality grades per domain
+├── QUALITY_SCORE.md               # Quality grades per domain
 ├── GIT_WORKFLOW.md          # Branching, commits, PRs, merge strategy
 ├── INFRASTRUCTURE.md        # Services, CI/CD, cloud, databases
 ├── PLANS.md                 # Planning conventions

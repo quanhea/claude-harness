@@ -52,7 +52,7 @@ This analyzes your project (language, framework, structure) and generates:
 
 docs/
 ├── ARCHITECTURE.md        # Module boundaries, dependency rules
-├── QUALITY.md             # Quality grades per domain
+├── QUALITY_SCORE.md             # Quality grades per domain
 ├── design-docs/
 │   ├── index.md
 │   └── core-beliefs.md    # Agent-first operating principles

@@ -4,7 +4,7 @@
 
 ---
 
-## File: docs/QUALITY.md
+## File: docs/QUALITY_SCORE.md
 
 ```markdown
 # Quality Grades
@@ -115,6 +115,6 @@ _Not yet generated._
 ## Adaptation Instructions
 
 1. Replace all `{{placeholders}}` with real project info
-2. In QUALITY.md, list actually detected domains — don't invent them
+2. In QUALITY_SCORE.md, list actually detected domains — don't invent them
 3. If `docs/` already exists, don't overwrite existing files — only add missing ones
 4. Create the `.gitkeep` files to preserve empty directories in git

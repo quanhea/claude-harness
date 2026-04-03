@@ -82,7 +82,7 @@ Don't load all of these. Read the one relevant to your current task.
 |------|----------------|
 | `ARCHITECTURE.md` | Before adding code — module boundaries, layers, dependency rules |
 | `docs/GIT_WORKFLOW.md` | Before branching, committing, or creating PRs |
-| `docs/QUALITY.md` | When assessing or grading code quality per domain |
+| `docs/QUALITY_SCORE.md` | When assessing or grading code quality per domain |
 | `docs/INFRASTRUCTURE.md` | When working with services, CI/CD, cloud, databases |
 | `docs/RELIABILITY.md` | When handling errors, SLAs, or observability |
 | `docs/SECURITY.md` | When touching auth, data handling, or secrets |
@@ -118,7 +118,7 @@ These are in `.claude/rules/` and are loaded automatically:
 | `/sync` | After significant code changes — re-analyze and update docs |
 | `/review` | Before committing — architecture-aware code review |
 | `/plan <task>` | Before starting complex work — create an execution plan |
-| `/quality` | To grade each domain and update QUALITY.md |
+| `/quality` | To grade each domain and update QUALITY_SCORE.md |
 | `/ci-check` | After pushing — check CI status and diagnose failures |
 
 ## Agents — Delegate When Appropriate

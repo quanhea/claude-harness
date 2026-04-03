@@ -112,7 +112,7 @@ Maintain repository knowledge quality:
 
 ## Process
 
-1. Read `ARCHITECTURE.md` and `docs/QUALITY.md`
+1. Read `ARCHITECTURE.md` and `docs/QUALITY_SCORE.md`
 2. Cross-reference documented domains/modules with actual code
 3. Check for:
    - Documented files/modules that no longer exist

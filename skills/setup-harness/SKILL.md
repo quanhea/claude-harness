@@ -105,7 +105,7 @@ Read each template file, fill in all `{{placeholders}}` with real project values
 1. `.claude/CLAUDE.md` — from CLAUDE.md.md template (MUST be under 100 lines)
 2. `.claude/settings.json` — from settings.json.md template (pick correct language variant)
 3. `ARCHITECTURE.md` — from ARCHITECTURE.md.md template
-4. `docs/QUALITY.md` and all docs/ files — from docs-structure.md template
+4. `docs/QUALITY_SCORE.md` and all docs/ files — from docs-structure.md template
 5. `docs/design-docs/core-beliefs.md` — from core-beliefs.md template
 6. `docs/exec-plans/tech-debt-tracker.md` — from tech-debt-tracker.md template
 7. `docs/generated/README.md` — from generated-docs.md template
