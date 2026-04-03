@@ -13,7 +13,7 @@ Analyze the codebase architecture: map actual dependencies, identify patterns an
 
 ## Process
 
-1. Read `docs/ARCHITECTURE.md` for the intended architecture
+1. Read `ARCHITECTURE.md` for the intended architecture
 2. Scan import/require/use statements across the codebase to build actual dependency graph
 3. Compare intended vs actual architecture
 4. Identify drift, circular dependencies, or boundary violations
@@ -37,7 +37,7 @@ Analyze the codebase architecture: map actual dependencies, identify patterns an
 - Is the naming consistent across the codebase?
 
 ### Drift Detection
-- Does `docs/ARCHITECTURE.md` match reality?
+- Does `ARCHITECTURE.md` match reality?
 - Are there new domains not documented?
 - Are there documented domains that no longer exist?
 
@@ -47,4 +47,4 @@ Analyze the codebase architecture: map actual dependencies, identify patterns an
 - **Dependency Violations**: specific imports that break the rules
 - **Circular Dependencies**: if any found, with the cycle path
 - **Recommendations**: prioritized list of structural improvements
-- **Docs Update Needed**: specific changes for `docs/ARCHITECTURE.md`
+- **Docs Update Needed**: specific changes for `ARCHITECTURE.md`

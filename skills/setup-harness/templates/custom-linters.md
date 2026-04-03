@@ -91,7 +91,7 @@ Add PostToolUse hooks to the project's `.claude/settings.json`:
 ### Architecture dependency linter
 **Generate if**: The project has a clear layer structure documented in ARCHITECTURE.md.
 **Script**: Read ARCHITECTURE.md for layer definitions, check imports against allowed direction.
-**Remediation**: "This file ({{layer}}) imports from {{higher-layer}}. See docs/ARCHITECTURE.md."
+**Remediation**: "This file ({{layer}}) imports from {{higher-layer}}. See ARCHITECTURE.md."
 
 ### Custom project-specific linters
 **Generate if**: The Explore agent finds project-specific rules (from existing lint config, pre-commit hooks, or CI checks) that aren't covered above.

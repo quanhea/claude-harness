@@ -49,9 +49,9 @@ How are files sized? How are tests organized? What do index files contain?}}
 
 ## When Adding New Code
 
-1. Check `docs/ARCHITECTURE.md` for which domain/layer this belongs to
+1. Check `ARCHITECTURE.md` for which domain/layer this belongs to
 2. Follow existing patterns in that domain
-3. If creating a new domain, update `docs/ARCHITECTURE.md`
+3. If creating a new domain, update `ARCHITECTURE.md`
 4. If changing boundaries, update this rule file and architecture docs
 ```
 
@@ -147,7 +147,7 @@ If knowledge isn't in the repo, it doesn't exist for agents.
 
 ## When to Update Docs
 
-- **New domain/module**: Update `docs/ARCHITECTURE.md`
+- **New domain/module**: Update `ARCHITECTURE.md`
 - **New pattern/convention**: Add to relevant architecture docs
 - **Design decision**: Create a design doc in `docs/design-docs/`
 - **API change**: Update relevant product specs

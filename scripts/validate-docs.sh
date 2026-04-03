@@ -23,7 +23,7 @@ check_required() {
 }
 
 check_required ".claude/CLAUDE.md" "Table of contents"
-check_required "docs/ARCHITECTURE.md" "Architecture map"
+check_required "ARCHITECTURE.md" "Architecture map"
 check_required "docs/QUALITY.md" "Quality grades"
 check_required "docs/design-docs/index.md" "Design docs index"
 check_required "docs/product-specs/index.md" "Product specs index"
@@ -59,8 +59,8 @@ if [ -d "$ROOT/docs" ]; then
   done < <(find "$ROOT/docs" -name "*.md" 2>/dev/null)
 fi
 
-# 4. Check docs/ARCHITECTURE.md references existing directories
-if [ -f "$ROOT/docs/ARCHITECTURE.md" ]; then
+# 4. Check ARCHITECTURE.md references existing directories
+if [ -f "$ROOT/ARCHITECTURE.md" ]; then
   # Extract backtick-quoted paths that look like directories
   while IFS= read -r dirref; do
     [ -z "$dirref" ] && continue
@@ -74,7 +74,7 @@ if [ -f "$ROOT/docs/ARCHITECTURE.md" ]; then
         ISSUE_COUNT=$((ISSUE_COUNT + 1))
       fi
     fi
-  done < <(grep -oE '`[a-zA-Z][a-zA-Z0-9_-]*/`' "$ROOT/docs/ARCHITECTURE.md" 2>/dev/null | head -20)
+  done < <(grep -oE '`[a-zA-Z][a-zA-Z0-9_-]*/`' "$ROOT/ARCHITECTURE.md" 2>/dev/null | head -20)
 fi
 
 # 5. Check exec-plans/active doesn't have completed plans

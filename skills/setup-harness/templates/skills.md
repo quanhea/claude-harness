@@ -24,7 +24,7 @@ Re-analyze this project and update all documentation to reflect the current code
 
 Current architecture doc:
 
-@docs/ARCHITECTURE.md
+@ARCHITECTURE.md
 
 Current quality grades:
 
@@ -33,9 +33,9 @@ Current quality grades:
 ## Steps
 
 1. **Scan the codebase** to find all domains/modules and their actual dependencies
-2. **Compare** documented state in `docs/ARCHITECTURE.md` vs actual code
+2. **Compare** documented state in `ARCHITECTURE.md` vs actual code
 3. **Update** these files if they've drifted:
-   - `docs/ARCHITECTURE.md` — module map, dependency graph, entry points
+   - `ARCHITECTURE.md` — module map, dependency graph, entry points
    - `docs/QUALITY.md` — re-grade each domain (Architecture, Testing, Docs, Reliability)
    - `.claude/CLAUDE.md` — update if domains or commands changed
 4. **Report** what changed and what needs human attention
@@ -73,12 +73,12 @@ Otherwise, review the current unstaged changes: !`git diff`
 
 ## Architecture Reference
 
-@docs/ARCHITECTURE.md
+@ARCHITECTURE.md
 
 ## Review Checklist
 
 ### 1. Architecture Compliance
-- Read `docs/ARCHITECTURE.md` for the project's layer boundaries and dependency rules
+- Read `ARCHITECTURE.md` for the project's layer boundaries and dependency rules
 - Check that imports respect the documented dependency direction
 - No circular dependencies between domains
 - Cross-cutting concerns follow the documented pattern
@@ -92,7 +92,7 @@ Otherwise, review the current unstaged changes: !`git diff`
 - Run tests: `{{test-command}}`
 
 ### 4. Documentation
-- New domains/modules are reflected in `docs/ARCHITECTURE.md`
+- New domains/modules are reflected in `ARCHITECTURE.md`
 - Public APIs have clear interfaces
 
 ## Output
@@ -125,7 +125,7 @@ Create a structured execution plan for: $ARGUMENTS
 
 ## Context
 
-@docs/ARCHITECTURE.md
+@ARCHITECTURE.md
 @docs/QUALITY.md
 
 Check `docs/exec-plans/active/` for related active plans.
@@ -199,7 +199,7 @@ Scan the codebase and grade each domain's quality.
 
 ## Architecture Reference
 
-@docs/ARCHITECTURE.md
+@ARCHITECTURE.md
 
 ## Grading Criteria
 
@@ -225,7 +225,7 @@ Scan the codebase and grade each domain's quality.
 
 ## Process
 
-For each domain in `docs/ARCHITECTURE.md`:
+For each domain in `ARCHITECTURE.md`:
 1. Scan source files for architecture compliance
 2. Check test files exist and cover key paths
 3. Verify documentation exists and is current

@@ -21,7 +21,7 @@ a table of pointers to `docs/`, a list of skills and agents, and 5 core principl
 **Rule**: Agents start with a small, stable entry point and are taught where to look next,
 rather than being overwhelmed up front.
 
-**How**: CLAUDE.md → docs/ARCHITECTURE.md → domain-specific docs → design docs.
+**How**: CLAUDE.md → ARCHITECTURE.md → domain-specific docs → design docs.
 Each level is self-contained and links forward to the next level of detail.
 
 ### 3. Repository Is the System of Record
@@ -33,7 +33,7 @@ effectively doesn't exist. Knowledge in Google Docs, chat threads, or people's h
 is not accessible to the system.
 
 **How**: All project knowledge lives in `docs/`. Design decisions are in `docs/design-docs/`.
-Plans are in `docs/exec-plans/`. Architecture is in `docs/ARCHITECTURE.md`.
+Plans are in `docs/exec-plans/`. Architecture is in `ARCHITECTURE.md`.
 Everything is versioned, co-located, and discoverable.
 
 ### 4. Agent Legibility Over Human Aesthetics
@@ -128,25 +128,31 @@ The universal rules are:
 - Circular dependencies between domains are never allowed
 
 The specific layer names, order, and structure are project-specific.
-See `docs/ARCHITECTURE.md` for this project's actual layer definitions.
+See `ARCHITECTURE.md` for this project's actual layer definitions.
 
 ## The Knowledge Base Layout
 
 ```
+ARCHITECTURE.md              # Top-level architecture map (root level)
 docs/
-├── ARCHITECTURE.md        # Top-level architecture map
-├── QUALITY.md             # Quality grades per domain
-├── design-docs/           # Design decisions with verification status
-│   └── index.md
-├── exec-plans/            # Execution plans as first-class artifacts
+├── QUALITY.md               # Quality grades per domain
+├── GIT_WORKFLOW.md          # Branching, commits, PRs, merge strategy
+├── INFRASTRUCTURE.md        # Services, CI/CD, cloud, databases
+├── PLANS.md                 # Planning conventions
+├── PRODUCT_SENSE.md         # Product context and domain language
+├── RELIABILITY.md           # SLAs, error handling, observability
+├── SECURITY.md              # Auth, data protection, secrets
+├── design-docs/             # Design decisions with verification status
+│   ├── index.md
+│   └── core-beliefs.md
+├── exec-plans/              # Execution plans as first-class artifacts
 │   ├── active/
-│   └── completed/
-├── product-specs/         # Product specifications
-│   └── index.md
-├── references/            # External reference material (llms.txt, API docs)
-│   └── index.md
-└── encyclopedia/          # Auto-generated codebase knowledge
-    └── index.md
+│   ├── completed/
+│   └── tech-debt-tracker.md
+├── generated/               # Auto-generated docs
+├── product-specs/           # Product specifications
+├── references/              # External reference material (llms.txt)
+└── encyclopedia/            # Auto-generated codebase knowledge
 ```
 
 Plans are first-class artifacts. Active plans, completed plans, and known technical debt

@@ -13,7 +13,7 @@ Review code changes for architecture compliance, test coverage, boundary validat
 
 ## Process
 
-1. Read `docs/ARCHITECTURE.md` (if it exists) to understand module boundaries and dependency rules
+1. Read `ARCHITECTURE.md` (if it exists) to understand module boundaries and dependency rules
 2. Read `.claude/rules/architecture.md` (if it exists) for enforced constraints
 3. Read the changed files
 4. Check that changes respect layer boundaries (Types → Config → Repo → Service → Runtime → UI)

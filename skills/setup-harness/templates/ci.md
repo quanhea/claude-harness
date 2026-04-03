@@ -29,7 +29,7 @@ jobs:
         run: |
           # Check required harness files exist
           test -f .claude/CLAUDE.md || { echo "❌ Missing .claude/CLAUDE.md"; exit 1; }
-          test -f docs/ARCHITECTURE.md || { echo "❌ Missing docs/ARCHITECTURE.md"; exit 1; }
+          test -f ARCHITECTURE.md || { echo "❌ Missing ARCHITECTURE.md"; exit 1; }
           test -f docs/QUALITY.md || { echo "❌ Missing docs/QUALITY.md"; exit 1; }
 
           # Check CLAUDE.md is under 100 lines
@@ -85,7 +85,7 @@ harness-validate:
   stage: test
   script:
     - test -f .claude/CLAUDE.md || { echo "❌ Missing .claude/CLAUDE.md"; exit 1; }
-    - test -f docs/ARCHITECTURE.md || { echo "❌ Missing docs/ARCHITECTURE.md"; exit 1; }
+    - test -f ARCHITECTURE.md || { echo "❌ Missing ARCHITECTURE.md"; exit 1; }
     - |
       lines=$(wc -l < .claude/CLAUDE.md)
       if [ "$lines" -gt 100 ]; then

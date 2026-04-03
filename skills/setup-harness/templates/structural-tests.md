@@ -26,7 +26,7 @@ Report with full examples from actual test files.")
 
 ### Step 2: Discover architecture to test
 
-Read `docs/ARCHITECTURE.md` (which was generated in Step 3). Extract:
+Read `ARCHITECTURE.md` (which was generated in Step 3). Extract:
 - The layer structure and allowed dependency direction
 - The domain/module boundaries
 - File organization rules (max file size, etc.)
@@ -75,7 +75,7 @@ Write one test file in the project's test directory, matching the project's:
 ## Adaptation Instructions
 
 1. The test file must look like it belongs in the project — same style as existing tests
-2. Layer names and dependency rules come from docs/ARCHITECTURE.md, NEVER hardcoded
+2. Layer names and dependency rules come from ARCHITECTURE.md, NEVER hardcoded
 3. If the project has no clear layers, test only for circular deps and file size
 4. If architecture tests already exist, do NOT overwrite — merge patterns
 5. The test runs with the project's normal test command (no extra setup)

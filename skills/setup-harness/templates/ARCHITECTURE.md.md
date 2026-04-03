@@ -1,4 +1,4 @@
-# Template: docs/ARCHITECTURE.md
+# Template: ARCHITECTURE.md
 
 > This template generates the architecture map. It MUST NOT contain hardcoded conventions.
 > For existing projects: discover conventions via Explore agents.
@@ -50,7 +50,7 @@ Use the research to propose an architecture. The user can modify it.
 
 ## Output Structure
 
-Write `docs/ARCHITECTURE.md` with these sections. Every section must be filled from
+Write `ARCHITECTURE.md` with these sections. Every section must be filled from
 discovery (existing project) or research (greenfield) — never hardcoded defaults.
 
 ```markdown

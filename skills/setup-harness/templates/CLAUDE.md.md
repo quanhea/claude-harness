@@ -68,10 +68,10 @@ Only include rows/sections for files that were actually generated.
 
 ## How to Work in This Repo
 
-**Before writing code**: Read `docs/ARCHITECTURE.md` for module boundaries.
+**Before writing code**: Read `ARCHITECTURE.md` for module boundaries.
 **Before committing**: Read `docs/GIT_WORKFLOW.md` for branching and commit conventions.
 **Before creating a PR**: Follow the PR process in `docs/GIT_WORKFLOW.md`.
-**When touching a new domain**: Read that domain's section in `docs/ARCHITECTURE.md`.
+**When touching a new domain**: Read that domain's section in `ARCHITECTURE.md`.
 **When making a design decision**: Check `docs/design-docs/` for prior decisions.
 
 ## Knowledge Base — Read On Demand
@@ -80,7 +80,7 @@ Don't load all of these. Read the one relevant to your current task.
 
 | Path | When to read it |
 |------|----------------|
-| `docs/ARCHITECTURE.md` | Before adding code — module boundaries, layers, dependency rules |
+| `ARCHITECTURE.md` | Before adding code — module boundaries, layers, dependency rules |
 | `docs/GIT_WORKFLOW.md` | Before branching, committing, or creating PRs |
 | `docs/QUALITY.md` | When assessing or grading code quality per domain |
 | `docs/INFRASTRUCTURE.md` | When working with services, CI/CD, cloud, databases |
