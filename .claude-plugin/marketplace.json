@@ -1,0 +1,15 @@
+{
+  "name": "claude-harness",
+  "owner": {
+    "name": "Community",
+    "url": "https://github.com/quanhea/claude-harness"
+  },
+  "description": "Scaffold any project for agent-first development with Claude Code — Harness Engineering methodology.",
+  "plugins": [
+    {
+      "name": "claude-harness",
+      "source": "./",
+      "description": "Generate CLAUDE.md, architecture docs, rules, skills, and agents following the Harness Engineering methodology."
+    }
+  ]
+}

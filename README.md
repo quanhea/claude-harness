@@ -5,7 +5,7 @@ A Claude Code plugin that scaffolds any project for agent-first development.
 One command. Full scaffold. No build step.
 
 ```
-/setup-harness
+/claude-harness:setup-harness
 ```
 
 ## What It Does
@@ -24,21 +24,49 @@ Applies every practice from the [Harness Engineering](https://openai.com/index/h
 
 ## Install
 
-```bash
-# From marketplace (when published)
-claude plugin install claude-harness
+This repo is a self-hosted Claude Code marketplace — install directly from GitHub.
 
-# From local directory
+**Inside a Claude Code session (recommended):**
+
+```
+/plugin marketplace add quanhea/claude-harness
+/plugin install claude-harness@claude-harness
+```
+
+The first command registers this repo as a marketplace; the second installs the plugin from it. Claude Code will prompt you to trust the marketplace on first add.
+
+**From your shell (non-interactive):**
+
+```bash
+claude plugin marketplace add quanhea/claude-harness
+claude plugin install claude-harness@claude-harness
+```
+
+**Local development (load without installing):**
+
+```bash
 claude --plugin-dir /path/to/claude-harness
 ```
+
+`--plugin-dir` loads the plugin for the current session only — useful when hacking on the plugin itself.
+
+**Verify installation:**
+
+```
+/plugin
+```
+
+Open the plugin manager and confirm `claude-harness` appears under the **Installed** tab.
 
 ## Usage
 
 ### Initial Setup
 
 ```
-/setup-harness
+/claude-harness:setup-harness
 ```
+
+> Claude Code namespaces plugin skills as `<plugin-name>:<skill-name>`. You can also type `/setup-harness` — Claude will match it by description if there's no conflict.
 
 This analyzes your project (language, framework, structure) and generates:
 
@@ -71,10 +99,10 @@ docs/
 The plugin provides ONE skill:
 
 ```
-/setup-harness
+/claude-harness:setup-harness
 ```
 
-This generates everything. After setup, your project has its own embedded skills and agents.
+This generates everything. After setup, your project has its own embedded skills and agents (which live in your project's `.claude/skills/` and are invoked without the plugin namespace — `/sync`, `/review`, etc.).
 
 ### Generated Project Skills
 

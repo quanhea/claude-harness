@@ -4,7 +4,10 @@
   "version": "0.1.0",
   "author": {
     "name": "Community",
-    "url": "https://github.com/anthropics/claude-harness"
+    "url": "https://github.com/quanhea/claude-harness"
   },
-  "keywords": ["scaffolding", "agent-first", "harness", "setup", "architecture"]
+  "keywords": ["scaffolding", "agent-first", "harness", "setup", "architecture"],
+  "homepage": "https://github.com/quanhea/claude-harness",
+  "repository": "https://github.com/quanhea/claude-harness",
+  "license": "MIT"
 }
