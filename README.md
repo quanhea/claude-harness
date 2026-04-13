@@ -1,197 +1,180 @@
 # claude-harness
 
-A Claude Code plugin that scaffolds any project for agent-first development.
+TypeScript CLI that scaffolds any project for agent-first development.
 
-One command. Full scaffold. No build step.
+Spawns one `claude -p` process per setup task — 28 tasks, flat parallel — so each step
+gets its own focused context window. No one prompt tries to do everything.
 
-```
-/claude-harness:setup-harness
-```
+## Background
 
-## What It Does
+The [Harness Engineering](https://openai.com/index/harness-engineering/) article describes
+a complete system: CLAUDE.md as a ~100-line table of contents, a `docs/` knowledge base,
+custom linters as hooks, rules enforced mechanically, project-specific skills generated
+from conversation history, and a recurring gardener that scans every tracked doc
+for references that no longer match the live code and commits fix-up edits.
 
-Applies every practice from the [Harness Engineering](https://openai.com/index/harness-engineering/) article to your project:
+The original approach was a monolithic skill — one 100-line `SKILL.md` that tried to
+generate 20+ files in a single Claude session. The problem: too much in one prompt gets
+overlooked. Sections merge. Files get skipped. Quality is uneven.
 
-- **CLAUDE.md as table of contents** (~100 lines) pointing to deeper docs
-- **`docs/` as system of record** — architecture, quality grades, design docs, exec plans, core beliefs, tech debt tracker
-- **Custom linters as hooks** — file size, naming, structured logging, architecture direction, boundary validation
-- **Rules enforced mechanically** — architecture boundaries, testing conventions, doc maintenance
-- **Project-embedded skills** — `/sync`, `/review`, `/plan`, `/quality`
-- **Specialized agents** — `@reviewer`, `@architect`, `@gardener`
-- **Agent-to-agent review loop** (Ralph Wiggum Loop) — iterate until all reviewers satisfied
-- **Garbage collection** — recurring scan for drift, dead code, stale docs
-- **Progressive disclosure** — small entry point, pointers to depth
+**claude-harness is the task-parallel implementation.** Each of the 29 setup tasks gets
+its own subprocess, its own focused prompt, and the full context window. The orchestrator
+handles the boring parts — phase sequencing, parallel execution, crash recovery, progress
+display — so each Claude invocation can do one thing well.
 
 ## Install
 
-This repo is a self-hosted Claude Code marketplace — install directly from GitHub.
-
-**Inside a Claude Code session (recommended):**
-
-```
-/plugin marketplace add quanhea/claude-harness
-/plugin install claude-harness@claude-harness
+```bash
+npm install -g @eastagile/claude-harness
 ```
 
-The first command registers this repo as a marketplace; the second installs the plugin from it. Claude Code will prompt you to trust the marketplace on first add.
+Prerequisites:
+- Node.js 18+
+- [Claude Code](https://code.claude.com/docs/en/quickstart) installed and authenticated (`claude auth login`)
 
-**From your shell (non-interactive):**
+## Quick Start
 
 ```bash
-claude plugin marketplace add quanhea/claude-harness
-claude plugin install claude-harness@claude-harness
+# Scaffold a project
+claude-harness ./my-project
+
+# Preview which tasks would run
+claude-harness ./my-project --dry-run
+
+# Run with more parallelism
+claude-harness ./my-project --parallel 8
+
+# Run only specific tasks
+claude-harness ./my-project --only rule-architecture,rule-testing,rule-documentation,rule-git
+
+# Resume after crash or Ctrl+C
+claude-harness ./my-project --resume
+
+# Resume and retry failed tasks
+claude-harness ./my-project --resume --retry
 ```
 
-**Local development (load without installing):**
-
-```bash
-claude --plugin-dir /path/to/claude-harness
-```
-
-`--plugin-dir` loads the plugin for the current session only — useful when hacking on the plugin itself.
-
-**Verify installation:**
+## How It Works
 
 ```
-/plugin
+load TASK_MANIFEST → spawn N claude -p processes → collect results
 ```
 
-Open the plugin manager and confirm `claude-harness` appears under the **Installed** tab.
+All 28 tasks run in one flat parallel pool (up to `--parallel` concurrent workers,
+default 6). There are no phases, no gates, no cross-task dependencies.
 
-## Usage
+Each prompt is self-contained: it reads the project directly (`package.json`, source
+files, git log) and, if the task doesn't apply to this project, writes a one-line
+stub and exits. For example, `design.md` skips itself on a backend-only project.
 
-### Initial Setup
+When all tasks drain, the orchestrator writes `setup-report.md` with timing and status
+for every task.
+
+Each Claude invocation uses `--dangerously-skip-permissions` so the task can read the
+project and write output files without confirmation prompts.
+
+## Output
+
+Results from the orchestrator go to `.claude-harness/` (or `--output <dir>`):
 
 ```
-/claude-harness:setup-harness
+.claude-harness/
+├── setup-report.md     # Task summary with timing
+├── state.json          # Run state (enables --resume)
+└── logs/               # Claude stdout+stderr per task
 ```
 
-> Claude Code namespaces plugin skills as `<plugin-name>:<skill-name>`. You can also type `/setup-harness` — Claude will match it by description if there's no conflict.
-
-This analyzes your project (language, framework, structure) and generates:
+Generated project files are written directly into the target project by each task's
+Claude subprocess:
 
 ```
+CLAUDE.md                          # Table of contents (~100 lines)
+ARCHITECTURE.md                    # Module map and invariants
+GIT_WORKFLOW.md                    # Branching, commit, PR conventions
+INFRASTRUCTURE.md                  # Services, CI/CD, databases
+QUALITY_SCORE.md                   # Quality grades per domain
+PLANS.md                           # Active / completed execution plans
+PRODUCT_SENSE.md                   # Domain terminology and UX conventions
+RELIABILITY.md                     # Error handling, SLAs, observability
+SECURITY.md                        # Auth, data handling, secrets
+
 .claude/
-├── CLAUDE.md              # Table of contents (~100 lines)
-├── settings.json          # Permissions for your stack
-├── rules/                 # Architecture, testing, doc rules
-├── skills/                # sync, review, plan, quality
-└── agents/                # reviewer, architect, gardener
+├── settings.json                  # Tool permissions
+├── rules/                         # Architecture, testing, doc, git rules
+├── hooks/                         # Custom linter scripts (PostToolUse)
+└── skills/                        # /sync, /review + project-specific skills
 
 docs/
-├── ARCHITECTURE.md        # Module boundaries, dependency rules
-├── QUALITY_SCORE.md             # Quality grades per domain
-├── design-docs/
-│   ├── index.md
-│   └── core-beliefs.md    # Agent-first operating principles
-├── exec-plans/
-│   ├── active/
-│   ├── completed/
-│   └── tech-debt-tracker.md
-├── generated/             # Auto-generated docs (db schema, API endpoints)
-├── product-specs/
-├── references/            # External llms.txt and API docs
-└── encyclopedia/          # Auto-generated codebase knowledge
+├── design-docs/core-beliefs.md
+├── exec-plans/tech-debt-tracker.md
+└── generated/                     # Auto-generated docs (db-schema, api-routes, ...)
 ```
 
-### Plugin Skill
-
-The plugin provides ONE skill:
+## Options
 
 ```
-/claude-harness:setup-harness
+  -j, --parallel <n>       Parallel workers per phase   (default: 6)
+  -t, --timeout <seconds>  Per-task timeout             (default: 1800)
+      --resume             Resume pending tasks from a previous run
+      --retry              Retry failed/timed-out tasks (use with --resume)
+      --only <ids>         Run only these task IDs (comma-separated, e.g. claude-md,rule-git)
+  -o, --output <dir>       Output directory             (default: .claude-harness)
+      --model <model>      Claude model to use
+      --max-turns <n>      Max Claude turns per task    (default: 30)
+      --dry-run            List tasks without running
+      --force              Override harness lock
+  -v, --verbose            Verbose output
 ```
 
-This generates everything. After setup, your project has its own embedded skills and agents (which live in your project's `.claude/skills/` and are invoked without the plugin namespace — `/sync`, `/review`, etc.).
+## Crash Recovery
 
-### Generated Project Skills
+State is saved atomically (write temp file → fsync → rename) after every task completes
+and every 30 seconds. If the process crashes, is killed, or you hit Ctrl+C:
 
-These are created in YOUR repo by `/setup-harness`:
+```bash
+claude-harness ./my-project --resume
+```
 
-| Skill | What it does |
-|-------|-------------|
-| `/sync` | Re-analyze and update stale docs |
-| `/review` | Architecture-aware code review |
-| `/plan <task>` | Create structured execution plan |
-| `/quality` | Grade quality per domain |
-| `/ci-check` | Check CI status, diagnose failures |
+Completed tasks are never re-run. Tasks that were mid-run reset to pending.
 
-Plus custom skills generated from your conversation history.
+If you run `claude-harness` on a project with an incomplete previous run, it will prompt:
 
-### Generated Agents
+```
+Previous run found: 12/28 tasks completed. Resume previous run? [y/N]
+```
 
-| Agent | When to use |
-|-------|-------------|
-| `@reviewer` | Delegate code review |
-| `@architect` | Analyze architecture health |
-| `@gardener` | Find stale docs, quality drift, PR feedback patterns |
+To also retry tasks that failed or timed out:
 
-## Custom Linters (from the article)
+```bash
+claude-harness ./my-project --resume --retry
+```
 
-`/setup-harness` generates **project-specific linter scripts** based on what it discovers in YOUR codebase. No hardcoded rules — every check comes from your project's actual conventions.
+**Signal handling:**
+- 1st Ctrl+C — stops the queue, waits for running tasks to finish
+- 2nd Ctrl+C — kills all workers immediately, saves state, exits
 
-Linters are generated at `.claude/hooks/` and wired into `.claude/settings.json` PostToolUse hooks. They run after every `Edit`/`Write` and inject remediation into agent context.
+## Gardener
 
-What gets generated depends on your project:
-- **File size** — if your project has a convention (discovered from existing lint config or file size patterns)
-- **Naming** — if your project has consistent naming (discovered by scanning existing files)
-- **Structured logging** — if your project uses a structured logger and bans raw print/console
-- **Architecture deps** — if your project has layer boundaries documented in ARCHITECTURE.md
-- **Boundary validation** — if your project uses schema validation at entry points
+The gardener runs as a background cron job and keeps the project's existing docs
+(CLAUDE.md, ARCHITECTURE.md, `docs/**/*.md`) fresh against the live code. On the
+first run it spawns parallel Explore agents — one per doc — to audit every
+reference. On subsequent runs it diffs the code since the last run and only
+re-audits docs that mention the changed files. It commits the fix-ups in place.
 
-Additional scripts bundled with the plugin (not project-specific):
+```bash
+claude-harness gardener add ./my-project                           # Register + schedule
+claude-harness gardener add ./my-project --schedule "0 9 * * 1-5" # Custom cron
+claude-harness gardener remove ./my-project
+claude-harness gardener list
+claude-harness gardener run ./my-project                           # Run immediately
+```
 
-| Script | What It Does |
-|--------|-------------|
-| **validate-docs.sh** | Check knowledge base structure, cross-links, freshness |
-| **grade-quality.sh** | Automated quality metrics per domain |
+The registry lives at `~/.claude-harness/projects.json`.
 
-## Every Article Practice Implemented
+## Architecture
 
-| # | Article Practice | Implementation |
-|---|---|---|
-| 1 | CLAUDE.md as table of contents (~100 lines) | Template + lint-file-size validates it stays under 100 |
-| 2 | `docs/` as structured knowledge base | Templates for ARCHITECTURE, QUALITY, design-docs, exec-plans, product-specs, references, encyclopedia, generated |
-| 3 | Core beliefs document | `docs/design-docs/core-beliefs.md` template |
-| 4 | Custom linters for dependency direction | `lint-architecture.sh` hook |
-| 5 | Structural tests (architecture constraints) | `@architect` agent + `/harness-review` skill |
-| 6 | Structured logging enforcement | `lint-structured-log.sh` hook |
-| 7 | Naming convention enforcement | `lint-naming.sh` hook |
-| 8 | File size limit enforcement | `lint-file-size.sh` hook |
-| 9 | Lint error messages as agent remediation | All scripts write remediation to stderr |
-| 10 | Knowledge base linters (up-to-date, cross-linked) | `validate-docs.sh` script |
-| 11 | Doc-gardening agent | `@gardener` agent |
-| 12 | Quality grading per domain | `grade-quality.sh` + `/harness-quality` skill |
-| 13 | Execution plans as first-class artifacts | `docs/exec-plans/` + `/harness-plan` skill |
-| 14 | Tech debt tracker | `docs/exec-plans/tech-debt-tracker.md` template |
-| 15 | Parse at boundaries enforcement | `lint-boundaries.sh` hook |
-| 16 | Agent-to-agent review loop (Ralph Wiggum Loop) | `/harness-loop` skill |
-| 17 | Recurring garbage collection | `/harness-gc` skill |
-| 18 | Progressive disclosure | CLAUDE.md → ARCHITECTURE.md → domain docs → design docs |
-| 19 | Generated docs (db-schema, etc.) | `docs/generated/` directory |
-| 20 | Agent legibility optimization | All templates structured for Claude's reasoning |
-
-## The 10 Principles
-
-1. **CLAUDE.md is a table of contents** — ~100 lines, pointers to docs
-2. **Progressive disclosure** — start small, discover depth as needed
-3. **Repository is the system of record** — if it's not in the repo, it doesn't exist
-4. **Agent legibility over human aesthetics** — optimize for Claude's reasoning
-5. **Enforce architecture mechanically** — rules in code, not prose
-6. **Garbage collection** — continuous quality enforcement
-7. **Golden principles in code** — taste captured once, enforced everywhere
-8. **Increasing autonomy** — each capability unlocks the next
-9. **Parse at boundaries** — validate external data at entry, trust internally
-10. **Give a map, not a manual** — small map pointing to deeper sources
-
-## Works With
-
-Any project under 1M lines of code. Detects and adapts to:
-
-- **Languages**: TypeScript, JavaScript, Python, Rust, Go, Java, Ruby, PHP, Swift, Kotlin, C#
-- **Frameworks**: Next.js, React, Vue, Angular, Svelte, Express, Fastify, NestJS, Django, Flask, FastAPI, Rails, Spring, Gin, Actix, Laravel
-- **Package managers**: npm, pnpm, yarn, bun, pip, poetry, uv, cargo, go, maven, gradle, bundler, composer
+See [ARCHITECTURE.md](ARCHITECTURE.md) for a guide to the codebase.
 
 ## License
 
-MIT
+MIT — see [LICENSE](LICENSE).

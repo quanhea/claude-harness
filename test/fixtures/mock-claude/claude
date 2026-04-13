@@ -1,0 +1,28 @@
+#!/usr/bin/env node
+// Mock claude CLI for harness testing.
+// Outputs a valid claude JSON envelope and exits 0. The harness orchestrator
+// does not need discovery.json anymore — each task prompt does its own
+// detection in real runs — so this mock just needs to look like a successful
+// claude invocation.
+const args = process.argv.slice(2);
+
+if (args.includes("--version")) {
+  console.log("1.0.0-mock");
+  process.exit(0);
+}
+
+if (args.includes("auth") && args.includes("status")) {
+  console.log(JSON.stringify({ authenticated: true }));
+  process.exit(0);
+}
+
+if (args.indexOf("-p") !== -1) {
+  console.log(JSON.stringify({
+    is_error: false,
+    result: "Task completed successfully (mock)",
+    total_cost_usd: 0,
+  }));
+  process.exit(0);
+}
+
+process.exit(0);

@@ -1,8 +1,43 @@
 {
-  "name": "claude-harness",
-  "private": true,
-  "type": "module",
-  "dependencies": {
-    "@anthropic-ai/claude-agent-sdk": "latest"
+  "name": "@eastagile/claude-harness",
+  "version": "0.1.0",
+  "description": "Agent-first project scaffold for Claude Code. Sets up CLAUDE.md, architecture docs, rules, skills, and a doc-gardening cron that keeps them fresh.",
+  "license": "MIT",
+  "author": "East Agile <dev@eastagile.com> (https://eastagile.com)",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/quanhea/claude-harness.git"
+  },
+  "keywords": [
+    "claude",
+    "claude-code",
+    "anthropic",
+    "scaffold",
+    "agent-first",
+    "documentation",
+    "harness"
+  ],
+  "bin": {
+    "claude-harness": "./dist/cli.js"
+  },
+  "main": "dist/scanner.js",
+  "files": [
+    "dist/",
+    "prompts/",
+    "LICENSE",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "prepublishOnly": "npm run build",
+    "test": "node --test test/*.test.js",
+    "test:ci": "node --test --test-reporter=spec test/*.test.js"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.19.39",
+    "typescript": "^5.9.3"
   }
 }
