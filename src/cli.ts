@@ -16,8 +16,8 @@ Usage:
 Setup options:
   -j, --parallel <n>        Parallel workers per phase  (default: ${DEFAULTS.parallel})
   -t, --timeout <seconds>   Per-task timeout            (default: ${DEFAULTS.timeout})
-      --resume               Resume incomplete run
-      --retry                Retry failed/timed-out tasks (use with --resume)
+      --resume               Resume incomplete run (pending tasks only)
+      --retry                Resume + also retry failed/timed-out tasks
       --only <id,...>        Run only these task IDs (e.g. --only 18,19,20)
   -o, --output <dir>        Output directory            (default: .claude-harness)
       --model <model>        Claude model to use
@@ -37,7 +37,7 @@ Gardener subcommands:
 Examples:
   claude-harness ./my-project
   claude-harness ./my-project --only 01
-  claude-harness ./my-project --resume --retry
+  claude-harness ./my-project --retry
   claude-harness gardener add ./my-project --schedule "0 9 * * 1-5"
   claude-harness gardener list
 `);
@@ -91,8 +91,13 @@ async function main(): Promise<void> {
     ? options.output
     : path.join(resolvedTarget, DEFAULTS.outputDir);
 
+  // --retry implies --resume (retrying only makes sense on an existing run)
+  const retry = !!options.retry;
+  const resume = !!options.resume || retry;
+
   const exitCode = await setup({
     targetDir: resolvedTarget,
+    targetArg: targetDir || null,
     outputDir,
     parallel: Number(options.parallel) || DEFAULTS.parallel,
     timeout: Number(options.timeout) || DEFAULTS.timeout,
@@ -100,8 +105,8 @@ async function main(): Promise<void> {
     maxTurns: Number(options.maxTurns) || DEFAULTS.maxTurns,
     model: (options.model as string) ?? null,
     only: options.only ? (options.only as string).split(",").map((s) => s.trim()) : null,
-    resume: !!options.resume,
-    retry: !!options.retry,
+    resume,
+    retry,
     dryRun: !!options.dryRun,
     force: !!options.force,
     verbose: !!options.verbose,

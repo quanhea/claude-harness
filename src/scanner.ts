@@ -248,7 +248,8 @@ export async function setup(options: HarnessOptions): Promise<number> {
   console.log(`\nDone. ${state.stats.completed}/${state.stats.totalTasks} tasks in ${elapsed}.`);
   if (state.stats.failed > 0 || state.stats.timeout > 0) {
     console.log(`  ${state.stats.failed} failed, ${state.stats.timeout} timed out.`);
-    console.log("  Retry:  claude-harness ./project --resume --retry");
+    const targetBit = options.targetArg ? `${options.targetArg} ` : "";
+    console.log(`  Retry:  claude-harness ${targetBit}--retry`);
   }
   console.log(`  Report: ${reportPath}`);
 

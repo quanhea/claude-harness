@@ -56,7 +56,7 @@ export function generateReport(state: HarnessState): string {
       lines.push(`- **[${taskId}]** ${def?.description ?? taskId} — ${entry.status}${entry.lastError ? ` (${entry.lastError})` : ""}`);
     }
     lines.push("");
-    lines.push("Retry with: `claude-harness --resume --retry`");
+    lines.push("Retry with: `claude-harness --retry`");
     lines.push("");
   }
 

@@ -50,8 +50,8 @@ claude-harness ./my-project --only rule-architecture,rule-testing,rule-documenta
 # Resume after crash or Ctrl+C
 claude-harness ./my-project --resume
 
-# Resume and retry failed tasks
-claude-harness ./my-project --resume --retry
+# Retry failed tasks (implies --resume)
+claude-harness ./my-project --retry
 ```
 
 ## How It Works
@@ -116,7 +116,7 @@ docs/
   -j, --parallel <n>       Parallel workers per phase   (default: 6)
   -t, --timeout <seconds>  Per-task timeout             (default: 1800)
       --resume             Resume pending tasks from a previous run
-      --retry              Retry failed/timed-out tasks (use with --resume)
+      --retry              Resume + also retry failed/timed-out tasks
       --only <ids>         Run only these task IDs (comma-separated, e.g. claude-md,rule-git)
   -o, --output <dir>       Output directory             (default: .claude-harness)
       --model <model>      Claude model to use
@@ -146,7 +146,7 @@ Previous run found: 12/28 tasks completed. Resume previous run? [y/N]
 To also retry tasks that failed or timed out:
 
 ```bash
-claude-harness ./my-project --resume --retry
+claude-harness ./my-project --retry
 ```
 
 **Signal handling:**

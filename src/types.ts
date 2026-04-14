@@ -64,6 +64,9 @@ export interface WorkerResult {
 
 export interface HarnessOptions {
   targetDir: string;
+  // The raw target arg the user typed on the CLI, or null if they omitted it.
+  // Used to echo a resume/retry suggestion that matches the original invocation.
+  targetArg?: string | null;
   outputDir: string;
   parallel: number;
   timeout: number;
