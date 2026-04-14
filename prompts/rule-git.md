@@ -55,6 +55,19 @@ Report ALL findings with specific examples from actual git history.")
 ```markdown
 # Git Workflow Rules
 
+## Worktree-First Local Development (non-negotiable)
+
+Code changes happen ONLY inside a git worktree. Branches are for remote
+history; locally, every branch you work on lives in its own worktree with
+its own isolated database, queue, cache, and `.env.local`.
+
+- **Starting a task**: run `claude -w` (preferred — also names the branch) or `git worktree add <path> -b <branch>`.
+- **NEVER** run `git checkout -b <branch>` in the main repo directory and edit files there. That path bypasses the post-checkout provisioning hook and will corrupt shared local-service state.
+- **When done**: `git worktree remove <path>` then `npm run wt:cleanup` (or the project's equivalent — see `docs/WORKTREE.md`).
+- **If you find yourself about to edit on `main`/`master`/`trunk`**: STOP and open a worktree first.
+
+See `docs/WORKTREE.md` for the service-provisioning mechanics, safety markers, and troubleshooting.
+
 ## Branching Strategy
 
 {{discovered — trunk-based or feature-branch? What's the main branch?}}

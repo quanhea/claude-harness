@@ -137,6 +137,6 @@ export const TASK_MANIFEST: TaskDefinition[] = [
   { id: "formatter",         promptFile: "formatter.md",         description: "Generate formatter config (.prettierrc / ruff.toml / etc.)" },
   { id: "ci-workflow",       promptFile: "ci-workflow.md",       description: "Generate .github/workflows/harness-validate.yml" },
   { id: "arch-tests",        promptFile: "arch-tests.md",        description: "Generate architecture test file" },
-  { id: "worktree",          promptFile: "worktree.md",          description: "Generate WORKTREE.md (skips if not an app)" },
+  { id: "worktree",          promptFile: "worktree.md",          description: "Generate worktree isolation — post-checkout hook, docs/WORKTREE.md (most important feature)" },
   { id: "mcp-config",        promptFile: "mcp-config.md",        description: "Generate .mcp.json server recommendations" },
 ];

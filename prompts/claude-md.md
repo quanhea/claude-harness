@@ -56,6 +56,7 @@ CLAUDE.md must follow this EXACT format. Fill in `{{...}}` placeholders from the
 
 ## How to Work in This Repo
 
+**Before any code change**: open a worktree — never edit on the current branch. Run `claude -w` or `git worktree add <path> -b <branch>`. The post-checkout hook auto-provisions an isolated database/queue/cache for your worktree. See `docs/WORKTREE.md`. Branches are for remote; locally we use worktrees always.
 **Before writing code**: Read `ARCHITECTURE.md` for module boundaries.
 **Before committing**: Read `docs/GIT_WORKFLOW.md` for branching and commit conventions.
 **Before creating a PR**: Follow the PR process in `docs/GIT_WORKFLOW.md`.
@@ -69,6 +70,7 @@ Don't load all of these. Read the one relevant to your current task.
 | Path | When to read it |
 |------|----------------|
 | `ARCHITECTURE.md` | Before adding code — module boundaries, layers, dependency rules |
+| `docs/WORKTREE.md` | Before starting any local work — worktree-first development, service isolation |
 | `docs/GIT_WORKFLOW.md` | Before branching, committing, or creating PRs |
 | `docs/INFRASTRUCTURE.md` | When working with services, CI/CD, cloud, databases |
 | `docs/QUALITY_SCORE.md` | When assessing or grading code quality per domain |
