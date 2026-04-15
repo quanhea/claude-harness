@@ -120,7 +120,7 @@ docs/
       --only <ids>         Run ONLY these task IDs and force re-run even if they already completed (comma-separated, e.g. claude-md,rule-git)
   -o, --output <dir>       Output directory             (default: .claude-harness)
       --model <model>      Claude model to use
-      --max-turns <n>      Max Claude turns per task    (default: 30)
+      --max-turns <n>      Max Claude turns per task    (default: 100)
       --dry-run            List tasks without running
       --force              Override harness lock
   -v, --verbose            Verbose output
