@@ -31,6 +31,96 @@ function selectTasks(only: string[] | null): TaskDefinition[] {
   return TASK_MANIFEST.filter((t) => set.has(t.id));
 }
 
+// Output existence check with full glob support.
+// Patterns that work:
+//   "CLAUDE.md"                          → literal existsSync (fast path)
+//   ".claude/skills/*/SKILL.md"          → single-segment wildcard
+//   "docs/**/*.md"                       → recursive **
+//   ".claude/{hooks,rules}/*.md"         → brace expansion
+//   "src/auth/?[!_]*.ts"                 → ? and char classes
+//
+// Translates the glob to a RegExp and walks from the deepest static prefix
+// of the pattern. Bounded recursion + a small ignore list keep the walk
+// cheap even on large repos.
+
+const GLOB_WALK_IGNORE = new Set([
+  "node_modules", ".git", "dist", "build", ".next", ".turbo",
+  ".cache", "__pycache__", ".venv", "venv", ".mypy_cache",
+]);
+const GLOB_WALK_MAX_DEPTH = 10;
+
+function escapeRegex(s: string): string {
+  return s.replace(/[.+^$|()[\]\\]/g, "\\$&");
+}
+
+function globToRegex(glob: string): RegExp {
+  let out = "";
+  let i = 0;
+  while (i < glob.length) {
+    const c = glob[i];
+    if (c === "*") {
+      if (glob[i + 1] === "*") {
+        out += ".*";          // ** crosses path separators
+        i += 2;
+        if (glob[i] === "/") i++; // collapse "**/" into ".*"
+      } else {
+        out += "[^/]*";       // single * stays within a segment
+        i++;
+      }
+    } else if (c === "?") {
+      out += "[^/]";
+      i++;
+    } else if (c === "{") {
+      const close = glob.indexOf("}", i);
+      if (close === -1) { out += "\\{"; i++; continue; }
+      const alts = glob.slice(i + 1, close).split(",").map(escapeRegex);
+      out += "(?:" + alts.join("|") + ")";
+      i = close + 1;
+    } else {
+      out += escapeRegex(c);
+      i++;
+    }
+  }
+  return new RegExp("^" + out + "$");
+}
+
+// Deepest path prefix free of glob metacharacters — start the walk there.
+function staticPrefix(glob: string): string {
+  const meta = glob.search(/[*?{]/);
+  if (meta === -1) return glob;
+  const slash = glob.lastIndexOf("/", meta);
+  return slash === -1 ? "" : glob.slice(0, slash);
+}
+
+export function outputExists(rootDir: string, pattern: string): boolean {
+  if (!/[*?{]/.test(pattern)) {
+    return fs.existsSync(path.join(rootDir, pattern));
+  }
+  const regex = globToRegex(pattern);
+  const startRel = staticPrefix(pattern);
+  const startAbs = path.join(rootDir, startRel);
+  if (!fs.existsSync(startAbs)) return false;
+  return walkMatch(rootDir, startRel, regex, 0);
+}
+
+function walkMatch(rootDir: string, relPath: string, regex: RegExp, depth: number): boolean {
+  if (depth > GLOB_WALK_MAX_DEPTH) return false;
+  const absPath = relPath ? path.join(rootDir, relPath) : rootDir;
+  let entries: fs.Dirent[];
+  try { entries = fs.readdirSync(absPath, { withFileTypes: true }); } catch { return false; }
+  for (const entry of entries) {
+    if (GLOB_WALK_IGNORE.has(entry.name)) continue;
+    // Build POSIX-style relative path so the regex matches consistently
+    // regardless of platform.
+    const childRel = relPath ? `${relPath}/${entry.name}` : entry.name;
+    if (regex.test(childRel)) return true;
+    if (entry.isDirectory()) {
+      if (walkMatch(rootDir, childRel, regex, depth + 1)) return true;
+    }
+  }
+  return false;
+}
+
 export async function setup(options: HarnessOptions): Promise<number> {
   const {
     targetDir, outputDir, parallel, timeout, maxRetries, maxTurns, model,
@@ -103,7 +193,7 @@ export async function setup(options: HarnessOptions): Promise<number> {
       if (!entry || entry.status !== STATUS.COMPLETED) continue;
       const outputs = meta.get(task.id)?.meta.outputs;
       if (!outputs || outputs.length === 0) continue;
-      const missing = outputs.filter((p) => !fs.existsSync(path.join(absTarget, p)));
+      const missing = outputs.filter((p) => !outputExists(absTarget, p));
       if (missing.length === 0) continue;
       entry.status = STATUS.PENDING;
       entry.attempts = 0;

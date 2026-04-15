@@ -1,17 +1,12 @@
 ---
 description: Generate project-specific skills from conversation history
-outputs: [".claude/skills/sync/SKILL.md",".claude/skills/review/SKILL.md"]
+outputs: [".claude/skills/*/SKILL.md"]
 max-turns: null
 ---
 
-# Task: Generate .claude/skills/ from conversation history
+# Task: Generate `.claude/skills/` from conversation history
 
-**Output:** `{{PROJECT_DIR}}/.claude/skills/<name>/SKILL.md` (1-N skills)
-
-> `max-turns: null` (unlimited) — this prompt requires deep analysis: extract
-> messages → cluster patterns → partial-Read many `.jsonl` files → classify
-> SUCCESS/FAIL per conversation → extract working flows → synthesize skills.
-> A turn cap will cut off the analysis mid-flight and produce wrong skills.
+**Output:** `{{PROJECT_DIR}}/.claude/skills/<name>/SKILL.md` (one directory per discovered skill)
 
 You are generating project-specific skills by analyzing the **actual Claude
 Code conversation history** for this project, discovering recurring patterns
@@ -19,8 +14,12 @@ the user invokes manually, and writing each pattern as a `SKILL.md`.
 
 The conversation history lives at `~/.claude/projects/<project-slug>/*.jsonl`
 where `<project-slug>` is the project's absolute path with `/` replaced by `-`
-(prefixed with `-`). For example, the project at `/Users/anhqtran/code/foo` has
-its conversations at `~/.claude/projects/-Users-anhqtran-code-foo/`.
+(prefixed with `-`). For example, the project at `/Users/anhqtran/code/foo`
+has its conversations at `~/.claude/projects/-Users-anhqtran-code-foo/`.
+
+**Important:** there is no always-generated set. Skills come from evidence
+in the conversation history. If no pattern qualifies, generate zero skills —
+do not invent placeholder skills.
 
 ## Your Tasks
 
@@ -35,23 +34,25 @@ happens — do not collapse them into one step.
 6. "For each candidate, partial-Read the source .jsonl files and classify each conversation as SUCCESS or FAIL"
 7. "For each SUCCESS conversation, extract the working flow (assistant turns AFTER the last user pivot, UP TO the success signal)"
 8. "Synthesize each skill's steps from the intersection of working flows; drop any candidate with fewer than 2 SUCCESS conversations"
-9. "mkdir -p .claude/skills/sync .claude/skills/review .claude/skills/<each-surviving-pattern>"
-10. "Write each SKILL.md (always sync + review; up to 3 surviving pattern-derived)"
+9. "mkdir -p .claude/skills/<each-surviving-skill-name>/ via Bash"
+10. "Write each SKILL.md following the official Claude Code skills format (see Reference Skill Formats below)"
+11. "Update CLAUDE.md Skills table with the actual skills generated"
 
 Use TaskUpdate to mark each complete. Use TaskList before finishing.
 
 ## Important: directory creation
 
 `.claude/` is a protected path in Claude Code. Before any `Write` into
-`.claude/skills/<name>/SKILL.md`, run a Bash `mkdir -p` for the subdirectory
-first — this lands the write under the documented `.claude/skills/`
-exemption. Do NOT rely on Write alone to create the parent directory.
+`.claude/skills/<name>/SKILL.md`, run a Bash `mkdir -p` for the
+subdirectory first — this lands the write under the documented
+`.claude/skills/` exemption. Do NOT rely on Write alone to create the parent
+directory.
 
 ## The extraction script (write this verbatim)
 
 Use Write to put the following into `{{PROJECT_DIR}}/.claude-harness/extract-conversations.cjs`.
-It's a Node.js port of the user's reference Python extractor — pure built-ins,
-no npm install needed.
+It's a Node.js port of the harness's reference Python extractor — pure
+built-ins, no npm install needed.
 
 ```javascript
 #!/usr/bin/env node
@@ -296,121 +297,153 @@ the relevant .jsonl section. The skill is only as good as the analysis.
 ### Greenfield case
 
 If the script reported "No conversation history" or "No .jsonl files", or
-if NO candidate pattern has 2+ SUCCESS conversations, treat this project as
-greenfield. ONLY generate the always-included `sync` and `review` skills
-below — do not invent pattern-derived skills with no evidence.
+if NO candidate pattern survives Step D, generate ZERO skills. The
+`.claude/skills/` directory does not need to exist. Do not invent
+placeholder skills — that's exactly the bloat the harness aims to avoid.
 
-## Always-Generated Skills
+## Reference Skill Formats (from the official Claude Code docs)
 
-Generate these regardless of conversation history. Adapt commands and tools
-to the detected project.
+Match one of these formats based on the type of pattern you discovered.
+Reference: <https://code.claude.com/docs/en/skills>
 
-### sync — `.claude/skills/sync/SKILL.md`
+### Format 1 — Reference content
 
-```markdown
----
-name: sync
-description: Re-analyze the project and update documentation to match current code. Use when docs may be stale or after significant code changes.
-allowed-tools: Read, Glob, Grep, Write, Edit, Bash
----
-
-# sync
-
-Re-reads the codebase and updates stale documentation to reflect current reality.
-
-## Steps
-
-1. Read current `ARCHITECTURE.md` and `docs/QUALITY_SCORE.md`.
-2. For each section in `ARCHITECTURE.md`, verify referenced files / types still exist and match the description.
-3. Edit divergent sections in place. Add new modules; remove deleted ones.
-4. Re-score each domain in `docs/QUALITY_SCORE.md` against current evidence; append a row to the History table.
-5. Run `<lint command for this project>`; fold new findings into the Linting score.
-6. Report what changed: docs updated, scores moved, divergence found but not yet fixed.
-
-## Context
-
-- @ARCHITECTURE.md
-- @docs/QUALITY_SCORE.md
-- @docs/RELIABILITY.md
-- @docs/OBSERVABILITY.md (if present)
-```
-
-### review — `.claude/skills/review/SKILL.md`
-
-```markdown
----
-name: review
-description: Architecture-aware code review for current changes. Use before committing or opening a PR.
-allowed-tools: Read, Glob, Grep, Bash
-argument-hint: [file or branch to review]
----
-
-# review
-
-Reviews uncommitted changes (or a specified file/branch) against this repo's
-architectural invariants and conventions.
-
-## Steps
-
-1. Run `git diff` (or against the argument) to see the changes.
-2. Run `<lint command>` and `<test command>`.
-3. For each touched module, check the rules in `.claude/rules/architecture.md` (dependency direction, layer boundaries, naming).
-4. Flag security concerns from `docs/SECURITY.md` (secrets, auth, boundary validation).
-5. Group findings by severity: `must-fix`, `should-fix`, `nit`. Report each with file:line.
-
-## Context
-
-- @ARCHITECTURE.md
-- @.claude/rules/architecture.md
-- @docs/SECURITY.md
-```
-
-## Pattern-Derived Skills (up to 3)
-
-A pattern qualifies for a skill ONLY if it has both:
-- 3+ distinct conversations where the user invoked it (Step A above), AND
-- 2+ of those conversations classified as SUCCESS (Step B above).
-
-For each surviving pattern, create `.claude/skills/<short-slug>/SKILL.md`:
+For patterns that are essentially **knowledge** the user kept restating:
+conventions, style guides, domain terminology. Lets Claude apply the
+guidance in any conversation it deems relevant.
 
 ```yaml
 ---
-name: <short-slug>
-description: <one-line — when to use it (drawn from how the SUCCESS conversations actually used it)>
-allowed-tools: <minimal tool list — only the tools the SUCCESS flows actually used>
-argument-hint: <optional, only if SUCCESS conversations consistently took an argument>
+name: api-conventions
+description: API design patterns for this codebase
 ---
+
+When writing API endpoints:
+- Use RESTful naming conventions
+- Return consistent error formats
+- Include request validation
 ```
 
-Body sections:
-- **One-paragraph "what this does"** — the actual outcome the SUCCESS conversations achieved. Reference the file types or system being touched. NOT generic advice.
-- **Steps** — numbered, derived from the intersection of working flows (Step D). Each step should be a real command or operation the assistant ran in the SUCCESS turns. Format: `1. Run \`<exact command>\`` or `1. Read @<file> to understand <what>`.
-- **Pitfalls (optional but recommended)** — if the SUCCESS conversations had to correct the assistant's first attempt with a specific gotcha ("the file lives in src/auth, not src/users"; "use the existing helper, don't add a dependency"), encode that as a pitfall the new skill warns about up-front.
-- **Context** — list of `@<file>` references the SUCCESS conversations consistently consulted before acting.
+### Format 2 — Task content with disabled auto-invocation
 
-Maximum 3 pattern-derived skills. If more patterns survive Step D, pick the
-3 with the most SUCCESS conversations. Folder names: lowercase + hyphens, no
-spaces.
+For patterns that are **actions with side effects**: deploys, commits,
+sends. The user wants to invoke explicitly via `/skill-name` and does NOT
+want Claude triggering them automatically.
+
+```yaml
+---
+name: deploy
+description: Deploy the application to production
+disable-model-invocation: true
+allowed-tools: Bash(git push *) Bash(npm run deploy *)
+---
+
+Deploy $ARGUMENTS to production:
+
+1. Run the test suite
+2. Build the application
+3. Push to the deployment target
+4. Verify the deployment succeeded
+```
+
+### Format 3 — Task with arguments (positional)
+
+For patterns where the user consistently passed an argument (issue number,
+file name, branch). Use `$ARGUMENTS` for the full input or `$0`, `$1`, …
+for positional access.
+
+```yaml
+---
+name: fix-issue
+description: Fix a GitHub issue
+disable-model-invocation: true
+---
+
+Fix GitHub issue $ARGUMENTS following our coding standards.
+
+1. Read the issue description
+2. Understand the requirements
+3. Implement the fix
+4. Write tests
+5. Create a commit
+```
+
+### Format 4 — Forked subagent (long-running analysis)
+
+For patterns that fan out into a deep read-only analysis (research,
+investigation, summarization). Runs in an isolated context using a
+subagent type — keeps the main conversation clean.
+
+```yaml
+---
+name: deep-research
+description: Research a topic thoroughly
+context: fork
+agent: Explore
+---
+
+Research $ARGUMENTS thoroughly:
+
+1. Find relevant files using Glob and Grep
+2. Read and analyze the code
+3. Summarize findings with specific file references
+```
+
+### Format 5 — Inline shell injection
+
+For patterns that always need fresh data captured at invocation time
+(current PR state, git status, env). Use `` !`<command>` `` to inline
+command output before Claude sees the prompt.
+
+```yaml
+---
+name: pr-summary
+description: Summarize changes in a pull request
+context: fork
+agent: Explore
+allowed-tools: Bash(gh *)
+---
+
+## Pull request context
+- PR diff: !`gh pr diff`
+- PR comments: !`gh pr view --comments`
+- Changed files: !`gh pr diff --name-only`
+
+## Your task
+Summarize this pull request...
+```
+
+### Frontmatter quick reference
+
+| Field | Use it when |
+|-------|-------------|
+| `name` | Optional — defaults to the directory name. |
+| `description` | Always include. Front-load the trigger phrase the user actually said. |
+| `disable-model-invocation: true` | The skill has side effects. User triggers explicitly with `/name`. |
+| `user-invocable: false` | Background knowledge. Claude reads, but `/name` shouldn't appear in autocomplete. |
+| `allowed-tools: <list>` | Pre-approve specific tools so the skill can run without permission prompts. Space-separated. |
+| `context: fork` + `agent: Explore` | Skill should run in an isolated subagent (read-only deep dive). |
+| `argument-hint: "[file] [branch]"` | Helps autocomplete when the skill takes arguments. |
 
 ## Update CLAUDE.md
 
-After generating skills, update the Skills table in `CLAUDE.md`. Replace the
-placeholder `/skill-name` row with one row per generated skill:
+After generating skills, update the Skills table in `CLAUDE.md`. Replace
+the placeholder `/skill-name` row with one row per generated skill:
 
 ```markdown
-| `/sync` | Re-analyze the project and update stale docs |
-| `/review` | Architecture-aware review of current changes |
-| `/<pattern-name>` | <one-line — when to use it> |
+| `/<actual-skill-name>` | <description from the skill's frontmatter> |
 ```
 
 If CLAUDE.md doesn't exist yet (running this task in isolation before
 `claude-md`), skip the CLAUDE.md update — the next full run will pick it up.
+If you generated zero skills, leave the placeholder row as-is.
 
 ## Rules
 
-- DO mkdir -p .claude/skills/<name>/ via Bash before any Write into that path.
-- DO NOT create skills for patterns seen only once or twice.
-- DO NOT create skills that duplicate Claude's built-in capabilities trivially.
+- DO `mkdir -p .claude/skills/<name>/` via Bash before any Write into that path.
+- DO NOT generate any skill that doesn't have 2+ SUCCESS conversations behind it.
+- DO NOT invent skills to fill empty space — zero is the correct count for greenfield projects.
 - DO NOT overwrite existing skills — read `.claude/skills/` first; only ADD missing.
-- The extraction script writes to `.claude-harness/conversations/`, not into the project's `docs/` or `.claude/`. Don't move it.
-- Total skill count: 2 (always) + up to 3 (pattern-derived) = 5 max.
+- The extraction script writes to `.claude-harness/conversations/`, not into the project's `docs/` or `.claude/`.
+- Skill folder names use lowercase + hyphens, no spaces.
+- Skill `description` text should match phrasing the user actually used — that's what makes Claude pick the skill in future sessions.
