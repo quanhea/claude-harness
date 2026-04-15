@@ -1,5 +1,6 @@
 ---
 description: Generate .github/workflows/harness-validate.yml
+disabled: true
 ---
 
 # Task: Generate CI harness validation workflow

@@ -26,9 +26,16 @@ import {
 } from "./progress";
 
 export function selectTasks(only: string[] | null): TaskDefinition[] {
-  if (!only || only.length === 0) return TASK_MANIFEST;
-  const set = new Set(only);
-  return TASK_MANIFEST.filter((t) => set.has(t.id));
+  // --only is an explicit override — always run the named tasks regardless of disabled flag.
+  if (only && only.length > 0) {
+    const set = new Set(only);
+    return TASK_MANIFEST.filter((t) => set.has(t.id));
+  }
+
+  // Normal run: exclude tasks with `disabled: true` in their frontmatter.
+  return TASK_MANIFEST.filter((t) => {
+    try { return !loadPrompt(t.promptFile).meta.disabled; } catch { return true; }
+  });
 }
 
 // Output existence check with full glob support.
@@ -176,6 +183,16 @@ export async function setup(options: HarnessOptions): Promise<number> {
     removeLockFile(absOutput);
     console.log(`Would run ${selectedTasks.length} tasks in parallel:`);
     for (const t of selectedTasks) console.log(`  [${t.id}] ${desc(t.id)}`);
+    // Show any disabled tasks so they're not silently invisible.
+    if (!only) {
+      const disabled = TASK_MANIFEST.filter((t) => {
+        try { return !!meta.get(t.id)?.meta.disabled; } catch { return false; }
+      });
+      if (disabled.length > 0) {
+        console.log(`\nDisabled (skipped — use --only to run):`);
+        for (const t of disabled) console.log(`  [${t.id}] ${desc(t.id)}`);
+      }
+    }
     return 0;
   }
 

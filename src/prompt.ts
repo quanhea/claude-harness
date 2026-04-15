@@ -28,6 +28,10 @@ export interface PromptMeta {
   // it always re-runs so it stays current. Use for foundational files that
   // must be fresh on every harness invocation (e.g. CLAUDE.md).
   alwaysRun?: boolean;
+  // When true, the task is excluded from all runs unless explicitly named
+  // with --only. Use to temporarily disable tasks under active development
+  // without removing them from the manifest.
+  disabled?: boolean;
 }
 
 export interface LoadedPrompt {
@@ -73,6 +77,9 @@ function parseFrontmatter(content: string): { meta: PromptMeta; body: string } {
         break;
       case "always-run":
         meta.alwaysRun = raw === "true" || raw === "yes" || raw === "1";
+        break;
+      case "disabled":
+        meta.disabled = raw === "true" || raw === "yes" || raw === "1";
         break;
     }
   }

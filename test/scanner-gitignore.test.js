@@ -74,14 +74,38 @@ describe("ensureGitignore", () => {
 });
 
 describe("selectTasks", () => {
-  it("returns the full manifest when only is null", () => {
+  // Compute how many tasks have disabled: true in their frontmatter.
+  // Done once here so every test in this suite can reference it.
+  const { loadPrompt } = require("../dist/prompt");
+  const disabledCount = TASK_MANIFEST.reduce((n, t) => {
+    try { return loadPrompt(t.promptFile).meta.disabled ? n + 1 : n; } catch { return n; }
+  }, 0);
+
+  it("returns the manifest minus disabled tasks when only is null", () => {
     const tasks = selectTasks(null);
-    assert.equal(tasks.length, TASK_MANIFEST.length);
+    assert.equal(tasks.length, TASK_MANIFEST.length - disabledCount);
   });
 
-  it("returns the full manifest when only is an empty array", () => {
+  it("returns the manifest minus disabled tasks when only is an empty array", () => {
     const tasks = selectTasks([]);
-    assert.equal(tasks.length, TASK_MANIFEST.length);
+    assert.equal(tasks.length, TASK_MANIFEST.length - disabledCount);
+  });
+
+  it("excludes tasks flagged disabled: true from normal runs", () => {
+    const disabledIds = TASK_MANIFEST
+      .filter((t) => { try { return !!loadPrompt(t.promptFile).meta.disabled; } catch { return false; } })
+      .map((t) => t.id);
+    const tasks = selectTasks(null);
+    for (const id of disabledIds) {
+      assert.ok(!tasks.some((t) => t.id === id), `disabled task '${id}' should be excluded`);
+    }
+  });
+
+  it("--only bypasses the disabled flag (explicit override)", () => {
+    // ci-workflow is currently disabled; --only must still include it
+    const tasks = selectTasks(["ci-workflow"]);
+    assert.equal(tasks.length, 1);
+    assert.equal(tasks[0].id, "ci-workflow");
   });
 
   it("filters by id", () => {
