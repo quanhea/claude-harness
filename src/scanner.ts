@@ -1,6 +1,5 @@
 // src/scanner.ts — top-level orchestrator (flat parallel task runner)
 import * as path from "path";
-import * as readline from "readline";
 import { HarnessOptions, STATUS, TASK_MANIFEST, TaskDefinition } from "./types";
 import { runPreflight, removeLockFile } from "./preflight";
 import { loadPrompt, renderPrompt, buildPromptVars } from "./prompt";
@@ -10,6 +9,7 @@ import {
   saveState,
   resetStaleRunning,
   resetFailed,
+  mergeNewTasks,
   updateTaskStatus,
   computeStats,
 } from "./state";
@@ -35,7 +35,6 @@ export async function setup(options: HarnessOptions): Promise<number> {
     targetDir, outputDir, parallel, timeout, maxRetries, maxTurns, model,
     only, retry, dryRun, force, verbose,
   } = options;
-  let resume = options.resume;
 
   const absTarget = path.resolve(targetDir);
   const absOutput = path.resolve(outputDir);
@@ -53,36 +52,59 @@ export async function setup(options: HarnessOptions): Promise<number> {
     return 0;
   }
 
-  // Prompt to resume if a previous run exists and is incomplete
-  if (!resume && process.stdin.isTTY) {
-    const existing = loadState(absOutput);
-    if (existing) {
-      const done = existing.stats.completed;
-      const total = existing.stats.totalTasks;
-      if (total - done > 0) {
-        console.log(`Previous run found: ${done}/${total} tasks completed.`);
-        const answer = await askYesNo("Resume previous run?");
-        if (answer) resume = true;
-      }
+  // Unified state load — every run behaves like a resume that also picks up
+  // any new tasks added to the manifest since the last run. No interactive
+  // "Resume previous run?" prompt; re-running is always safe.
+  const allTaskIds = TASK_MANIFEST.map((t) => t.id);
+  let state = loadState(absOutput);
+
+  if (!state) {
+    // First run for this project
+    state = initState(absTarget, allTaskIds, config);
+  } else {
+    state.config = config;
+
+    // (1) Merge in any tasks added to TASK_MANIFEST since the last run.
+    // This is how `claude-harness` (with no args) picks up new tasks after
+    // an upgrade — they land as PENDING and run on the next execution.
+    const added = mergeNewTasks(state, allTaskIds);
+    if (added > 0) {
+      console.log(`Detected ${added} new task(s) from an updated claude-harness version.`);
+    }
+
+    // (2) Reset stale RUNNING entries (previous process crashed mid-run).
+    // This used to require --resume; now it's automatic and safe.
+    const stale = resetStaleRunning(state);
+    if (stale > 0) console.log(`Reset ${stale} stale in-flight task(s) to pending.`);
+
+    // (3) --retry also resets FAILED/TIMEOUT so they re-run.
+    if (retry) {
+      const failed = resetFailed(state);
+      if (failed > 0) console.log(`Retry: reset ${failed} failed/timed-out task(s) to pending.`);
     }
   }
 
-  let state;
-  if (resume) {
-    state = loadState(absOutput);
-    if (!state) {
-      removeLockFile(absOutput);
-      throw new Error("No previous run found. Run without --resume first.");
+  // (4) --only forces listed tasks back to PENDING (even if COMPLETED), so
+  // `claude-harness --only <id>` always re-runs that task. This is the
+  // "regenerate a specific file" UX.
+  if (only && only.length > 0) {
+    const forced: string[] = [];
+    for (const id of only) {
+      const entry = state.tasks[id];
+      if (entry && entry.status !== STATUS.PENDING) {
+        entry.status = STATUS.PENDING;
+        entry.attempts = 0;
+        delete entry.completedAt;
+        delete entry.durationMs;
+        delete entry.exitCode;
+        delete entry.lastError;
+        forced.push(id);
+      }
     }
-    const resetCount = resetStaleRunning(state);
-    if (resetCount > 0) console.log(`Resumed: reset ${resetCount} interrupted tasks to pending.`);
-    if (retry) {
-      const retryCount = resetFailed(state);
-      if (retryCount > 0) console.log(`Retry: reset ${retryCount} failed/timed-out tasks to pending.`);
+    if (forced.length > 0) {
+      state.stats = computeStats(state.tasks);
+      console.log(`Forcing re-run of ${forced.length} task(s): ${forced.join(", ")}`);
     }
-    state.config = config;
-  } else {
-    state = initState(absTarget, selectedTasks.map((t) => t.id), config);
   }
 
   const pendingTasks = selectedTasks.filter(
@@ -90,7 +112,9 @@ export async function setup(options: HarnessOptions): Promise<number> {
   );
 
   if (pendingTasks.length === 0) {
-    console.log("No pending tasks — nothing to do.");
+    console.log("Everything up to date — no pending tasks.");
+    console.log("  Regenerate specific: claude-harness --only <id>[,<id>...]");
+    console.log("  Retry failed tasks:  claude-harness --retry");
     removeLockFile(absOutput);
     return 0;
   }
@@ -255,14 +279,4 @@ export async function setup(options: HarnessOptions): Promise<number> {
 
   removeLockFile(absOutput);
   return state.stats.failed > 0 ? 1 : 0;
-}
-
-function askYesNo(question: string): Promise<boolean> {
-  return new Promise((resolve) => {
-    const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
-    rl.question(`${question} [y/N] `, (answer) => {
-      rl.close();
-      resolve(answer.trim().toLowerCase() === "y");
-    });
-  });
 }

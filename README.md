@@ -44,13 +44,13 @@ claude-harness ./my-project --dry-run
 # Run with more parallelism
 claude-harness ./my-project --parallel 8
 
-# Run only specific tasks
-claude-harness ./my-project --only rule-architecture,rule-testing,rule-documentation,rule-git
+# Run only specific tasks (forces re-run even if already completed)
+claude-harness ./my-project --only claude-md,rule-git
 
-# Resume after crash or Ctrl+C
-claude-harness ./my-project --resume
+# Re-run after upgrading claude-harness — auto-picks up any new tasks
+claude-harness ./my-project
 
-# Retry failed tasks (implies --resume)
+# Retry failed / timed-out tasks
 claude-harness ./my-project --retry
 ```
 
@@ -80,7 +80,7 @@ Results from the orchestrator go to `.claude-harness/` (or `--output <dir>`):
 ```
 .claude-harness/
 ├── setup-report.md     # Task summary with timing
-├── state.json          # Run state (enables --resume)
+├── state.json          # Run state (powers re-run / --retry / --only)
 └── logs/               # Claude stdout+stderr per task
 ```
 
@@ -115,9 +115,9 @@ docs/
 ```
   -j, --parallel <n>       Parallel workers per phase   (default: 6)
   -t, --timeout <seconds>  Per-task timeout             (default: 1800)
-      --resume             Resume pending tasks from a previous run
-      --retry              Resume + also retry failed/timed-out tasks
-      --only <ids>         Run only these task IDs (comma-separated, e.g. claude-md,rule-git)
+      --resume             (legacy no-op — every run is a resume now)
+      --retry              Also re-run failed/timed-out tasks
+      --only <ids>         Run ONLY these task IDs and force re-run even if they already completed (comma-separated, e.g. claude-md,rule-git)
   -o, --output <dir>       Output directory             (default: .claude-harness)
       --model <model>      Claude model to use
       --max-turns <n>      Max Claude turns per task    (default: 30)
@@ -126,28 +126,34 @@ docs/
   -v, --verbose            Verbose output
 ```
 
-## Crash Recovery
+## Re-running
 
 State is saved atomically (write temp file → fsync → rename) after every task completes
-and every 30 seconds. If the process crashes, is killed, or you hit Ctrl+C:
+and every 30 seconds. **Every invocation of `claude-harness` behaves as a safe re-run** —
+no `--resume` flag required:
 
 ```bash
-claude-harness ./my-project --resume
+claude-harness ./my-project          # pick up any pending / stale / newly-added tasks
+claude-harness ./my-project --retry  # also re-run failed or timed-out tasks
+claude-harness ./my-project --only claude-md,rule-git   # force re-run of specific tasks
 ```
 
-Completed tasks are never re-run. Tasks that were mid-run reset to pending.
+On each run the orchestrator:
 
-If you run `claude-harness` on a project with an incomplete previous run, it will prompt:
+1. Loads existing `state.json` if present (no interactive prompt).
+2. Auto-merges any task IDs that are in the current `TASK_MANIFEST` but not in
+   state — so upgrading claude-harness and re-running picks up new tasks without
+   any extra step.
+3. Resets stale RUNNING entries (from a crashed previous process) to PENDING.
+4. Runs whatever is PENDING.
 
-```
-Previous run found: 12/28 tasks completed. Resume previous run? [y/N]
-```
+Completed tasks are preserved across runs. Use `--only` to explicitly regenerate
+a specific file; that flag forces the listed task(s) back to PENDING even if
+they already completed.
 
-To also retry tasks that failed or timed out:
-
-```bash
-claude-harness ./my-project --retry
-```
+**Signal handling:**
+- 1st Ctrl+C — stops the queue, waits for running tasks to finish
+- 2nd Ctrl+C — kills all workers immediately, saves state, exits
 
 **Signal handling:**
 - 1st Ctrl+C — stops the queue, waits for running tasks to finish

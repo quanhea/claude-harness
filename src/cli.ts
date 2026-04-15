@@ -16,9 +16,9 @@ Usage:
 Setup options:
   -j, --parallel <n>        Parallel workers per phase  (default: ${DEFAULTS.parallel})
   -t, --timeout <seconds>   Per-task timeout            (default: ${DEFAULTS.timeout})
-      --resume               Resume incomplete run (pending tasks only)
-      --retry                Resume + also retry failed/timed-out tasks
-      --only <id,...>        Run only these task IDs (e.g. --only 18,19,20)
+      --resume               (legacy no-op — every run is now a resume)
+      --retry                Also re-run failed/timed-out tasks
+      --only <id,...>        Run only these task IDs — forces re-run even if already completed (e.g. --only claude-md,rule-git)
   -o, --output <dir>        Output directory            (default: .claude-harness)
       --model <model>        Claude model to use
       --max-turns <n>        Max Claude turns per task   (default: ${DEFAULTS.maxTurns})
@@ -36,7 +36,7 @@ Gardener subcommands:
 
 Examples:
   claude-harness ./my-project
-  claude-harness ./my-project --only 01
+  claude-harness ./my-project --only claude-md,rule-git
   claude-harness ./my-project --retry
   claude-harness gardener add ./my-project --schedule "0 9 * * 1-5"
   claude-harness gardener list

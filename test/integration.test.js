@@ -84,6 +84,69 @@ describe("integration", () => {
     assert.ok(!fs.existsSync(path.join(outputDir, "state.json")), "dry-run should not create state.json");
   });
 
+  it("--only forces re-run of already-COMPLETED tasks", () => {
+    const env = { ...process.env, PATH: MOCK_CLAUDE + ":" + process.env.PATH };
+
+    // First run — complete claude-md
+    execFileSync(
+      "node",
+      [CLI, projectDir, "--output", outputDir, "--only", "claude-md", "--parallel", "1", "--timeout", "10", "--max-turns", "5"],
+      { encoding: "utf-8", env, timeout: 30000 },
+    );
+
+    const statePath = path.join(outputDir, "state.json");
+    const before = JSON.parse(fs.readFileSync(statePath, "utf-8"));
+    assert.equal(before.tasks["claude-md"].status, "COMPLETED", "first run should complete the task");
+    const firstCompletedAt = before.tasks["claude-md"].completedAt;
+
+    // Wait a moment so timestamps can differ
+    execFileSync("sleep", ["1.1"]);
+
+    // Second run with --only on the same task — should force re-run
+    const out = execFileSync(
+      "node",
+      [CLI, projectDir, "--output", outputDir, "--only", "claude-md", "--parallel", "1", "--timeout", "10", "--max-turns", "5"],
+      { encoding: "utf-8", env, timeout: 30000 },
+    );
+    assert.ok(out.includes("Forcing re-run"), "should announce the forced re-run");
+
+    const after = JSON.parse(fs.readFileSync(statePath, "utf-8"));
+    assert.equal(after.tasks["claude-md"].status, "COMPLETED", "re-run should complete again");
+    assert.ok(after.tasks["claude-md"].completedAt !== firstCompletedAt, "completedAt should have been refreshed by the re-run");
+  });
+
+  it("auto-merges new manifest tasks into existing state", () => {
+    const env = { ...process.env, PATH: MOCK_CLAUDE + ":" + process.env.PATH };
+
+    // Seed state.json with an older "manifest" — just claude-md
+    fs.mkdirSync(outputDir, { recursive: true });
+    const seedState = {
+      version: 2,
+      runId: "test1234",
+      targetDir: projectDir,
+      startedAt: new Date().toISOString(),
+      config: { parallel: 1, timeout: 10, maxRetries: 2, maxTurns: 5, model: null, verbose: false },
+      stats: { totalTasks: 1, completed: 1, failed: 0, timeout: 0, skipped: 0, pending: 0, running: 0 },
+      tasks: {
+        "claude-md": { status: "COMPLETED", attempts: 1, completedAt: new Date().toISOString(), durationMs: 1000, exitCode: 0 },
+      },
+    };
+    fs.writeFileSync(path.join(outputDir, "state.json"), JSON.stringify(seedState, null, 2));
+
+    // Run with --only for a task NOT in the seed state — forces detection + merge
+    const out = execFileSync(
+      "node",
+      [CLI, projectDir, "--output", outputDir, "--only", "settings-json", "--parallel", "1", "--timeout", "10", "--max-turns", "5"],
+      { encoding: "utf-8", env, timeout: 30000 },
+    );
+    assert.ok(out.includes("Detected") && out.includes("new task"), "should announce detected new tasks");
+
+    const state = JSON.parse(fs.readFileSync(path.join(outputDir, "state.json"), "utf-8"));
+    assert.equal(state.tasks["claude-md"].status, "COMPLETED", "existing completed task should be preserved");
+    assert.equal(state.tasks["settings-json"].status, "COMPLETED", "newly-merged task should have run");
+    assert.ok(state.stats.totalTasks > 1, "state should now contain more than the seed task");
+  });
+
   it("resume resets stale RUNNING tasks and continues", () => {
     const env = {
       ...process.env,
