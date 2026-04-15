@@ -77,46 +77,40 @@ It must:
 1. Read positional args: `prev=$1`, `new_ref=$2`, `flag=$3`. Exit 0 if `flag != 1` (file checkout, not branch/worktree).
 2. Resolve the current branch: `git rev-parse --abbrev-ref HEAD`.
 3. Skip provisioning for the shared-branch allowlist — by default `main`, `master`, `trunk`, `develop`. Allow override via env var `WORKTREE_SKIP_BRANCHES` (comma-separated).
-4. Compute `slug = sanitize(branch) + "_" + sha6(branch)`:
-   - Sanitize: lowercase via `tr`, replace `[^a-z0-9_]` with `_` via `sed`, collapse repeated `_`, trim to 30 chars.
-   - Append `_` + first 6 hex of `sha256(branch)` (`printf '%s' "$branch" | sha256sum | cut -c1-6`) so two branches that sanitize to the same slug still get different DBs.
-5. Project name: read from `package.json` with `grep`/`sed`, or `Cargo.toml`, or `pyproject.toml`, or fall back to the repo directory name. Sanitize same way.
-6. Resource name template: `${project}_wt_${slug}` (or `${project}.wt.${slug}` for dotted namespaces). The `_wt_` literal is a **safety marker** — the cleanup script refuses to touch anything without it.
-7. Acquire a file-lock using `mkdir ~/.claude-harness/locks/${project}.lock 2>/dev/null` (atomic on POSIX). Retry up to 30 seconds with 1s sleep, then fail.
-8. For each detected service, provision idempotently:
+4. Compute `slug = sanitize(branch)_sha6(branch)`:
+   - Sanitize: lowercase, replace `[^a-z0-9]` with `_`, collapse repeated `_`, trim to 30 chars.
+   - Append `_` + first 6 hex of `sha256(branch)` so two branches with the same sanitized form still get distinct resources.
+5. Project name: read from `package.json`, `Cargo.toml`, `pyproject.toml`, or fall back to the repo directory name. Sanitize same way.
+6. Resource name: `${project}_wt_${slug}`. The `_wt_` literal is a **safety marker** — the cleanup script refuses to touch anything without it.
+7. For each detected service, provision idempotently:
 
    | Service | Action |
    |---------|--------|
-   | PostgreSQL | `psql "$WORKTREE_ADMIN_DATABASE_URL" -c "CREATE DATABASE \"$name\""` (default URL: `postgresql://postgres:postgres@localhost/postgres`). Ignore `already exists` in stderr. |
-   | MySQL / MariaDB | `mysql -e "CREATE DATABASE IF NOT EXISTS \`$name\`"` via admin env. |
+   | PostgreSQL | `psql "$WORKTREE_ADMIN_DATABASE_URL" -c "CREATE DATABASE \"$name\""`. Default URL: `postgresql://postgres:postgres@localhost/postgres`. Ignore `already exists`. |
+   | MySQL / MariaDB | `mysql -e "CREATE DATABASE IF NOT EXISTS \`$name\`"`. |
    | MongoDB | No create needed — namespace is implicit. Just compute the URL. |
-   | Redis | Assign a DB number 0–15 from a registry file `~/.claude-harness/redis-registry.json` (slug → dbNumber). Use `python3 -c` or `jq` to read/write JSON. If >16 worktrees, fall back to key-prefix mode and document the URL with `?prefix=<slug>:`. |
-   | RabbitMQ | `curl -su "$user:$pass" -X PUT "$WORKTREE_ADMIN_RABBITMQ_URL/api/vhosts/$name"`. Default URL: `http://guest:guest@localhost:15672`. Ignore 204 and "already exists". |
-   | Kafka / NATS | Topic/subject prefix `${project}.wt.${slug}.` — no API call; documented only. |
-   | Elasticsearch / OpenSearch | Index prefix `${project}_wt_${slug}_` — no API call. |
-   | MinIO / LocalStack | Bucket prefix `${project}-wt-${slug}-` — no API call. |
+   | Redis | Always use key-prefix mode: set `REDIS_PREFIX="${project}:wt:${slug}:"` in `.env.local`. No DB numbers, no registry file. |
+   | RabbitMQ | `curl -su "$user:$pass" -X PUT "$WORKTREE_ADMIN_RABBITMQ_URL/api/vhosts/$name"`. Default: `http://guest:guest@localhost:15672`. Ignore 204/"already exists". |
+   | Kafka / NATS | Topic prefix `${project}.wt.${slug}.` — document in `.env.local`, no API call. |
+   | Elasticsearch / OpenSearch | Index prefix `${project}_wt_${slug}_` — document in `.env.local`, no API call. |
+   | MinIO / LocalStack | Bucket prefix `${project}-wt-${slug}-` — document in `.env.local`, no API call. |
 
-9. Write the worktree's `.env.local`. Seed by copying `.env` (fallback: `.env.example`) then `sed -i` each detected env var to the isolated-resource URL. **Skip silently if `.env.local` already exists and already contains `_wt_${slug}`** (idempotency).
-10. Release the lock (`rm -rf ~/.claude-harness/locks/${project}.lock`), print a single summary line: `✓ worktree ${slug}: db=... redis=db3 rabbit=...`.
-11. **On any error, never partial-provision:** use a `trap ERR` to DROP anything already created for this slug before exiting non-zero.
+8. Write `.env.local` in the worktree. Copy `.env` (fallback: `.env.example`) then rewrite each detected env var to the isolated URL. Skip silently if `.env.local` already contains `_wt_${slug}` (idempotent re-run).
+9. Print a summary line: `✓ worktree ${slug}: db=... redis-prefix=... rabbit=...`. Exit non-zero on any provisioning failure — `wt:cleanup` handles partial state.
 
-Optional: detect a migration command and run it for the new DB. Detectors: `prisma/schema.prisma` → `npx prisma migrate deploy`; `alembic.ini` → `alembic upgrade head`; `config/database.yml` → `bundle exec rails db:migrate`; no detector → skip, log `migrations: skipped`. Run with `DATABASE_URL="$isolated_url" <migrate-cmd>` — env only, never persisted.
+Optional: detect a migration tool and run it against the new DB. `prisma/schema.prisma` → `npx prisma migrate deploy`; `alembic.ini` → `alembic upgrade head`; `config/database.yml` → `bundle exec rails db:migrate`. Run with `DATABASE_URL="$isolated_url"` in env only. Log `migrations: skipped` if no tool detected.
 
 ## Step 3 — Generate `.claude/hooks/worktree-cleanup.sh`
 
-Manually invoked bash script. Never runs from the checkout hook itself — cleanup on checkout would delete a live worktree's DB during a rollback.
+Manually invoked bash script. Never called from the checkout hook — cleanup on checkout would drop a live worktree's DB during rollback.
 
 Logic:
-1. `git worktree list --porcelain` → set of live worktree paths and branches.
-2. Derive the live-slug set (apply the same slug function used at provision time).
-3. For each service, enumerate provisioned resources (e.g. `psql -t -c "SELECT datname FROM pg_database WHERE datname LIKE '${project}_wt_%'"`).
-4. For each resource:
-   - **Assert** the name contains `_wt_` (or `.wt.` for dotted). Refuse otherwise — print an error and skip.
-   - If the slug extracted from the name is NOT in the live set, drop it.
-   - If the slug IS in the live set, keep.
-5. Print diff: `dropped N stale; kept M live`.
+1. `git worktree list --porcelain` → derive the live-slug set (same slug function as provisioning).
+2. For each service, enumerate provisioned resources matching `${project}_wt_%`.
+3. For each resource: **assert** the name contains `_wt_` — refuse and skip if not. Drop if slug not live, keep if live.
+4. Print: `dropped N stale; kept M live`.
 
-Add a `--dry-run` flag that prints what WOULD be dropped without doing it.
+Support `--dry-run` to show what would be dropped without acting.
 
 ## Step 4 — Install `.git/hooks/post-checkout`
 
@@ -206,17 +200,14 @@ git worktree remove ../myapp-wt-foo npm run wt:cleanup              # Drops stal
 - Every isolated resource contains `_wt_` in its name. The cleanup script
   refuses to DROP anything without that marker — there is no code path
   that can take down the shared dev DB.
-- The hook uses a file-lock at `~/.claude-harness/locks/<project>.lock`
-  so two simultaneous `git worktree add` calls serialize cleanly.
 
 ## Troubleshooting
 
 | Symptom | Fix |
 |---------|-----|
 | `permission denied to create database` | Set `WORKTREE_ADMIN_DATABASE_URL` to a role with `CREATEDB`. |
-| Stuck lock file in `~/.claude-harness/locks/` | Remove it after confirming no `post-checkout.sh` is running. |
 | `.env.local` missing after `claude -w` with sparse-checkout | Claude Code uses `--no-checkout` for sparse repos and suppresses hooks. Run manually: `bash .claude/hooks/post-checkout.sh 0 HEAD 1`. |
-| Resources left behind after a crash | `npm run wt:cleanup` — it reconciles against `git worktree list`. |
+| Resources left behind after a crash | `npm run wt:cleanup` — reconciles against `git worktree list`. |
 
 ## Why worktrees are mandatory
 
