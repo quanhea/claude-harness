@@ -56,12 +56,21 @@ CLAUDE.md must follow this EXACT format. Fill in `{{...}}` placeholders from the
 
 ## How to Work in This Repo
 
-**Before any code change**: open a worktree — never edit on the current branch. Run `claude -w` or `git worktree add <path> -b <branch>`. The post-checkout hook auto-provisions an isolated database/queue/cache for your worktree. See `docs/WORKTREE.md`. Branches are for remote; locally we use worktrees always.
-**Before writing code**: Read `ARCHITECTURE.md` for module boundaries.
-**Before committing**: Read `docs/GIT_WORKFLOW.md` for branching and commit conventions.
-**Before creating a PR**: Follow the PR process in `docs/GIT_WORKFLOW.md`.
-**When touching a new domain**: Read that domain's section in `ARCHITECTURE.md`.
-**When making a design decision**: Check `docs/design-docs/` for prior decisions.
+Two rules apply to every change in this repo — no exceptions. Everything else is secondary.
+
+### Rule 1 — Worktree-first local development
+
+Never edit code on the current branch. Open a worktree first: `claude -w` (preferred — auto-names the branch) or `git worktree add <path> -b <branch>`. The post-checkout hook auto-provisions an isolated database, queue, cache, and `.env.local` for your worktree so parallel work can't corrupt shared state. Branches are for remote history; locally, worktrees always. See `docs/WORKTREE.md` for the provisioning mechanics and safety markers.
+
+### Rule 2 — Plans are first-class artifacts
+
+Every non-trivial change starts with a plan file committed to `docs/exec-plans/active/<slug>.md` BEFORE any code is written. Plans use checkbox lists (`[ ]` pending, `[x]` done) with nested subtasks — they are how you hand off work to the next session or agent without losing context. Update the plan as you work: check off tasks, append to the decision log when you make a non-obvious choice, record surprises. When the plan is complete, move the file to `docs/exec-plans/completed/` so the history stays visible. Small one-off fixes don't need a plan; anything that spans more than one commit does. See `docs/PLANS.md` for the template and lifecycle.
+
+### Other conventions
+
+- **Before writing code**: skim `ARCHITECTURE.md` for module boundaries.
+- **Before committing or opening a PR**: follow `docs/GIT_WORKFLOW.md`.
+- **When making a design decision**: check `docs/design-docs/` for prior choices.
 
 ## Knowledge Base — Read On Demand
 
@@ -109,10 +118,10 @@ remediation into context. You don't need to invoke them — they fire on PostToo
 
 ## Principles
 
-1. **This file is the map** — read linked docs on demand, don't load everything
+1. **Worktrees and plans are first-class** — see Rules 1 and 2 above
 2. **Repository is the system of record** — if it's not in the repo, it doesn't exist
-3. **Enforce mechanically** — rules and hooks catch violations, not memory
-4. **Progressive disclosure** — start here, follow pointers to the relevant doc
+3. **This file is the map** — read linked docs on demand, don't load everything
+4. **Enforce mechanically** — rules and hooks catch violations, not memory
 5. **Correct > clever** — well-tested, composable, boring code wins
 ```
 
