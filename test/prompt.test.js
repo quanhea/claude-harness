@@ -182,6 +182,48 @@ body`);
     assert.equal(loadPrompt(p).meta.maxTurns, undefined);
   });
 
+  it("parses always-run: true", () => {
+    const p = writeFixture("always-run-true.md", `---
+description: x
+always-run: true
+---
+
+body`);
+    assert.equal(loadPrompt(p).meta.alwaysRun, true);
+  });
+
+  it("parses always-run: yes", () => {
+    const p = writeFixture("always-run-yes.md", `---
+always-run: yes
+---
+
+body`);
+    assert.equal(loadPrompt(p).meta.alwaysRun, true);
+  });
+
+  it("leaves alwaysRun undefined when key is absent", () => {
+    const p = writeFixture("no-always-run.md", `---
+description: no always-run key
+---
+
+body`);
+    assert.equal(loadPrompt(p).meta.alwaysRun, undefined);
+  });
+
+  it("parses always-run: false as false (not undefined)", () => {
+    const p = writeFixture("always-run-false.md", `---
+always-run: false
+---
+
+body`);
+    assert.equal(loadPrompt(p).meta.alwaysRun, false);
+  });
+
+  it("claude-md.md has always-run: true", () => {
+    const loaded = loadPrompt("claude-md.md");
+    assert.equal(loaded.meta.alwaysRun, true, "claude-md.md must always re-run");
+  });
+
   it("ignores unknown frontmatter keys", () => {
     const p = writeFixture("unknown-key.md", `---
 description: test

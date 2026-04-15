@@ -87,21 +87,22 @@ describe("integration", () => {
   it("--only forces re-run of already-COMPLETED tasks", () => {
     const env = { ...process.env, PATH: MOCK_CLAUDE + ":" + process.env.PATH };
 
-    // First run — complete claude-md
+    // Use architecture-md (has declared outputs, not always-run) so we test
+    // the explicit --only forcing path without always-run interfering.
     execFileSync(
       "node",
-      [CLI, projectDir, "--output", outputDir, "--only", "claude-md", "--parallel", "1", "--timeout", "10", "--max-turns", "5"],
+      [CLI, projectDir, "--output", outputDir, "--only", "architecture-md", "--parallel", "1", "--timeout", "10", "--max-turns", "5"],
       { encoding: "utf-8", env, timeout: 30000 },
     );
 
     // Mock claude doesn't actually write files; create the expected output
     // so the reconciliation check doesn't short-circuit our --only test.
-    fs.writeFileSync(path.join(projectDir, "CLAUDE.md"), "# placeholder\n");
+    fs.writeFileSync(path.join(projectDir, "ARCHITECTURE.md"), "# placeholder\n");
 
     const statePath = path.join(outputDir, "state.json");
     const before = JSON.parse(fs.readFileSync(statePath, "utf-8"));
-    assert.equal(before.tasks["claude-md"].status, "COMPLETED", "first run should complete the task");
-    const firstCompletedAt = before.tasks["claude-md"].completedAt;
+    assert.equal(before.tasks["architecture-md"].status, "COMPLETED", "first run should complete the task");
+    const firstCompletedAt = before.tasks["architecture-md"].completedAt;
 
     // Wait a moment so timestamps can differ
     execFileSync("sleep", ["1.1"]);
@@ -109,20 +110,21 @@ describe("integration", () => {
     // Second run with --only on the same task — should force re-run
     const out = execFileSync(
       "node",
-      [CLI, projectDir, "--output", outputDir, "--only", "claude-md", "--parallel", "1", "--timeout", "10", "--max-turns", "5"],
+      [CLI, projectDir, "--output", outputDir, "--only", "architecture-md", "--parallel", "1", "--timeout", "10", "--max-turns", "5"],
       { encoding: "utf-8", env, timeout: 30000 },
     );
     assert.ok(out.includes("Forcing re-run"), "should announce the forced re-run, got:\n" + out);
 
     const after = JSON.parse(fs.readFileSync(statePath, "utf-8"));
-    assert.equal(after.tasks["claude-md"].status, "COMPLETED", "re-run should complete again");
-    assert.ok(after.tasks["claude-md"].completedAt !== firstCompletedAt, "completedAt should have been refreshed by the re-run");
+    assert.equal(after.tasks["architecture-md"].status, "COMPLETED", "re-run should complete again");
+    assert.ok(after.tasks["architecture-md"].completedAt !== firstCompletedAt, "completedAt should have been refreshed by the re-run");
   });
 
   it("requeues tasks whose declared output was deleted from disk", () => {
     const env = { ...process.env, PATH: MOCK_CLAUDE + ":" + process.env.PATH };
 
-    // Seed state.json marking claude-md as COMPLETED, but DON'T create CLAUDE.md
+    // Use architecture-md (has declared outputs, not always-run) to test the
+    // COMPLETED-but-output-missing requeue branch cleanly.
     fs.mkdirSync(outputDir, { recursive: true });
     const seedState = {
       version: 2,
@@ -132,33 +134,35 @@ describe("integration", () => {
       config: { parallel: 1, timeout: 10, maxRetries: 2, maxTurns: 5, model: null, verbose: false },
       stats: { totalTasks: 1, completed: 1, failed: 0, timeout: 0, skipped: 0, pending: 0, running: 0 },
       tasks: {
-        "claude-md": { status: "COMPLETED", attempts: 1, completedAt: new Date().toISOString(), durationMs: 1000, exitCode: 0 },
+        "architecture-md": { status: "COMPLETED", attempts: 1, completedAt: new Date().toISOString(), durationMs: 1000, exitCode: 0 },
       },
     };
     fs.writeFileSync(path.join(outputDir, "state.json"), JSON.stringify(seedState, null, 2));
 
-    // Run claude-harness — CLAUDE.md is missing on disk, so claude-md should be requeued
+    // Run — ARCHITECTURE.md is missing on disk, so architecture-md should be requeued.
     const out = execFileSync(
       "node",
-      [CLI, projectDir, "--output", outputDir, "--only", "claude-md", "--parallel", "1", "--timeout", "10", "--max-turns", "5"],
+      [CLI, projectDir, "--output", outputDir, "--only", "architecture-md", "--parallel", "1", "--timeout", "10", "--max-turns", "5"],
       { encoding: "utf-8", env, timeout: 30000 },
     );
     assert.ok(
       out.includes("missing output") || out.includes("Forcing re-run"),
-      "scanner should notice missing file and re-run (or --only forced it), got: " + out,
+      "scanner should notice missing file and requeue, got: " + out,
     );
 
     const after = JSON.parse(fs.readFileSync(path.join(outputDir, "state.json"), "utf-8"));
-    assert.equal(after.tasks["claude-md"].status, "COMPLETED", "task should have re-run and completed");
+    assert.equal(after.tasks["architecture-md"].status, "COMPLETED", "task should have re-run and completed");
   });
 
   it("auto-merges new manifest tasks into existing state", () => {
     const env = { ...process.env, PATH: MOCK_CLAUDE + ":" + process.env.PATH };
 
-    // Seed state.json with an older "manifest" — just claude-md — and create
-    // its declared output so reconciliation doesn't requeue it.
+    // Seed state.json with an older "manifest" — just architecture-md — and
+    // create its declared output so reconciliation keeps it COMPLETED.
+    // Use architecture-md here (not claude-md) because claude-md is always-run
+    // and would be reset to PENDING regardless of prior state.
     fs.mkdirSync(outputDir, { recursive: true });
-    fs.writeFileSync(path.join(projectDir, "CLAUDE.md"), "# placeholder\n");
+    fs.writeFileSync(path.join(projectDir, "ARCHITECTURE.md"), "# placeholder\n");
     const seedState = {
       version: 2,
       runId: "test1234",
@@ -167,7 +171,7 @@ describe("integration", () => {
       config: { parallel: 1, timeout: 10, maxRetries: 2, maxTurns: 5, model: null, verbose: false },
       stats: { totalTasks: 1, completed: 1, failed: 0, timeout: 0, skipped: 0, pending: 0, running: 0 },
       tasks: {
-        "claude-md": { status: "COMPLETED", attempts: 1, completedAt: new Date().toISOString(), durationMs: 1000, exitCode: 0 },
+        "architecture-md": { status: "COMPLETED", attempts: 1, completedAt: new Date().toISOString(), durationMs: 1000, exitCode: 0 },
       },
     };
     fs.writeFileSync(path.join(outputDir, "state.json"), JSON.stringify(seedState, null, 2));
@@ -181,7 +185,7 @@ describe("integration", () => {
     assert.ok(out.includes("Detected") && out.includes("new task"), "should announce detected new tasks");
 
     const state = JSON.parse(fs.readFileSync(path.join(outputDir, "state.json"), "utf-8"));
-    assert.equal(state.tasks["claude-md"].status, "COMPLETED", "existing completed task should be preserved");
+    assert.equal(state.tasks["architecture-md"].status, "COMPLETED", "existing completed task should be preserved");
     assert.equal(state.tasks["settings-json"].status, "COMPLETED", "newly-merged task should have run");
     assert.ok(state.stats.totalTasks > 1, "state should now contain more than the seed task");
   });

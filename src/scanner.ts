@@ -214,22 +214,40 @@ export async function setup(options: HarnessOptions): Promise<number> {
   }
 
   // Bidirectional reconciliation against the target's on-disk state.
-  // Runs on EVERY invocation (fresh init or resumed state), covering two
-  // symmetric cases:
-  //   - COMPLETED in state but outputs missing → requeue (user deleted a file)
-  //   - PENDING in state but outputs already present → mark COMPLETED (a
-  //     teammate pulled a repo that already had the generated files; no
-  //     point spawning Claude to regenerate what's already committed).
-  // Tasks with no declared outputs in frontmatter skip this check entirely.
+  // Runs on EVERY invocation (fresh init or resumed state), covering three cases:
+  //   - COMPLETED + outputs missing   → requeue (user deleted a file)
+  //   - PENDING + outputs present     → mark COMPLETED (teammate-pull: files
+  //     already committed, no point regenerating)
+  //   - always-run task               → always stays/resets to PENDING so the
+  //     task runs on every invocation (even if its file already exists on disk).
+  //     This is the right behavior for foundational files like CLAUDE.md that
+  //     must stay current regardless of what's on disk.
+  // Tasks with no declared outputs in frontmatter skip all three checks.
   const requeued: string[] = [];
   const detected: string[] = [];
+  const alwaysReset: string[] = [];
   for (const task of TASK_MANIFEST) {
     const entry = state.tasks[task.id];
     if (!entry) continue;
-    const outputs = meta.get(task.id)?.meta.outputs;
+    const taskMeta = meta.get(task.id)?.meta;
+    const outputs = taskMeta?.outputs;
     if (!outputs || outputs.length === 0) continue;
     const allPresent = outputs.every((p) => outputExists(absTarget, p));
-    if (entry.status === STATUS.COMPLETED && !allPresent) {
+    const alwaysRun = taskMeta?.alwaysRun === true;
+
+    if (alwaysRun) {
+      // Reset to PENDING regardless of current status or disk state.
+      if (entry.status !== STATUS.PENDING) {
+        entry.status = STATUS.PENDING;
+        entry.attempts = 0;
+        delete entry.completedAt;
+        delete entry.durationMs;
+        delete entry.exitCode;
+        delete entry.lastError;
+        alwaysReset.push(task.id);
+      }
+      // If already PENDING (e.g. fresh init), nothing to do — it will run.
+    } else if (entry.status === STATUS.COMPLETED && !allPresent) {
       entry.status = STATUS.PENDING;
       entry.attempts = 0;
       delete entry.completedAt;
@@ -244,8 +262,11 @@ export async function setup(options: HarnessOptions): Promise<number> {
       detected.push(task.id);
     }
   }
-  if (requeued.length > 0 || detected.length > 0) {
+  if (alwaysReset.length > 0 || requeued.length > 0 || detected.length > 0) {
     state.stats = computeStats(state.tasks);
+    if (alwaysReset.length > 0) {
+      console.log(`Always-run task(s) reset to pending: ${alwaysReset.join(", ")}`);
+    }
     if (detected.length > 0) {
       console.log(`Detected ${detected.length} task(s) already present on disk — marking completed: ${detected.join(", ")}`);
     }

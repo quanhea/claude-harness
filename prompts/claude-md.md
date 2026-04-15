@@ -1,6 +1,7 @@
 ---
 description: Generate CLAUDE.md (~100 lines, table of contents)
 outputs: ["CLAUDE.md"]
+always-run: true
 ---
 
 # Task: Generate CLAUDE.md

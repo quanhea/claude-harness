@@ -24,6 +24,10 @@ export interface PromptMeta {
   description?: string;
   outputs?: string[];
   maxTurns?: number | null;
+  // When true, disk-reconciliation never promotes this task to COMPLETED —
+  // it always re-runs so it stays current. Use for foundational files that
+  // must be fresh on every harness invocation (e.g. CLAUDE.md).
+  alwaysRun?: boolean;
 }
 
 export interface LoadedPrompt {
@@ -66,6 +70,9 @@ function parseFrontmatter(content: string): { meta: PromptMeta; body: string } {
             }
           } catch { /* ignore malformed; leaves outputs undefined */ }
         }
+        break;
+      case "always-run":
+        meta.alwaysRun = raw === "true" || raw === "yes" || raw === "1";
         break;
     }
   }
