@@ -104,90 +104,10 @@ Add PostToolUse hooks to `.claude/settings.json`:
 
 Merge with existing hooks — do not overwrite.
 
-## Workflow Enforcement Hooks (Always Generate — Non-Optional)
-
-These are NOT advisory linters. They block tool calls with exit code 2. Generate them
-unconditionally — regardless of what project conventions were or were not found.
-
-### Worktree enforcement (`enforce-worktree.sh`)
-
-This hook blocks Edit and Write calls when Claude is running in the main git working tree
-instead of a linked worktree. It implements CLAUDE.md Rule 1 mechanically, because text
-rules alone are not reliably followed.
-
-**Detection:** In a linked worktree, `$GIT_TOPLEVEL/.git` is a *file* (gitdir pointer).
-In the main working tree, it is a *directory*. One `[ -d ]` check is sufficient.
-
-**Bypass:** `CLAUDE_HARNESS_SETUP=1` in the environment skips enforcement — the harness
-sets this when running setup agents so they can write files freely during initial project
-scaffolding.
-
-```bash
-#!/usr/bin/env bash
-# PreToolUse enforcement: require a git worktree for all code edits.
-# Exit 0 = allow. Exit 2 = block (stderr becomes Claude's feedback).
-
-set -euo pipefail
-
-# Allow harness setup runs to bypass enforcement.
-[ "${CLAUDE_HARNESS_SETUP:-}" = "1" ] && exit 0
-
-# Parse cwd from the PreToolUse JSON on stdin.
-INPUT=$(cat)
-CWD=$(echo "$INPUT" | python3 -c "import json,sys; d=json.load(sys.stdin); print(d.get('cwd',''))" 2>/dev/null || echo "")
-[ -z "$CWD" ] && CWD=$(pwd)
-
-# Find the git toplevel. Not a git repo → no enforcement.
-GIT_TOP=$(git -C "$CWD" rev-parse --show-toplevel 2>/dev/null || echo "")
-[ -z "$GIT_TOP" ] && exit 0
-
-# .git is a DIRECTORY in the main working tree; a FILE in a linked worktree.
-if [ -d "$GIT_TOP/.git" ]; then
-  BRANCH=$(git -C "$CWD" rev-parse --abbrev-ref HEAD 2>/dev/null || echo "unknown")
-  echo "Blocked: on branch '$BRANCH' in the main working tree — not a git worktree." >&2
-  echo "This repo requires worktree-first development — no exceptions." >&2
-  echo "" >&2
-  echo "Open a worktree:" >&2
-  echo "  claude -w                                    # preferred (Claude Code names the branch)" >&2
-  echo "  git worktree add ../<name> -b <branch>       # manual" >&2
-  echo "" >&2
-  echo "See docs/WORKTREE.md for service provisioning and the full workflow." >&2
-  exit 2
-fi
-
-exit 0
-```
-
-Make it executable:
-```bash
-chmod +x "{{PROJECT_DIR}}/.claude/hooks/enforce-worktree.sh"
-```
-
-Wire into `.claude/settings.json` as a PreToolUse hook — MERGE with existing hooks, do not overwrite:
-```json
-{
-  "hooks": {
-    "PreToolUse": [
-      {
-        "matcher": "Edit|Write",
-        "hooks": [
-          {
-            "type": "command",
-            "command": ".claude/hooks/enforce-worktree.sh",
-            "timeout": 5
-          }
-        ]
-      }
-    ]
-  }
-}
-```
-
 ## Rules
 
-- ONLY generate advisory linters for conventions that ACTUALLY EXIST in the project.
-- Every advisory linter's check logic comes from Explore agent discovery, never from this template.
+- ONLY generate linters for conventions that ACTUALLY EXIST in the project.
+- Every linter's check logic comes from Explore agent discovery, never from this template.
 - Remediation messages must reference the project's actual tools and file paths.
-- All advisory linter scripts must exit 0 — warnings injected into context, not blockers.
-- `enforce-worktree.sh` is mandatory and must always be generated and wired. It exits 2.
-- Make all scripts executable: `chmod +x .claude/hooks/*.sh`
+- All scripts must exit 0 — these are warnings injected into context, not blockers.
+- Make scripts executable: `chmod +x .claude/hooks/*.sh`

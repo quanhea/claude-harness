@@ -1,6 +1,6 @@
 ---
 description: Generate worktree isolation — post-checkout hook, docs/WORKTREE.md (most important feature)
-outputs: ["docs/WORKTREE.md",".claude/hooks/post-checkout.js",".claude/hooks/worktree-cleanup.js"]
+outputs: ["docs/WORKTREE.md",".claude/hooks/post-checkout.js",".claude/hooks/worktree-cleanup.js",".claude/hooks/enforce-worktree.sh"]
 max-turns: 200
 ---
 
@@ -30,6 +30,7 @@ Create these tasks now with TaskCreate:
 4. "Write .claude/hooks/worktree-cleanup.js — teardown for removed worktrees"
 5. "Install .git/hooks/post-checkout shell wrapper (idempotent — merge if present)"
 6. "Wire a `wt:cleanup` convenience command into package.json (or Makefile / justfile / pyproject scripts)"
+6. "Write .claude/hooks/enforce-worktree.sh and wire into .claude/settings.json PreToolUse"
 7. "Write docs/WORKTREE.md listing the detected services and the lifecycle"
 8. "Verify every generated file exists and is syntactically valid (node --check)"
 
@@ -144,7 +145,75 @@ Claude Code sets `core.hooksPath` per-worktree back to the main repo's `.git/hoo
 
 Goal: `npm run wt:cleanup` (or `make wt-cleanup`) just works.
 
-## Step 6 — Write `docs/WORKTREE.md`
+## Step 6 — Generate `.claude/hooks/enforce-worktree.sh`
+
+This hook blocks Edit and Write tool calls when Claude is running in the main git working
+tree instead of a linked worktree. It is the mechanical enforcement of the worktree-first
+mandate — text rules alone are not reliably followed.
+
+**Detection:** In a linked worktree, `$GIT_TOPLEVEL/.git` is a *file* (gitdir pointer).
+In the main working tree, it is a *directory*. One `[ -d ]` check is sufficient.
+
+**Bypass:** `CLAUDE_HARNESS_SETUP=1` skips enforcement so the harness can write project
+files freely during initial setup.
+
+```bash
+#!/usr/bin/env bash
+# PreToolUse enforcement: require a git worktree for all code edits.
+# Exit 0 = allow. Exit 2 = block (stderr becomes Claude's feedback context).
+
+set -euo pipefail
+
+[ "${CLAUDE_HARNESS_SETUP:-}" = "1" ] && exit 0
+
+INPUT=$(cat)
+CWD=$(echo "$INPUT" | python3 -c "import json,sys; d=json.load(sys.stdin); print(d.get('cwd',''))" 2>/dev/null || echo "")
+[ -z "$CWD" ] && CWD=$(pwd)
+
+GIT_TOP=$(git -C "$CWD" rev-parse --show-toplevel 2>/dev/null || echo "")
+[ -z "$GIT_TOP" ] && exit 0
+
+# .git is a DIRECTORY in the main working tree; a FILE in a linked worktree.
+if [ -d "$GIT_TOP/.git" ]; then
+  BRANCH=$(git -C "$CWD" rev-parse --abbrev-ref HEAD 2>/dev/null || echo "unknown")
+  echo "Blocked: on branch '$BRANCH' in the main working tree — not a git worktree." >&2
+  echo "This repo requires worktree-first development — no exceptions." >&2
+  echo "" >&2
+  echo "Open a worktree:" >&2
+  echo "  claude -w                                    # preferred (Claude Code names the branch)" >&2
+  echo "  git worktree add ../<name> -b <branch>       # manual" >&2
+  echo "" >&2
+  echo "See docs/WORKTREE.md for service provisioning and the full workflow." >&2
+  exit 2
+fi
+
+exit 0
+```
+
+Make it executable: `chmod +x "{{PROJECT_DIR}}/.claude/hooks/enforce-worktree.sh"`
+
+Wire into `.claude/settings.json` as a PreToolUse hook — MERGE with existing hooks, do not overwrite:
+
+```json
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": ".claude/hooks/enforce-worktree.sh",
+            "timeout": 5
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+## Step 7 — Write `docs/WORKTREE.md`
 
 Template (fill in the bracketed bits from detection):
 
