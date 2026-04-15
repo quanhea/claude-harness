@@ -138,7 +138,10 @@ export function spawnClaude(options: ClaudeSpawnOptions): {
   const child = spawn("claude", args, {
     cwd,
     stdio: ["ignore", "pipe", "pipe"],
-    env: { ...process.env },
+    // CLAUDE_HARNESS_SETUP=1 signals the worktree-enforcement hook (.claude/hooks/enforce-worktree.sh)
+    // to skip its check so the harness can write project files during initial setup. Without this,
+    // the hook would block harness agents from creating any files in the main working tree.
+    env: { ...process.env, CLAUDE_HARNESS_SETUP: "1" },
   });
 
   let killed = false;
