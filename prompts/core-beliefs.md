@@ -1,3 +1,8 @@
+---
+description: Generate docs/design-docs/core-beliefs.md
+outputs: ["docs/design-docs/core-beliefs.md"]
+---
+
 # Task: Generate docs/design-docs/core-beliefs.md
 
 **Output:** `{{PROJECT_DIR}}/docs/design-docs/core-beliefs.md`

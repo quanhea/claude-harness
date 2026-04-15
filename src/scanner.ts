@@ -14,7 +14,7 @@ import {
   updateTaskStatus,
   computeStats,
 } from "./state";
-import { WorkerPool } from "./worker-pool";
+import { WorkerPool, PromptEntry } from "./worker-pool";
 import { writeReport } from "./reporter";
 import {
   isTTY,
@@ -45,11 +45,19 @@ export async function setup(options: HarnessOptions): Promise<number> {
   const config = { parallel, timeout, maxRetries, maxTurns, model, verbose };
   const selectedTasks = selectTasks(only);
 
+  // Resolve every task's frontmatter ONCE up-front. The orchestrator needs
+  // descriptions (for --dry-run + summary), outputs (for on-disk
+  // reconciliation), and per-task max-turns (passed to the worker pool).
+  // All three live in each prompt's YAML frontmatter — see src/prompt.ts.
+  const meta = new Map<string, ReturnType<typeof loadPrompt>>();
+  for (const task of TASK_MANIFEST) meta.set(task.id, loadPrompt(task.promptFile));
+  const desc = (id: string) => meta.get(id)?.meta.description ?? id;
+
   // Dry run — list and exit
   if (dryRun) {
     removeLockFile(absOutput);
     console.log(`Would run ${selectedTasks.length} tasks in parallel:`);
-    for (const t of selectedTasks) console.log(`  [${t.id}] ${t.description}`);
+    for (const t of selectedTasks) console.log(`  [${t.id}] ${desc(t.id)}`);
     return 0;
   }
 
@@ -85,15 +93,17 @@ export async function setup(options: HarnessOptions): Promise<number> {
     }
 
     // (4) Reconcile state against disk: if a COMPLETED task's declared output
-    // is missing (user deleted the file), requeue it. Tasks with no declared
-    // outputs (skills, hooks, formatter, ci-workflow, arch-tests, gardener)
-    // are skipped — their output paths are dynamic or project-type-specific.
+    // (from prompt frontmatter `outputs:`) is missing, requeue it. Tasks
+    // with no declared outputs (skills, hooks, formatter, ci-workflow,
+    // arch-tests, gardener) are skipped — their output paths are dynamic
+    // or project-type-specific.
     const requeued: string[] = [];
     for (const task of TASK_MANIFEST) {
       const entry = state.tasks[task.id];
       if (!entry || entry.status !== STATUS.COMPLETED) continue;
-      if (!task.outputs || task.outputs.length === 0) continue;
-      const missing = task.outputs.filter((p) => !fs.existsSync(path.join(absTarget, p)));
+      const outputs = meta.get(task.id)?.meta.outputs;
+      if (!outputs || outputs.length === 0) continue;
+      const missing = outputs.filter((p) => !fs.existsSync(path.join(absTarget, p)));
       if (missing.length === 0) continue;
       entry.status = STATUS.PENDING;
       entry.attempts = 0;
@@ -147,12 +157,26 @@ export async function setup(options: HarnessOptions): Promise<number> {
   console.log(`Running ${pendingTasks.length} tasks in parallel (up to ${parallel} concurrent workers)...`);
   saveState(state, absOutput);
 
-  // Build prompt map
-  const prompts = new Map<string, string>();
+  // Build prompt map. Per-task `max-turns` override (from prompt frontmatter)
+  // is forwarded to the worker pool so the global default doesn't bind a
+  // heavy prompt. We re-use the meta cache loaded above.
+  const prompts = new Map<string, PromptEntry>();
+  const overrides: string[] = [];
   for (const task of pendingTasks) {
-    const template = loadPrompt(task.promptFile);
+    const loaded = meta.get(task.id);
+    if (!loaded) continue; // shouldn't happen — manifest is the source of truth
     const vars = buildPromptVars({ taskId: task.id, targetDir: absTarget, outputDir: absOutput });
-    prompts.set(task.id, renderPrompt(template, vars));
+    prompts.set(task.id, {
+      text: renderPrompt(loaded.text, vars),
+      maxTurns: loaded.meta.maxTurns,
+    });
+    if (loaded.meta.maxTurns !== undefined) {
+      const label = loaded.meta.maxTurns === null ? "unlimited" : String(loaded.meta.maxTurns);
+      overrides.push(`${task.id}=${label}`);
+    }
+  }
+  if (overrides.length > 0) {
+    console.log(`Per-prompt --max-turns overrides: ${overrides.join(", ")}`);
   }
 
   const pool = new WorkerPool({
@@ -301,7 +325,7 @@ export async function setup(options: HarnessOptions): Promise<number> {
     else if (s === STATUS.TIMEOUT) runTimeout++;
   }
 
-  const reportPath = writeReport(absOutput, state);
+  const reportPath = writeReport(absOutput, state, desc);
   const elapsed = formatDuration(Date.now() - startTime);
 
   console.log(

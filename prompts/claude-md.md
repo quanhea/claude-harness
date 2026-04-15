@@ -1,3 +1,8 @@
+---
+description: Generate CLAUDE.md (~100 lines, table of contents)
+outputs: ["CLAUDE.md"]
+---
+
 # Task: Generate CLAUDE.md
 
 **Output:** `{{PROJECT_DIR}}/CLAUDE.md`

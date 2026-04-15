@@ -1,3 +1,8 @@
+---
+description: Generate docs/QUALITY_SCORE.md
+outputs: ["docs/QUALITY_SCORE.md"]
+---
+
 # Task: Generate docs/QUALITY_SCORE.md
 
 **Output:** `{{PROJECT_DIR}}/docs/QUALITY_SCORE.md`

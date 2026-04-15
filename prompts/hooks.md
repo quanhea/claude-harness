@@ -1,3 +1,7 @@
+---
+description: Generate .claude/hooks/ custom linters
+---
+
 # Task: Generate .claude/hooks/ linter scripts
 
 **Output:** `{{PROJECT_DIR}}/.claude/hooks/*.sh`

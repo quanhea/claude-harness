@@ -1,3 +1,8 @@
+---
+description: Generate .mcp.json server recommendations
+outputs: [".mcp.json"]
+---
+
 # Task: Generate .mcp.json
 
 **Output:** `{{PROJECT_DIR}}/.mcp.json`

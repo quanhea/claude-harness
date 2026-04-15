@@ -1,3 +1,8 @@
+---
+description: Generate ARCHITECTURE.md (matklad format)
+outputs: ["ARCHITECTURE.md"]
+---
+
 # Task: Generate ARCHITECTURE.md
 
 **Output:** `{{PROJECT_DIR}}/ARCHITECTURE.md`

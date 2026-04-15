@@ -1,3 +1,8 @@
+---
+description: Generate docs/SECURITY.md
+outputs: ["docs/SECURITY.md"]
+---
+
 # Task: Generate docs/SECURITY.md
 
 **Output:** `{{PROJECT_DIR}}/docs/SECURITY.md`

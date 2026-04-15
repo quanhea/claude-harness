@@ -122,8 +122,8 @@ export async function runGardener(projectPath: string): Promise<number> {
       };
     }
 
-    const template = loadPrompt(promptFile);
-    const prompt = renderPrompt(template, promptVars);
+    const loaded = loadPrompt(promptFile);
+    const prompt = renderPrompt(loaded.text, promptVars);
 
     const { promise } = spawnClaude({ prompt, cwd: worktreePath, logPath, rawPath, config });
     const result = await promise;

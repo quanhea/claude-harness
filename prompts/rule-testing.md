@@ -1,3 +1,8 @@
+---
+description: Generate .claude/rules/testing.md
+outputs: [".claude/rules/testing.md"]
+---
+
 # Task: Generate .claude/rules/testing.md
 
 **Output:** `{{PROJECT_DIR}}/.claude/rules/testing.md`

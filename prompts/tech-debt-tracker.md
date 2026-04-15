@@ -1,3 +1,8 @@
+---
+description: Generate docs/exec-plans/tech-debt-tracker.md
+outputs: ["docs/exec-plans/tech-debt-tracker.md"]
+---
+
 # Task: Generate docs/exec-plans/tech-debt-tracker.md
 
 **Output:** `{{PROJECT_DIR}}/docs/exec-plans/tech-debt-tracker.md`

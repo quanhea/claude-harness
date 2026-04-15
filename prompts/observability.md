@@ -1,3 +1,8 @@
+---
+description: Generate docs/OBSERVABILITY.md (skips if not an app)
+outputs: ["docs/OBSERVABILITY.md"]
+---
+
 # Task: Generate docs/OBSERVABILITY.md
 
 **Output:** `{{PROJECT_DIR}}/docs/OBSERVABILITY.md`

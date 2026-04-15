@@ -1,3 +1,8 @@
+---
+description: Generate docs/INFRASTRUCTURE.md
+outputs: ["docs/INFRASTRUCTURE.md"]
+---
+
 # Task: Generate docs/INFRASTRUCTURE.md
 
 **Output:** `{{PROJECT_DIR}}/docs/INFRASTRUCTURE.md`

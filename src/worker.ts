@@ -68,15 +68,24 @@ export function spawnClaude(options: ClaudeSpawnOptions): {
   fs.mkdirSync(path.dirname(rawPath), { recursive: true });
 
   const args: string[] = [
+    // Belt-and-suspenders permission bypass. --dangerously-skip-permissions is the
+    // legacy flag; --permission-mode bypassPermissions is the newer-API equivalent.
+    // Together they cover post-v2.1.78 protected-directory behavior where writes
+    // to .claude/, .git/, .vscode/, .husky/ would otherwise still prompt.
     "--dangerously-skip-permissions",
+    "--permission-mode", "bypassPermissions",
     "-p",
     prompt,
-    "--max-turns",
-    String(config.maxTurns),
     "--output-format",
     "json",
     "--no-session-persistence",
   ];
+
+  // Only pass --max-turns when the prompt (or global default) actually wants
+  // a cap. null / 0 / negative → omit, letting Claude run until it finishes.
+  if (config.maxTurns !== null && config.maxTurns > 0) {
+    args.push("--max-turns", String(config.maxTurns));
+  }
 
   if (config.model) args.push("--model", config.model);
   if (config.verbose) args.push("--verbose");

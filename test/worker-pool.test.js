@@ -19,7 +19,7 @@ const TASK_IDS = ["claude-md", "settings-json", "architecture-md"];
 function makePrompts(ids) {
   const m = new Map();
   for (const id of ids) {
-    m.set(id, `task ${id} in {{PROJECT_DIR}}`);
+    m.set(id, { text: `task ${id} in {{PROJECT_DIR}}` });
   }
   return m;
 }

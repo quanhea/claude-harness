@@ -1,3 +1,8 @@
+---
+description: Generate docs/FRONTEND.md (skips if not frontend)
+outputs: ["docs/FRONTEND.md"]
+---
+
 # Task: Generate docs/FRONTEND.md
 
 **Output:** `{{PROJECT_DIR}}/docs/FRONTEND.md`

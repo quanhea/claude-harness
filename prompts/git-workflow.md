@@ -1,3 +1,8 @@
+---
+description: Generate docs/GIT_WORKFLOW.md (skips if no git history)
+outputs: ["docs/GIT_WORKFLOW.md"]
+---
+
 # Task: Generate docs/GIT_WORKFLOW.md
 
 **Output:** `{{PROJECT_DIR}}/docs/GIT_WORKFLOW.md`

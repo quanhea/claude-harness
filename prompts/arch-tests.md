@@ -1,3 +1,7 @@
+---
+description: Generate architecture test file
+---
+
 # Task: Generate architecture structural tests
 
 **Output:** `{{PROJECT_DIR}}/tests/architecture.test.*` (or matching test directory convention)

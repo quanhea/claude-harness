@@ -1,3 +1,9 @@
+---
+description: Generate worktree isolation — post-checkout hook, docs/WORKTREE.md (most important feature)
+outputs: ["docs/WORKTREE.md",".claude/hooks/post-checkout.js",".claude/hooks/worktree-cleanup.js"]
+max-turns: 200
+---
+
 # Task: Generate worktree isolation (the most important feature)
 
 **Output:**

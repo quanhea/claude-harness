@@ -1,3 +1,8 @@
+---
+description: Generate docs/PLANS.md
+outputs: ["docs/PLANS.md"]
+---
+
 # Task: Generate docs/PLANS.md
 
 **Output:** `{{PROJECT_DIR}}/docs/PLANS.md`

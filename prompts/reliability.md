@@ -1,3 +1,8 @@
+---
+description: Generate docs/RELIABILITY.md
+outputs: ["docs/RELIABILITY.md"]
+---
+
 # Task: Generate docs/RELIABILITY.md
 
 **Output:** `{{PROJECT_DIR}}/docs/RELIABILITY.md`

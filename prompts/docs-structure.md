@@ -1,3 +1,8 @@
+---
+description: Create docs/ directory skeleton
+outputs: ["docs/README.md"]
+---
+
 # Task: Create docs/ Directory Structure
 
 **Output:** `{{PROJECT_DIR}}/docs/` (directory skeleton)

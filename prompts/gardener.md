@@ -1,3 +1,7 @@
+---
+description: Register project with the doc-gardening scheduler
+---
+
 # Task: Register project with gardener + create cron schedule
 
 **Output:** Entry in `~/.claude-harness/projects.json` + CronCreate schedule

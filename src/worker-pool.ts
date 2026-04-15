@@ -10,9 +10,16 @@ export interface PoolEvents {
   drain: () => void;
 }
 
+// Per-task entry. `maxTurns` (when present) overrides the global config's
+// maxTurns for THIS task only — sourced from the prompt's frontmatter.
+export interface PromptEntry {
+  text: string;
+  maxTurns?: number | null;
+}
+
 export class WorkerPool extends EventEmitter {
   private queue: string[];
-  private prompts: Map<string, string>;
+  private prompts: Map<string, PromptEntry>;
   private active: Map<string, { child: ChildProcess; kill: () => void; index: number }> =
     new Map();
   private concurrency: number;
@@ -27,7 +34,7 @@ export class WorkerPool extends EventEmitter {
 
   constructor(options: {
     tasks: string[];
-    prompts: Map<string, string>;  // taskId → rendered prompt text
+    prompts: Map<string, PromptEntry>;  // taskId → rendered prompt text + per-task overrides
     concurrency: number;
     targetDir: string;
     outputDir: string;
@@ -114,12 +121,20 @@ export class WorkerPool extends EventEmitter {
     const workerIndex = this.findFreeIndex();
     this.emit("start", taskId, workerIndex);
 
+    const entry = this.prompts.get(taskId);
+    // Merge per-task maxTurns override (from prompt frontmatter) onto the
+    // global config. `undefined` means "no override" → keep global.
+    const taskConfig: HarnessConfig =
+      entry && entry.maxTurns !== undefined
+        ? { ...this.config, maxTurns: entry.maxTurns }
+        : this.config;
+
     const spawnOpts: SpawnOptions = {
       targetDir: this.targetDir,
       outputDir: this.outputDir,
       taskId,
-      promptTemplate: this.prompts.get(taskId) ?? "",
-      config: this.config,
+      promptTemplate: entry?.text ?? "",
+      config: taskConfig,
     };
 
     const { child, promise, kill } = spawnTask(spawnOpts);

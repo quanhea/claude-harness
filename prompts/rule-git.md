@@ -1,3 +1,8 @@
+---
+description: Generate .claude/rules/git-workflow.md
+outputs: [".claude/rules/git-workflow.md"]
+---
+
 # Task: Generate .claude/rules/git-workflow.md
 
 **Output:** `{{PROJECT_DIR}}/.claude/rules/git-workflow.md`

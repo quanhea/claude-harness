@@ -1,3 +1,7 @@
+---
+description: Generate formatter config (.prettierrc / ruff.toml / etc.)
+---
+
 # Task: Generate formatter configuration
 
 **Output:** `{{PROJECT_DIR}}/.prettierrc` / `ruff.toml` / `rustfmt.toml` / etc.

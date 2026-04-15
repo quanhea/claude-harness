@@ -1,3 +1,7 @@
+---
+description: Generate .github/workflows/harness-validate.yml
+---
+
 # Task: Generate CI harness validation workflow
 
 **Output:** `{{PROJECT_DIR}}/.github/workflows/harness-validate.yml`

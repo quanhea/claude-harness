@@ -1,3 +1,8 @@
+---
+description: Generate docs/PRODUCT_SENSE.md
+outputs: ["docs/PRODUCT_SENSE.md"]
+---
+
 # Task: Generate docs/PRODUCT_SENSE.md
 
 **Output:** `{{PROJECT_DIR}}/docs/PRODUCT_SENSE.md`

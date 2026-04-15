@@ -4,16 +4,17 @@ const path = require("path");
 const { loadPrompt, renderPrompt, buildPromptVars } = require("../dist/prompt");
 
 describe("loadPrompt", () => {
-  it("loads a bundled prompt by filename", () => {
-    const prompt = loadPrompt("claude-md.md");
-    assert.ok(prompt.includes("{{PROJECT_DIR}}"));
-    assert.ok(prompt.includes("TaskCreate"));
+  it("loads a bundled prompt by filename and returns text + meta", () => {
+    const loaded = loadPrompt("claude-md.md");
+    assert.ok(loaded.text.includes("{{PROJECT_DIR}}"));
+    assert.ok(loaded.text.includes("TaskCreate"));
+    assert.ok(loaded.meta);
   });
 
   it("loads by absolute path", () => {
     const absPath = path.join(__dirname, "..", "prompts", "claude-md.md");
-    const prompt = loadPrompt(absPath);
-    assert.ok(prompt.includes("CLAUDE.md"));
+    const loaded = loadPrompt(absPath);
+    assert.ok(loaded.text.includes("CLAUDE.md"));
   });
 
   it("throws on missing file", () => {
@@ -21,15 +22,31 @@ describe("loadPrompt", () => {
   });
 
   it("loads gardener-init.md", () => {
-    const prompt = loadPrompt("gardener-init.md");
-    assert.ok(prompt.includes("{{HEAD_COMMIT}}"));
-    assert.ok(prompt.includes("Explore"));
+    const loaded = loadPrompt("gardener-init.md");
+    assert.ok(loaded.text.includes("{{HEAD_COMMIT}}"));
+    assert.ok(loaded.text.includes("Explore"));
   });
 
   it("loads gardener-update.md", () => {
-    const prompt = loadPrompt("gardener-update.md");
-    assert.ok(prompt.includes("{{CHANGED_FILES}}"));
-    assert.ok(prompt.includes("{{LAST_COMMIT}}"));
+    const loaded = loadPrompt("gardener-update.md");
+    assert.ok(loaded.text.includes("{{CHANGED_FILES}}"));
+    assert.ok(loaded.text.includes("{{LAST_COMMIT}}"));
+  });
+
+  it("parses max-turns: null frontmatter as unlimited", () => {
+    const loaded = loadPrompt("skills.md");
+    assert.equal(loaded.meta.maxTurns, null, "skills.md declares max-turns: null");
+    assert.ok(!loaded.text.startsWith("---"), "frontmatter should be stripped from text");
+  });
+
+  it("parses numeric max-turns frontmatter", () => {
+    const loaded = loadPrompt("worktree.md");
+    assert.equal(loaded.meta.maxTurns, 200, "worktree.md declares max-turns: 200");
+  });
+
+  it("returns empty meta when no frontmatter present", () => {
+    const loaded = loadPrompt("settings-json.md");
+    assert.equal(loaded.meta.maxTurns, undefined, "settings-json.md has no frontmatter");
   });
 });
 

@@ -1,3 +1,8 @@
+---
+description: Generate .claude/settings.json with tool permissions
+outputs: [".claude/settings.json"]
+---
+
 # Task: Generate .claude/settings.json
 
 **Output:** `{{PROJECT_DIR}}/.claude/settings.json`

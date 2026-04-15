@@ -1,3 +1,8 @@
+---
+description: Generate .claude/rules/architecture.md
+outputs: [".claude/rules/architecture.md"]
+---
+
 # Task: Generate .claude/rules/architecture.md
 
 **Output:** `{{PROJECT_DIR}}/.claude/rules/architecture.md`
