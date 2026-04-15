@@ -17,10 +17,10 @@ The original approach was a monolithic skill — one 100-line `SKILL.md` that tr
 generate 20+ files in a single Claude session. The problem: too much in one prompt gets
 overlooked. Sections merge. Files get skipped. Quality is uneven.
 
-**claude-harness is the task-parallel implementation.** Each of the 29 setup tasks gets
+**claude-harness is the task-parallel implementation.** Each of the 28 setup tasks gets
 its own subprocess, its own focused prompt, and the full context window. The orchestrator
-handles the boring parts — phase sequencing, parallel execution, crash recovery, progress
-display — so each Claude invocation can do one thing well.
+handles the boring parts — parallel execution, crash recovery, progress display — so each
+Claude invocation can do one thing well.
 
 ## Install
 
@@ -30,28 +30,35 @@ npm install -g @eastagile/claude-harness
 
 Prerequisites:
 - Node.js 18+
-- [Claude Code](https://code.claude.com/docs/en/quickstart) installed and authenticated (`claude auth login`)
+- [Claude Code](https://code.claude.com/docs/en/quickstart) v2.1.78+ installed and authenticated (`claude auth login`)
 
 ## Quick Start
 
+The target directory defaults to the current directory — run from inside your project:
+
 ```bash
-# Scaffold a project
-claude-harness ./my-project
+cd ~/code/my-project
+
+# Scaffold (default: current directory)
+claude-harness
 
 # Preview which tasks would run
-claude-harness ./my-project --dry-run
+claude-harness --dry-run
 
 # Run with more parallelism
-claude-harness ./my-project --parallel 8
+claude-harness --parallel 8
 
 # Run only specific tasks (forces re-run even if already completed)
-claude-harness ./my-project --only claude-md,rule-git
+claude-harness --only claude-md,rule-git
 
 # Re-run after upgrading claude-harness — auto-picks up any new tasks
-claude-harness ./my-project
+claude-harness
 
 # Retry failed / timed-out tasks
-claude-harness ./my-project --retry
+claude-harness --retry
+
+# Or pass a path explicitly
+claude-harness /path/to/project
 ```
 
 ## How It Works
@@ -109,7 +116,7 @@ SECURITY.md                        # Auth, data handling, secrets
 .claude/
 ├── settings.json                  # Tool permissions
 ├── rules/                         # Architecture, testing, doc, git rules
-├── hooks/                         # Custom linter scripts (PostToolUse)
+├── hooks/                         # PostToolUse linters + PreToolUse enforcement (worktree, git naming)
 └── skills/                        # /sync, /review + project-specific skills
 
 docs/
@@ -141,9 +148,9 @@ and every 30 seconds. **Every invocation of `claude-harness` behaves as a safe r
 no `--resume` flag required:
 
 ```bash
-claude-harness ./my-project          # pick up any pending / stale / newly-added tasks
-claude-harness ./my-project --retry  # also re-run failed or timed-out tasks
-claude-harness ./my-project --only claude-md,rule-git   # force re-run of specific tasks
+claude-harness                              # pick up any pending / stale / newly-added tasks
+claude-harness --retry                      # also re-run failed or timed-out tasks
+claude-harness --only claude-md,rule-git    # force re-run of specific tasks
 ```
 
 On each run the orchestrator:
@@ -163,9 +170,24 @@ they already completed.
 - 1st Ctrl+C — stops the queue, waits for running tasks to finish
 - 2nd Ctrl+C — kills all workers immediately, saves state, exits
 
-**Signal handling:**
-- 1st Ctrl+C — stops the queue, waits for running tasks to finish
-- 2nd Ctrl+C — kills all workers immediately, saves state, exits
+## Start Claude
+
+After scaffolding a project, start an interactive Claude Code session pre-loaded with harness methodology context. Defaults to the current directory:
+
+```bash
+# From inside your project
+claude-harness start-claude
+
+# Pass extra args to the claude binary
+claude-harness start-claude -- --model claude-opus-4-6
+
+# Or point at a specific project
+claude-harness start-claude /path/to/project
+```
+
+This uses `claude --append-system-prompt` to inject a harness-engineering primer into the session — repository as system of record, CLAUDE.md as table of contents, plans as first-class artifacts — without replacing Claude Code's built-in tools.
+
+Projects can override the bundled prompt by placing a custom `.claude/start-claude.md` in the project root.
 
 ## Gardener
 
@@ -176,11 +198,11 @@ reference. On subsequent runs it diffs the code since the last run and only
 re-audits docs that mention the changed files. It commits the fix-ups in place.
 
 ```bash
-claude-harness gardener add ./my-project                           # Register + schedule
-claude-harness gardener add ./my-project --schedule "0 9 * * 1-5" # Custom cron
-claude-harness gardener remove ./my-project
-claude-harness gardener list
-claude-harness gardener run ./my-project                           # Run immediately
+claude-harness gardener add .                           # Register current project
+claude-harness gardener add . --schedule "0 9 * * 1-5" # Custom cron schedule
+claude-harness gardener list                            # Show all registered projects
+claude-harness gardener run .                           # Run immediately
+claude-harness gardener remove /path/to/project         # Unregister
 ```
 
 The registry lives at `~/.claude-harness/projects.json`.

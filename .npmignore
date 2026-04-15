@@ -1,0 +1,10 @@
+# Excluded from npm publish — the `files` array in package.json is the
+# primary allowlist (dist/, prompts/, LICENSE, README.md). This file
+# blocks anything that could sneak in through npm's default inclusions.
+src/
+test/
+tsconfig.json
+CHANGELOG.md
+ARCHITECTURE.md
+worktree-isolation-epic.md
+.claude/

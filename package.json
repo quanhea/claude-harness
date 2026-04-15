@@ -1,9 +1,13 @@
 {
   "name": "@eastagile/claude-harness",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "Agent-first project scaffold for Claude Code. Sets up CLAUDE.md, architecture docs, rules, skills, and a doc-gardening cron that keeps them fresh.",
   "license": "MIT",
   "author": "East Agile <dev@eastagile.com> (https://eastagile.com)",
+  "homepage": "https://github.com/quanhea/claude-harness#readme",
+  "bugs": {
+    "url": "https://github.com/quanhea/claude-harness/issues"
+  },
   "repository": {
     "type": "git",
     "url": "https://github.com/quanhea/claude-harness.git"
