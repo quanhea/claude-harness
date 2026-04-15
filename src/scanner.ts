@@ -104,16 +104,27 @@ export function outputExists(rootDir: string, pattern: string): boolean {
 }
 
 // Idempotently append `.claude-harness/` to the target project's .gitignore.
-// Sentinel-marker lets us detect a previous append so we don't add twice.
-function ensureGitignore(targetDir: string): void {
+// Guards against duplicates via (a) our sentinel comment and (b) a normalized
+// match that treats `.claude-harness`, `.claude-harness/`, `/.claude-harness`,
+// and `/.claude-harness/` as equivalent — all of them ignore our state dir.
+export function ensureGitignore(targetDir: string): void {
   const gitignorePath = path.join(targetDir, ".gitignore");
   const SENTINEL = "# claude-harness: local state — never track";
   const ENTRY = ".claude-harness/";
+  const TARGET = ".claude-harness";
   let existing = "";
   if (fs.existsSync(gitignorePath)) {
     existing = fs.readFileSync(gitignorePath, "utf-8");
     if (existing.includes(SENTINEL)) return;
-    if (existing.split(/\r?\n/).some((l) => l.trim() === ENTRY)) return;
+    const alreadyIgnored = existing.split(/\r?\n/).some((l) => {
+      const trimmed = l.trim();
+      if (!trimmed || trimmed.startsWith("#")) return false;
+      // Strip optional leading `/` and trailing `/` — they don't change
+      // whether the entry ignores our state directory.
+      const normalized = trimmed.replace(/^\//, "").replace(/\/$/, "");
+      return normalized === TARGET;
+    });
+    if (alreadyIgnored) return;
   }
   const prefix = existing && !existing.endsWith("\n") ? "\n" : "";
   const block = `\n${SENTINEL}\n${ENTRY}\n`;
