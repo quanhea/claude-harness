@@ -8,23 +8,16 @@ max-turns: null
 
 **Output:** `{{PROJECT_DIR}}/.claude/skills/<name>/SKILL.md` (one directory per discovered skill)
 
-You are generating project-specific skills by analyzing the **actual Claude
-Code conversation history** for this project, discovering recurring patterns
-the user invokes manually, and writing each pattern as a `SKILL.md`.
+You are generating project-specific skills by analyzing the **actual Claude Code conversation history** for this project, discovering recurring patterns the user invokes manually, and writing each pattern as a `SKILL.md`.
 
-The conversation history lives at `~/.claude/projects/<project-slug>/*.jsonl`
-where `<project-slug>` is the project's absolute path with `/` replaced by `-`
-(prefixed with `-`). For example, the project at `/Users/anhqtran/code/foo`
-has its conversations at `~/.claude/projects/-Users-anhqtran-code-foo/`.
+The conversation history lives at `~/.claude/projects/<project-slug>/*.jsonl` where `<project-slug>` is the project's absolute path with `/` replaced by `-` (prefixed with `-`). For example, the project at `/Users/anhqtran/code/foo` has its conversations at `~/.claude/projects/-Users-anhqtran-code-foo/`.
 
 **Important:** there is no always-generated set. Skills come from evidence
-in the conversation history. If no pattern qualifies, generate zero skills —
-do not invent placeholder skills.
+in the conversation history. If no pattern qualifies, generate zero skills — do not invent placeholder skills.
 
 ## Your Tasks
 
-Create these tasks now with TaskCreate. Steps 5–8 are where the real work
-happens — do not collapse them into one step.
+Create these tasks now with TaskCreate. Steps 5–8 are where the real work happens — do not collapse them into one step.
 
 1. "Detect project info (language, framework, commands)"
 2. "Compute the project slug from {{PROJECT_DIR}} (replace / with -, prefix with -)"
@@ -42,17 +35,11 @@ Use TaskUpdate to mark each complete. Use TaskList before finishing.
 
 ## Important: directory creation
 
-`.claude/` is a protected path in Claude Code. Before any `Write` into
-`.claude/skills/<name>/SKILL.md`, run a Bash `mkdir -p` for the
-subdirectory first — this lands the write under the documented
-`.claude/skills/` exemption. Do NOT rely on Write alone to create the parent
-directory.
+`.claude/` is a protected path in Claude Code. Before any `Write` into `.claude/skills/<name>/SKILL.md`, run a Bash `mkdir -p` for the subdirectory first — this lands the write under the documented `.claude/skills/` exemption. Do NOT rely on Write alone to create the parent directory.
 
 ## The extraction script (write this verbatim)
 
-Use Write to put the following into `{{PROJECT_DIR}}/.claude-harness/extract-conversations.cjs`.
-It's a Node.js port of the harness's reference Python extractor — pure
-built-ins, no npm install needed.
+Use Write to put the following into `{{PROJECT_DIR}}/.claude-harness/extract-conversations.cjs`. It's a Node.js port of the harness's reference Python extractor — pure built-ins, no npm install needed.
 
 ```javascript
 #!/usr/bin/env node
@@ -184,11 +171,7 @@ extract(slug, outDir);
 
 ## CRITICAL — Analyze conversations thoroughly BEFORE writing any skill
 
-This is the most important part of this task. The naive approach (read user
-messages, see "the user said X three times, write a skill that does X") will
-**produce wrong skills** in almost every case, because conversations contain
-many failed attempts before the successful one. A skill that encodes the
-*first attempt* in a conversation is encoding what DIDN'T work.
+This is the most important part of this task. The naive approach (read user messages, see "the user said X three times, write a skill that does X") will **produce wrong skills** in almost every case, because conversations contain many failed attempts before the successful one. A skill that encodes the *first attempt* in a conversation is encoding what DIDN'T work.
 
 **The skill must encode the LAST WORKING flow, not the first attempt.**
 
@@ -201,20 +184,15 @@ Real conversation lifecycle:
 6. Assistant tries approach C → works.
 7. User says "perfect" / "thanks" / pushes / no further messages.
 
-If we extract approach A as the skill, the next agent invoking the skill
-will repeat the same mistakes. Skills must extract approach C — the actual
-working sequence of tool calls.
+If we extract approach A as the skill, the next agent invoking the skill will repeat the same mistakes. Skills must extract approach C — the actual working sequence of tool calls.
 
 ### Analysis pipeline (do this for every candidate pattern)
 
-After the extraction script gives you the user-messages files, follow this
-pipeline. Do NOT skip steps.
+After the extraction script gives you the user-messages files, follow this pipeline. Do NOT skip steps.
 
 #### Step A — Cluster candidate patterns
 
-Read every `.claude-harness/conversations/<slug>-user-messages-part*.md`
-file. Group user messages into candidate patterns. A pattern qualifies as
-a skill candidate only if it appears in **3 or more distinct conversations**.
+Read every `.claude-harness/conversations/<slug>-user-messages-part*.md` file. Group user messages into candidate patterns. A pattern qualifies as a skill candidate only if it appears in **3 or more distinct conversations**.
 
 For each candidate, record the list of conversation IDs where it appears.
 
@@ -227,12 +205,9 @@ Look for:
 
 #### Step B — For each candidate, classify each conversation as SUCCESS or FAIL
 
-The user-messages files tell you WHICH conversations to look at. Now you
-must read those conversations' raw `.jsonl` files to see the full flow.
-The `.jsonl` files live at `~/.claude/projects/<project-slug>/<convId>.jsonl`.
+The user-messages files tell you WHICH conversations to look at. Now you must read those conversations' raw `.jsonl` files to see the full flow. The `.jsonl` files live at `~/.claude/projects/<project-slug>/<convId>.jsonl`.
 
-**Use the Read tool with offset/limit to read .jsonl files partially.** Do
-NOT load whole conversations into context — they can be huge. Strategy:
+**Use the Read tool with offset/limit to read .jsonl files partially.** Do NOT load whole conversations into context — they can be huge. Strategy:
 
 1. First, use Grep to locate the user message that introduces the pattern within the .jsonl: `grep -n '"text":"<user-prompt-snippet>"' <convId>.jsonl`. This gives you the line number.
 2. Read 50–200 lines starting from that line to see the assistant's first attempt.
@@ -252,8 +227,7 @@ Classify each conversation against the pattern as one of:
 
 #### Step C — For each SUCCESS conversation, extract the WORKING flow
 
-Read the .jsonl section between the LAST user pivot/correction and the
-final success signal. That window contains the actual working flow.
+Read the .jsonl section between the LAST user pivot/correction and the final success signal. That window contains the actual working flow.
 
 Heuristic for "last pivot":
 - Walk user messages backwards from the success signal until you find one
@@ -270,9 +244,7 @@ Discard everything before the last pivot — it's the failed-attempt history.
 
 #### Step D — Synthesize the skill from the unioned working flows
 
-For a candidate that has, say, 4 SUCCESS conversations, you now have 4
-working flows. They will not be identical (different files touched,
-different specifics) but should share a CORE SEQUENCE of steps.
+For a candidate that has, say, 4 SUCCESS conversations, you now have 4 working flows. They will not be identical (different files touched, different specifics) but should share a CORE SEQUENCE of steps.
 
 Synthesize:
 - The **steps** in the SKILL.md should be the intersection / common core, not the union.
@@ -280,9 +252,7 @@ Synthesize:
 - If two conversations diverge significantly in approach, that's a sign you have TWO skills, not one — split them.
 - Each step in the skill should reference a real command the assistant actually ran in a SUCCESS conversation. Do not invent generic-sounding steps.
 
-If a candidate has fewer than 2 SUCCESS conversations (regardless of total
-occurrences), DROP IT. The pattern repeats, but no working flow has been
-demonstrated enough to encode reliably.
+If a candidate has fewer than 2 SUCCESS conversations (regardless of total occurrences), DROP IT. The pattern repeats, but no working flow has been demonstrated enough to encode reliably.
 
 #### Step E — Sanity-check the skill before writing
 
@@ -291,26 +261,19 @@ Before Writing the SKILL.md, ask yourself for each step:
 - If a future agent runs this step, what's the failure mode? Does the skill warn about it (because the original conversations hit and corrected that failure)?
 - Does the skill capture the LAST working version, not an interim attempt?
 
-If the answer is "no" or "I'm not sure" for any step, go back and re-read
-the relevant .jsonl section. The skill is only as good as the analysis.
+If the answer is "no" or "I'm not sure" for any step, go back and re-read the relevant .jsonl section. The skill is only as good as the analysis.
 
 ### Greenfield case
 
-If the script reported "No conversation history" or "No .jsonl files", or
-if NO candidate pattern survives Step D, generate ZERO skills. The
-`.claude/skills/` directory does not need to exist. Do not invent
-placeholder skills — that's exactly the bloat the harness aims to avoid.
+If the script reported "No conversation history" or "No .jsonl files", or if NO candidate pattern survives Step D, generate ZERO skills. The `.claude/skills/` directory does not need to exist. Do not invent placeholder skills — that's exactly the bloat the harness aims to avoid.
 
 ## Reference Skill Formats (from the official Claude Code docs)
 
-Match one of these formats based on the type of pattern you discovered.
-Reference: <https://code.claude.com/docs/en/skills>
+Match one of these formats based on the type of pattern you discovered. Reference: <https://code.claude.com/docs/en/skills>
 
 ### Format 1 — Reference content
 
-For patterns that are essentially **knowledge** the user kept restating:
-conventions, style guides, domain terminology. Lets Claude apply the
-guidance in any conversation it deems relevant.
+For patterns that are essentially **knowledge** the user kept restating: conventions, style guides, domain terminology. Lets Claude apply the guidance in any conversation it deems relevant.
 
 ```yaml
 ---
@@ -326,9 +289,7 @@ When writing API endpoints:
 
 ### Format 2 — Task content with disabled auto-invocation
 
-For patterns that are **actions with side effects**: deploys, commits,
-sends. The user wants to invoke explicitly via `/skill-name` and does NOT
-want Claude triggering them automatically.
+For patterns that are **actions with side effects**: deploys, commits, sends. The user wants to invoke explicitly via `/skill-name` and does NOT want Claude triggering them automatically.
 
 ```yaml
 ---
@@ -348,9 +309,7 @@ Deploy $ARGUMENTS to production:
 
 ### Format 3 — Task with arguments (positional)
 
-For patterns where the user consistently passed an argument (issue number,
-file name, branch). Use `$ARGUMENTS` for the full input or `$0`, `$1`, …
-for positional access.
+For patterns where the user consistently passed an argument (issue number, file name, branch). Use `$ARGUMENTS` for the full input or `$0`, `$1`, … for positional access.
 
 ```yaml
 ---
@@ -370,9 +329,7 @@ Fix GitHub issue $ARGUMENTS following our coding standards.
 
 ### Format 4 — Forked subagent (long-running analysis)
 
-For patterns that fan out into a deep read-only analysis (research,
-investigation, summarization). Runs in an isolated context using a
-subagent type — keeps the main conversation clean.
+For patterns that fan out into a deep read-only analysis (research, investigation, summarization). Runs in an isolated context using a subagent type — keeps the main conversation clean.
 
 ```yaml
 ---
@@ -391,9 +348,7 @@ Research $ARGUMENTS thoroughly:
 
 ### Format 5 — Inline shell injection
 
-For patterns that always need fresh data captured at invocation time
-(current PR state, git status, env). Use `` !`<command>` `` to inline
-command output before Claude sees the prompt.
+For patterns that always need fresh data captured at invocation time (current PR state, git status, env). Use `` !`<command>` `` to inline command output before Claude sees the prompt.
 
 ```yaml
 ---
@@ -427,16 +382,13 @@ Summarize this pull request...
 
 ## Update CLAUDE.md
 
-After generating skills, update the Skills table in `CLAUDE.md`. Replace
-the placeholder `/skill-name` row with one row per generated skill:
+After generating skills, update the Skills table in `CLAUDE.md`. Replace the placeholder `/skill-name` row with one row per generated skill:
 
 ```markdown
 | `/<actual-skill-name>` | <description from the skill's frontmatter> |
 ```
 
-If CLAUDE.md doesn't exist yet (running this task in isolation before
-`claude-md`), skip the CLAUDE.md update — the next full run will pick it up.
-If you generated zero skills, leave the placeholder row as-is.
+If CLAUDE.md doesn't exist yet (running this task in isolation before `claude-md`), skip the CLAUDE.md update — the next full run will pick it up. If you generated zero skills, leave the placeholder row as-is.
 
 ## Rules
 

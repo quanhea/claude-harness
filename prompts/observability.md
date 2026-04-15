@@ -9,8 +9,7 @@ outputs: ["docs/OBSERVABILITY.md"]
 
 **Skip if not an app.** If `package.json` has no `scripts.start`/`scripts.dev` and there is no `main.py`/`manage.py`/`main.go`/`Dockerfile`, write a one-line stub `# Observability (N/A — not an app)` and exit.
 
-You are creating docs/OBSERVABILITY.md — the logging, metrics, and tracing setup for this application.
-Only generated for applications (isApp: true), not libraries.
+You are creating docs/OBSERVABILITY.md — the logging, metrics, and tracing setup for this application. Only generated for applications (isApp: true), not libraries.
 
 ## Your Tasks
 

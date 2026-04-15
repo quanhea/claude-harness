@@ -44,29 +44,19 @@ Report everything with specific file paths and patterns found.")
 **Generate ONLY if the pattern is FOUND in the project:**
 
 ### File size linter (`lint-filesize.sh`)
-Generate if: project has a consistent max file size (from lint config or observed pattern).
-Check: `wc -l` against discovered threshold.
-Remediation: "File is X lines (project convention is max Y lines). Consider splitting."
+Generate if: project has a consistent max file size (from lint config or observed pattern). Check: `wc -l` against discovered threshold. Remediation: "File is X lines (project convention is max Y lines). Consider splitting."
 
 ### Naming convention linter (`lint-naming.sh`)
-Generate if: project has a consistent file naming pattern (all kebab-case, all PascalCase, etc.).
-Check: new file name matches discovered pattern.
-Remediation: "File uses X naming. This project uses Y (based on existing files like Z)."
+Generate if: project has a consistent file naming pattern (all kebab-case, all PascalCase, etc.). Check: new file name matches discovered pattern. Remediation: "File uses X naming. This project uses Y (based on existing files like Z)."
 
 ### Structured logging linter (`lint-logging.sh`)
-Generate if: project uses a structured logger AND has consistent anti-raw-logging convention.
-Check: grep for raw console.log/print that bypass the project's logger.
-Remediation: "Use the project's logger ({{logger-name}}) instead of raw {{print/console}}."
+Generate if: project uses a structured logger AND has consistent anti-raw-logging convention. Check: grep for raw console.log/print that bypass the project's logger. Remediation: "Use the project's logger ({{logger-name}}) instead of raw {{print/console}}."
 
 ### Boundary validation linter (`lint-boundaries.sh`)
-Generate if: project validates external data at boundaries with a specific library.
-Check: grep for unvalidated external data parsing.
-Remediation: "Validate with {{validation-library}} at entry boundaries."
+Generate if: project validates external data at boundaries with a specific library. Check: grep for unvalidated external data parsing. Remediation: "Validate with {{validation-library}} at entry boundaries."
 
 ### Architecture dependency linter (`lint-architecture.sh`)
-Generate if: project has clear layer structure in ARCHITECTURE.md.
-Check: read ARCHITECTURE.md for layer definitions, grep imports against allowed direction.
-Remediation: "This file ({{layer}}) imports from {{higher-layer}}. See ARCHITECTURE.md invariants."
+Generate if: project has clear layer structure in ARCHITECTURE.md. Check: read ARCHITECTURE.md for layer definitions, grep imports against allowed direction. Remediation: "This file ({{layer}}) imports from {{higher-layer}}. See ARCHITECTURE.md invariants."
 
 ## Hook Script Format
 

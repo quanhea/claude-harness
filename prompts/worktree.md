@@ -16,15 +16,9 @@ max-turns: 200
 
 ## Why this task exists
 
-Parallel agent work corrupts shared local state. Two agents on two branches
-hitting the same local Postgres database, Redis, or RabbitMQ will overwrite
-each other's rows, blow up migrations, and desync queues. This task solves
-that by making every git worktree get its OWN isolated copy of every local
-service the project touches, provisioned automatically on checkout.
+Parallel agent work corrupts shared local state. Two agents on two branches hitting the same local Postgres database, Redis, or RabbitMQ will overwrite each other's rows, blow up migrations, and desync queues. This task solves that by making every git worktree get its OWN isolated copy of every local service the project touches, provisioned automatically on checkout.
 
-**Local development in this repo is worktree-only after this runs.** The
-companion rule (`.claude/rules/git-workflow.md`) enforces it at the agent
-level; this task makes the physical isolation real.
+**Local development in this repo is worktree-only after this runs.** The companion rule (`.claude/rules/git-workflow.md`) enforces it at the agent level; this task makes the physical isolation real.
 
 ## Your Tasks
 
@@ -43,8 +37,7 @@ Use TaskUpdate to mark each complete. Use TaskList before finishing.
 
 ## Step 1 — Service Detection
 
-Read the codebase and identify every local service the project talks to.
-Look in these places (no guessing — only include what you actually find):
+Read the codebase and identify every local service the project talks to. Look in these places (no guessing — only include what you actually find):
 
 **Databases**
 - `.env*` files for `DATABASE_URL`, `DB_HOST`, `POSTGRES_*`, `MYSQL_*`, `MONGO_*`
@@ -72,14 +65,11 @@ For each hit, record:
 - `envVars` (canonical names the project actually uses — don't invent new ones; read them from `.env.example` or the code)
 - `adminHint` (where to reach the service's admin interface — `localhost:5432` defaults if you can't tell)
 
-Write this mapping down as a comment block at the top of `post-checkout.js`
-so humans can audit what the detector saw.
+Write this mapping down as a comment block at the top of `post-checkout.js` so humans can audit what the detector saw.
 
 ## Step 2 — Generate `.claude/hooks/post-checkout.js`
 
-Write a self-contained Node.js script with zero non-built-in dependencies
-**except** the database/queue client libraries the project already uses
-(re-use what's in `package.json` — don't add new deps).
+Write a self-contained Node.js script with zero non-built-in dependencies **except** the database/queue client libraries the project already uses (re-use what's in `package.json` — don't add new deps).
 
 It must:
 
@@ -109,18 +99,11 @@ It must:
 10. Release the lock, print a single summary line: `✓ worktree ${slug}: db=... redis=db3 rabbit=...`.
 11. **On any error, never partial-provision:** if any service fails, DROP anything already created for this slug and exit non-zero. Let the next invocation retry cleanly.
 
-Optional: detect a migration command and run it for the new DB. Detectors:
-`prisma/schema.prisma` → `npx prisma migrate deploy`;
-`alembic.ini` → `alembic upgrade head`;
-`config/database.yml` → `bundle exec rails db:migrate`;
-`migrations/*.sql` or `db/migrations/` → skip (too unspecific);
-no detector → skip, log `migrations: skipped (no tool detected)`.
-Run the migration with the per-worktree DATABASE_URL **in the environment only**, never persisting it.
+Optional: detect a migration command and run it for the new DB. Detectors: `prisma/schema.prisma` → `npx prisma migrate deploy`; `alembic.ini` → `alembic upgrade head`; `config/database.yml` → `bundle exec rails db:migrate`; `migrations/*.sql` or `db/migrations/` → skip (too unspecific); no detector → skip, log `migrations: skipped (no tool detected)`. Run the migration with the per-worktree DATABASE_URL **in the environment only**, never persisting it.
 
 ## Step 3 — Generate `.claude/hooks/worktree-cleanup.js`
 
-Manually invoked. Never runs from the checkout hook itself — cleanup on
-checkout would delete a live worktree's DB during a rollback.
+Manually invoked. Never runs from the checkout hook itself — cleanup on checkout would delete a live worktree's DB during a rollback.
 
 Logic:
 1. `git worktree list --porcelain` → set of live worktree paths and branches.
@@ -148,13 +131,9 @@ fi
 ```
 
 **Idempotent merge:** if `.git/hooks/post-checkout` already exists and
-does NOT contain the sentinel `claude-harness:worktree-isolation`,
-append a call to our script to the END of the existing hook (not
-overwrite). If it already contains the sentinel, leave it alone.
+does NOT contain the sentinel `claude-harness:worktree-isolation`, append a call to our script to the END of the existing hook (not overwrite). If it already contains the sentinel, leave it alone.
 
-Claude Code sets `core.hooksPath` per-worktree back to the main repo's
-`.git/hooks/` (see `/Users/anhqtran/code/opensource/claude-code/src/utils/worktree.ts:565`),
-so one install covers every worktree created by `claude -w` too.
+Claude Code sets `core.hooksPath` per-worktree back to the main repo's `.git/hooks/` (see `/Users/anhqtran/code/opensource/claude-code/src/utils/worktree.ts:565`), so one install covers every worktree created by `claude -w` too.
 
 ## Step 5 — Wire a cleanup command
 
@@ -195,8 +174,7 @@ worktree using the pattern `{{projectName}}_wt_<slug>`:
 
 **Create a worktree:**
 ```bash
-claude -w                       # Preferred — also names the branch for you
-git worktree add ../myapp-wt-foo -b wt/foo   # Equivalent
+claude -w                       # Preferred — also names the branch for you git worktree add ../myapp-wt-foo -b wt/foo   # Equivalent
 ```
 
 On checkout, `.git/hooks/post-checkout` fires, invokes
@@ -209,14 +187,12 @@ On checkout, `.git/hooks/post-checkout` fires, invokes
 
 **Work in the worktree:**
 ```bash
-cd ../myapp-wt-foo
-[dev command]               # Reads .env.local, talks to the isolated DB
+cd ../myapp-wt-foo [dev command]               # Reads .env.local, talks to the isolated DB
 ```
 
 **When done:**
 ```bash
-git worktree remove ../myapp-wt-foo
-npm run wt:cleanup              # Drops stale DBs, vhosts, etc. (safe — asserts the _wt_ marker)
+git worktree remove ../myapp-wt-foo npm run wt:cleanup              # Drops stale DBs, vhosts, etc. (safe — asserts the _wt_ marker)
 ```
 
 ## Configuration

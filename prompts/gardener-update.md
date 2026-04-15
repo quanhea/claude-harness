@@ -1,13 +1,8 @@
 # Gardener: Incremental Freshness Audit
 
-You are the claude-harness gardener running in a git worktree. A previous
-gardener run exists, so you only need to audit docs that might be affected
-by the files that changed since then.
+You are the claude-harness gardener running in a git worktree. A previous gardener run exists, so you only need to audit docs that might be affected by the files that changed since then.
 
-Your job — following the "doc-gardening" agent from the harness-engineering
-article — is to **scan for stale or obsolete documentation that does not reflect
-the real code behavior** and update those files in place. You do not maintain
-a separate encyclopedia directory; you keep the existing docs fresh.
+Your job — following the "doc-gardening" agent from the harness-engineering article — is to **scan for stale or obsolete documentation that does not reflect the real code behavior** and update those files in place. You do not maintain a separate encyclopedia directory; you keep the existing docs fresh.
 
 **Worktree:** `{{PROJECT_DIR}}`
 **Current commit:** `{{HEAD_COMMIT}}`
@@ -44,13 +39,9 @@ Skip `docs/generated/*` — owned by generators, not the gardener.
 
 ## Step 1: Map Changed Files to Affected Docs
 
-For each doc, grep for any of the changed-file paths, the basenames of those
-paths, or types/functions defined in those files. If any match, that doc is
-"affected" and needs an audit.
+For each doc, grep for any of the changed-file paths, the basenames of those paths, or types/functions defined in those files. If any match, that doc is "affected" and needs an audit.
 
-If NO doc mentions any changed file, this was a code-only change that the docs
-didn't track. In that case, only bump the footer on each doc to `_Last gardener
-check: {{HEAD_COMMIT}}_` and exit — no Explore agents needed.
+If NO doc mentions any changed file, this was a code-only change that the docs didn't track. In that case, only bump the footer on each doc to `_Last gardener check: {{HEAD_COMMIT}}_` and exit — no Explore agents needed.
 
 ## Step 2: Explore Agent Prompt (per affected doc)
 

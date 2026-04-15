@@ -44,10 +44,7 @@ Updated: {{today's date}}
 **Location:** `{{src/components/ or pages/ or app/}}`
 **Structure:**
 ```
-{{ComponentName}}/
-├── index.tsx          # Public export
-├── {{ComponentName}}.tsx  # Implementation
-└── {{ComponentName}}.test.tsx  # Tests
+{{ComponentName}}/ ├── index.tsx          # Public export ├── {{ComponentName}}.tsx  # Implementation └── {{ComponentName}}.test.tsx  # Tests
 ```
 
 ## Design Tokens

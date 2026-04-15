@@ -7,8 +7,7 @@ outputs: ["docs/README.md"]
 
 **Output:** `{{PROJECT_DIR}}/docs/` (directory skeleton)
 
-You are creating the `docs/` directory skeleton and the index / placeholder files
-that other tasks will later populate.
+You are creating the `docs/` directory skeleton and the index / placeholder files that other tasks will later populate.
 
 ## Your Tasks
 
@@ -27,15 +26,11 @@ Use TaskUpdate to mark each complete. Use TaskList before finishing.
 
 ## Context
 
-Detect whether this project is an app (has `scripts.start`/`scripts.dev` in
-`package.json`, or `main.py`/`main.go`/`Dockerfile`) and whether it has frontend
-code (`.tsx`/`.jsx`/`.vue`/`.svelte` files). Use those decisions below.
+Detect whether this project is an app (has `scripts.start`/`scripts.dev` in `package.json`, or `main.py`/`main.go`/`Dockerfile`) and whether it has frontend code (`.tsx`/`.jsx`/`.vue`/`.svelte` files). Use those decisions below.
 
 ## Required Structure
 
-Only `CLAUDE.md` and `ARCHITECTURE.md` live at the project root. Every other
-uppercase knowledge-base file lives inside `docs/`. This mirrors the
-harness-engineering layout from the OpenAI article.
+Only `CLAUDE.md` and `ARCHITECTURE.md` live at the project root. Every other uppercase knowledge-base file lives inside `docs/`. This mirrors the harness-engineering layout from the OpenAI article.
 
 ```
 <project root>
@@ -68,9 +63,7 @@ harness-engineering layout from the OpenAI article.
         └── llms.txt                ← stub (create this)
 ```
 
-Only create the `docs/` subdirectories and the index/stub files listed above.
-The uppercase knowledge-base files are written by their own dedicated tasks —
-do NOT write content into `docs/QUALITY_SCORE.md`, `docs/PLANS.md`, etc.
+Only create the `docs/` subdirectories and the index/stub files listed above. The uppercase knowledge-base files are written by their own dedicated tasks — do NOT write content into `docs/QUALITY_SCORE.md`, `docs/PLANS.md`, etc.
 
 If this is a frontend project, also create:
 - `docs/DESIGN.md` placeholder (the `design` task will fill it in)
@@ -181,9 +174,7 @@ _No generated docs yet. Wire up generators as the project grows._
 
 - Create `.gitkeep` in directories that will remain empty so git tracks them.
 - Do NOT write content into files owned by other tasks (`QUALITY_SCORE.md`,
-  `PLANS.md`, `core-beliefs.md`, `tech-debt-tracker.md`, etc.). Only write
-  placeholders for the ones marked "if frontend" / "if an app".
+  `PLANS.md`, `core-beliefs.md`, `tech-debt-tracker.md`, etc.). Only write placeholders for the ones marked "if frontend" / "if an app".
 - Check before creating — skip files/dirs that already exist.
 - All links in `docs/README.md` and `docs/design-docs/index.md` are relative
-  to the file's own directory (no `docs/` prefix in those links, since they're
-  already inside `docs/`).
+  to the file's own directory (no `docs/` prefix in those links, since they're already inside `docs/`).

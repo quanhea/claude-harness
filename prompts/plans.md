@@ -7,15 +7,9 @@ outputs: ["docs/PLANS.md"]
 
 **Output:** `{{PROJECT_DIR}}/docs/PLANS.md`
 
-You are creating `docs/PLANS.md` — the index and template reference for
-**execution plans**, which are first-class artifacts in this repo
-(alongside worktrees). Every non-trivial change starts with a plan file
-in `docs/exec-plans/active/<slug>.md`. Plans use nested checkbox tasks
-and a decision log so the next agent or session can resume work without
-re-deriving your reasoning.
+You are creating `docs/PLANS.md` — the index and template reference for **execution plans**, which are first-class artifacts in this repo (alongside worktrees). Every non-trivial change starts with a plan file in `docs/exec-plans/active/<slug>.md`. Plans use nested checkbox tasks and a decision log so the next agent or session can resume work without re-deriving your reasoning.
 
-This task does NOT generate individual plan files (those are written per
-change, not by setup). It generates PLANS.md, which contains:
+This task does NOT generate individual plan files (those are written per change, not by setup). It generates PLANS.md, which contains:
 1. An index of active + completed plans in the repo today.
 2. The plan template agents copy from when starting new work.
 3. The lifecycle (active → completed).
@@ -68,19 +62,15 @@ The slug should be short and hyphenated: `add-oauth-login`, `migrate-to-postgres
 ```markdown
 # Plan: <short-title>
 
-Owner: <handle or "unassigned">
-Opened: <YYYY-MM-DD>
+Owner: <handle or "unassigned"> Opened: <YYYY-MM-DD>
 
 ## Context
 
-One paragraph. Why is this change being made? What prompted it? What's the
-intended outcome? A future reader should understand the motivation without
-reading any code.
+One paragraph. Why is this change being made? What prompted it? What's the intended outcome? A future reader should understand the motivation without reading any code.
 
 ## Approach
 
-Two or three sentences. The chosen direction — not the exhaustive design.
-Link to a design doc in `docs/design-docs/` if one exists.
+Two or three sentences. The chosen direction — not the exhaustive design. Link to a design doc in `docs/design-docs/` if one exists.
 
 ## Tasks
 
@@ -102,13 +92,11 @@ Link to a design doc in `docs/design-docs/` if one exists.
 - [ ] Self-review the diff
 - [ ] Open PR
 
-Check boxes off as work completes. Add new tasks / subtasks freely as the
-plan evolves — plans are living documents.
+Check boxes off as work completes. Add new tasks / subtasks freely as the plan evolves — plans are living documents.
 
 ## Decision log
 
-Append an entry whenever you make a non-obvious choice or hit a surprise.
-Keep entries short; the goal is auditability, not prose.
+Append an entry whenever you make a non-obvious choice or hit a surprise. Keep entries short; the goal is auditability, not prose.
 
 - **YYYY-MM-DD** — Decision — One-line rationale.
 - **YYYY-MM-DD** — Decision — One-line rationale.

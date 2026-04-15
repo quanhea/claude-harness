@@ -61,10 +61,7 @@ Use atomic write: write to `.tmp` file, then rename.
 
 ## First Run
 
-The gardener's first scheduled trigger does a full freshness audit of every
-tracked doc (CLAUDE.md, ARCHITECTURE.md, docs/**/*.md). Subsequent runs are
-incremental — they only re-check docs that reference files changed since
-the previous run.
+The gardener's first scheduled trigger does a full freshness audit of every tracked doc (CLAUDE.md, ARCHITECTURE.md, docs/**/*.md). Subsequent runs are incremental — they only re-check docs that reference files changed since the previous run.
 
 To trigger immediately:
 ```bash
