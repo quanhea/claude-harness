@@ -104,6 +104,65 @@ describe("spawnTask", () => {
     assert.ok(fs.existsSync(path.join(outputDir, "logs")), "logs/ directory should exist");
   });
 
+  it("writes a debug JSONL file with spawn and exit events", async () => {
+    const outputDir = path.join(tmpDir, "output");
+    const { promise } = spawnTask({
+      targetDir,
+      outputDir,
+      taskId: "architecture-md",
+      promptTemplate: "task {{TASK_ID}}",
+      config: {
+        parallel: 1,
+        timeout: 1,
+        maxRetries: 0,
+        maxTurns: 5,
+        model: null,
+        verbose: false,
+      },
+    });
+    await promise;
+
+    const debugFile = path.join(outputDir, "debug", "architecture-md.jsonl");
+    assert.ok(fs.existsSync(debugFile), "debug/<slug>.jsonl should exist");
+
+    const lines = fs.readFileSync(debugFile, "utf-8").trim().split("\n").filter(Boolean);
+    assert.ok(lines.length >= 1, "should have at least one event");
+
+    const events = lines.map((l) => JSON.parse(l));
+    // Every event is timestamped + tagged.
+    for (const e of events) {
+      assert.ok(e.t, "every event has a timestamp");
+      assert.ok(e.event, "every event is tagged");
+    }
+    // Either spawn-then-exit (claude found) OR spawn_error (claude missing).
+    const tags = events.map((e) => e.event);
+    assert.ok(
+      tags.includes("spawn") || tags.includes("spawn_error"),
+      `expected spawn or spawn_error, got ${tags.join(",")}`,
+    );
+  });
+
+  it("uses double-underscore slug for nested task ids in debug and log paths", async () => {
+    const outputDir = path.join(tmpDir, "output");
+    const { promise } = spawnTask({
+      targetDir,
+      outputDir,
+      taskId: "rule/architecture",
+      promptTemplate: "t",
+      config: {
+        parallel: 1,
+        timeout: 1,
+        maxRetries: 0,
+        maxTurns: 5,
+        model: null,
+        verbose: false,
+      },
+    });
+    await promise;
+    assert.ok(fs.existsSync(path.join(outputDir, "logs", "rule__architecture.log")));
+    assert.ok(fs.existsSync(path.join(outputDir, "debug", "rule__architecture.jsonl")));
+  });
+
   it("kill() terminates the process", async () => {
     const outputDir = path.join(tmpDir, "output");
     const { promise, kill } = spawnTask({

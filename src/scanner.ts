@@ -25,7 +25,7 @@ import {
   printTTYProgress,
 } from "./progress";
 
-function selectTasks(only: string[] | null): TaskDefinition[] {
+export function selectTasks(only: string[] | null): TaskDefinition[] {
   if (!only || only.length === 0) return TASK_MANIFEST;
   const set = new Set(only);
   return TASK_MANIFEST.filter((t) => set.has(t.id));

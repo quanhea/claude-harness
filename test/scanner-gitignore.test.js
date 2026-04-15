@@ -3,7 +3,8 @@ const assert = require("node:assert/strict");
 const fs = require("fs");
 const path = require("path");
 const os = require("os");
-const { ensureGitignore } = require("../dist/scanner");
+const { ensureGitignore, selectTasks } = require("../dist/scanner");
+const { TASK_MANIFEST } = require("../dist/types");
 
 describe("ensureGitignore", () => {
   let tmpDir;
@@ -69,5 +70,52 @@ describe("ensureGitignore", () => {
     ensureGitignore(tmpDir);
     const content = fs.readFileSync(gitignorePath, "utf-8");
     assert.ok(content.startsWith("node_modules/\n"), "should insert newline");
+  });
+});
+
+describe("selectTasks", () => {
+  it("returns the full manifest when only is null", () => {
+    const tasks = selectTasks(null);
+    assert.equal(tasks.length, TASK_MANIFEST.length);
+  });
+
+  it("returns the full manifest when only is an empty array", () => {
+    const tasks = selectTasks([]);
+    assert.equal(tasks.length, TASK_MANIFEST.length);
+  });
+
+  it("filters by id", () => {
+    const tasks = selectTasks(["claude-md", "settings-json"]);
+    assert.equal(tasks.length, 2);
+    const ids = tasks.map((t) => t.id).sort();
+    assert.deepEqual(ids, ["claude-md", "settings-json"]);
+  });
+
+  it("silently drops ids not in the manifest", () => {
+    const tasks = selectTasks(["claude-md", "not-a-real-task"]);
+    assert.equal(tasks.length, 1);
+    assert.equal(tasks[0].id, "claude-md");
+  });
+
+  it("returns empty array when no ids match", () => {
+    const tasks = selectTasks(["does-not-exist", "neither-does-this"]);
+    assert.equal(tasks.length, 0);
+  });
+
+  it("preserves manifest order regardless of input order", () => {
+    // Pick three tasks in reverse manifest order.
+    const last = TASK_MANIFEST[TASK_MANIFEST.length - 1].id;
+    const mid = TASK_MANIFEST[Math.floor(TASK_MANIFEST.length / 2)].id;
+    const first = TASK_MANIFEST[0].id;
+    const tasks = selectTasks([last, first, mid]);
+    const expectedOrder = TASK_MANIFEST
+      .filter((t) => [last, first, mid].includes(t.id))
+      .map((t) => t.id);
+    assert.deepEqual(tasks.map((t) => t.id), expectedOrder);
+  });
+
+  it("does not duplicate when id is repeated in `only`", () => {
+    const tasks = selectTasks(["claude-md", "claude-md", "claude-md"]);
+    assert.equal(tasks.length, 1);
   });
 });

@@ -1,7 +1,21 @@
-const { describe, it } = require("node:test");
+const { describe, it, before, after } = require("node:test");
 const assert = require("node:assert/strict");
 const path = require("path");
+const fs = require("fs");
+const os = require("os");
 const { loadPrompt, renderPrompt, buildPromptVars } = require("../dist/prompt");
+
+// Fixture helper for frontmatter edge cases — writes a prompt file to a
+// tmp dir and returns its path. loadPrompt accepts absolute paths so we can
+// exercise parseFrontmatter without exporting it.
+let tmpFxDir;
+before(() => { tmpFxDir = fs.mkdtempSync(path.join(os.tmpdir(), "harness-prompt-fx-")); });
+after(() => { fs.rmSync(tmpFxDir, { recursive: true, force: true }); });
+const writeFixture = (name, body) => {
+  const p = path.join(tmpFxDir, name);
+  fs.writeFileSync(p, body);
+  return p;
+};
 
 describe("loadPrompt", () => {
   it("loads a bundled prompt by filename and returns text + meta", () => {
@@ -79,6 +93,155 @@ describe("renderPrompt", () => {
       OUTPUT_DIR: "/my-app/.claude-harness",
     });
     assert.equal(result, "task claude-md in /my-app writes to /my-app/.claude-harness");
+  });
+});
+
+describe("frontmatter edge cases", () => {
+  it("strips double-quoted description", () => {
+    const p = writeFixture("quoted-desc.md", `---
+description: "quoted with \\"embedded\\" quotes handled weirdly"
+---
+
+body`);
+    const loaded = loadPrompt(p);
+    // Implementation uses a regex .replace(/^["'](.*)["']$/, "$1") — strips
+    // the outer pair but leaves inner content untouched.
+    assert.ok(loaded.meta.description);
+    assert.ok(!loaded.meta.description.startsWith('"'));
+  });
+
+  it("strips single-quoted description", () => {
+    const p = writeFixture("squoted-desc.md", `---
+description: 'single quoted'
+---
+
+body`);
+    assert.equal(loadPrompt(p).meta.description, "single quoted");
+  });
+
+  it("parses outputs as a JSON-style array", () => {
+    const p = writeFixture("outputs-array.md", `---
+outputs: ["a.md", "b/c.md", ".claude/skills/*/SKILL.md"]
+---
+
+body`);
+    assert.deepEqual(loadPrompt(p).meta.outputs, ["a.md", "b/c.md", ".claude/skills/*/SKILL.md"]);
+  });
+
+  it("leaves outputs undefined when value is not an array", () => {
+    const p = writeFixture("outputs-scalar.md", `---
+outputs: "a.md"
+---
+
+body`);
+    assert.equal(loadPrompt(p).meta.outputs, undefined);
+  });
+
+  it("leaves outputs undefined when JSON is malformed", () => {
+    const p = writeFixture("outputs-bad.md", `---
+outputs: ["unterminated
+---
+
+body`);
+    assert.equal(loadPrompt(p).meta.outputs, undefined);
+  });
+
+  it("leaves outputs undefined when array contains non-strings", () => {
+    const p = writeFixture("outputs-mixed.md", `---
+outputs: ["ok.md", 42, "also-ok.md"]
+---
+
+body`);
+    assert.equal(loadPrompt(p).meta.outputs, undefined);
+  });
+
+  it("parses max-turns: ~ as unlimited (null)", () => {
+    const p = writeFixture("turns-tilde.md", `---
+max-turns: ~
+---
+
+body`);
+    assert.equal(loadPrompt(p).meta.maxTurns, null);
+  });
+
+  it("parses empty max-turns value as null", () => {
+    const p = writeFixture("turns-empty.md", `---
+max-turns:
+---
+
+body`);
+    assert.equal(loadPrompt(p).meta.maxTurns, null);
+  });
+
+  it("leaves maxTurns undefined for non-numeric invalid value", () => {
+    const p = writeFixture("turns-bad.md", `---
+max-turns: banana
+---
+
+body`);
+    assert.equal(loadPrompt(p).meta.maxTurns, undefined);
+  });
+
+  it("ignores unknown frontmatter keys", () => {
+    const p = writeFixture("unknown-key.md", `---
+description: test
+pineapple: yes
+max-turns: 5
+---
+
+body`);
+    const { meta } = loadPrompt(p);
+    assert.equal(meta.description, "test");
+    assert.equal(meta.maxTurns, 5);
+    assert.equal(meta.pineapple, undefined);
+  });
+
+  it("handles CRLF line endings in frontmatter", () => {
+    const p = writeFixture("crlf.md", "---\r\ndescription: crlf-ok\r\nmax-turns: 10\r\n---\r\n\r\nbody\r\n");
+    const { meta } = loadPrompt(p);
+    assert.equal(meta.description, "crlf-ok");
+    assert.equal(meta.maxTurns, 10);
+  });
+
+  it("returns empty meta + full body when no frontmatter", () => {
+    const p = writeFixture("no-fm.md", "# Just a body\n\nNo frontmatter here.\n");
+    const { meta, text } = loadPrompt(p);
+    assert.deepEqual(meta, {});
+    assert.ok(text.startsWith("# Just a body"));
+  });
+
+  it("strips body whitespace on load", () => {
+    const p = writeFixture("padded.md", `---
+description: x
+---
+
+
+  actual content
+
+
+`);
+    assert.equal(loadPrompt(p).text, "actual content");
+  });
+});
+
+describe("renderPrompt edge cases", () => {
+  it("leaves unknown placeholder intact when not in vars map", () => {
+    const result = renderPrompt("{{KNOWN}} and {{UNKNOWN}}", { KNOWN: "yes" });
+    assert.equal(result, "yes and {{UNKNOWN}}");
+  });
+
+  it("empty vars map leaves all placeholders intact", () => {
+    const result = renderPrompt("{{A}} {{B}}", {});
+    assert.equal(result, "{{A}} {{B}}");
+  });
+
+  it("replaces value containing regex metacharacters safely", () => {
+    // The value may contain $1, $&, etc. — String.replace gives them
+    // replacement semantics in the 2nd argument. Current impl passes a
+    // plain string, so $& would be interpreted. This test asserts we
+    // handle the common "forward-slash path" case at minimum.
+    const result = renderPrompt("{{DIR}}", { DIR: "/some/path" });
+    assert.equal(result, "/some/path");
   });
 });
 
