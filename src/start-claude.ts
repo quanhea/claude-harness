@@ -15,26 +15,6 @@ import { spawn } from "child_process";
 import * as fs from "fs";
 import * as path from "path";
 import { loadPrompt, renderPrompt } from "./prompt";
-import { TASK_MANIFEST } from "./types";
-
-// Build the dynamic task table from each prompt's frontmatter description.
-function buildTaskTable(): string {
-  return TASK_MANIFEST.map((t) => {
-    let desc: string;
-    let flags: string[] = [];
-    try {
-      const meta = loadPrompt(t.promptFile).meta;
-      desc = meta.description ?? t.id;
-      if (meta.alwaysRun) flags.push("always-run");
-      if (meta.maxTurns === null) flags.push("unlimited turns");
-      if (meta.outputs?.length) flags.push(`→ ${meta.outputs.join(", ")}`);
-    } catch {
-      desc = t.id;
-    }
-    const suffix = flags.length ? ` *(${flags.join(" | ")})*` : "";
-    return `| \`${t.id}\` | ${desc}${suffix} |`;
-  }).join("\n");
-}
 
 export async function startClaude(args: string[]): Promise<number> {
   // Parse: [target-dir] [-- ...passthrough-to-claude]
@@ -62,8 +42,6 @@ export async function startClaude(args: string[]): Promise<number> {
     const loaded = loadPrompt(promptSource);
     systemContext = renderPrompt(loaded.text, {
       PROJECT_DIR: targetDir,
-      TASK_TABLE: buildTaskTable(),
-      TASK_COUNT: String(TASK_MANIFEST.length),
     });
   } catch (err: any) {
     console.error(`Error loading start-claude prompt: ${err.message}`);

@@ -1,6 +1,6 @@
 // Tests for the start-claude command.
 // We cannot actually launch an interactive claude session in CI, so we test:
-//  1. Prompt loading and rendering (buildTaskTable + renderPrompt)
+//  1. Prompt loading and rendering (PROJECT_DIR substitution, --append-system-prompt)
 //  2. Project-local override: .claude/start-claude.md preferred over bundled
 //  3. Missing target dir returns exit code 1
 //  4. ENOENT (claude not found) is handled gracefully
@@ -74,7 +74,7 @@ describe("start-claude prompt rendering", () => {
     // Mock binary echoes argv as JSON.
     const argv = JSON.parse(result.stdout.trim());
     assert.equal(argv[0], "--append-system-prompt", "first arg must be --append-system-prompt");
-    assert.ok(argv[1].includes("claude-harness"), "system prompt should mention claude-harness");
+    assert.ok(argv[1].includes("agent-first"), "system prompt should mention agent-first development");
   });
 
   it("renders {{PROJECT_DIR}} into the system prompt", () => {
@@ -84,36 +84,6 @@ describe("start-claude prompt rendering", () => {
     assert.ok(systemPrompt.includes(tmpProject), "system prompt should contain the resolved project dir");
   });
 
-  it("renders {{TASK_COUNT}} — should equal the manifest size", () => {
-    const { TASK_MANIFEST } = require("../dist/types");
-    const result = run([tmpProject]);
-    const argv = JSON.parse(result.stdout.trim());
-    const systemPrompt = argv[1];
-    assert.ok(
-      systemPrompt.includes(String(TASK_MANIFEST.length)),
-      `system prompt should mention ${TASK_MANIFEST.length} tasks`,
-    );
-  });
-
-  it("includes a task table row for every task in the manifest", () => {
-    const { TASK_MANIFEST } = require("../dist/types");
-    const result = run([tmpProject]);
-    const argv = JSON.parse(result.stdout.trim());
-    const systemPrompt = argv[1];
-    // Spot-check a few task IDs are present in the rendered table.
-    for (const t of ["claude-md", "architecture-md", "skills", "mcp-config"]) {
-      assert.ok(systemPrompt.includes(t), `task '${t}' should appear in the task table`);
-    }
-    // Every task ID should appear.
-    const missing = TASK_MANIFEST.filter((t) => !systemPrompt.includes(t.id));
-    assert.equal(missing.length, 0, `Missing tasks: ${missing.map((t) => t.id).join(", ")}`);
-  });
-
-  it("marks always-run tasks in the task table", () => {
-    const result = run([tmpProject]);
-    const argv = JSON.parse(result.stdout.trim());
-    assert.ok(argv[1].includes("always-run"), "table should flag always-run tasks");
-  });
 });
 
 describe("project-local override", () => {
