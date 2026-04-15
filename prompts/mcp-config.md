@@ -90,4 +90,4 @@ Use `${DATABASE_URL}` env var reference, not hardcoded credentials.
 - Only include MCP servers for infrastructure that ACTUALLY EXISTS in this project.
 - If no relevant infrastructure is detected, write an empty `mcpServers: {}`.
 - If .mcp.json already exists, read it first and MERGE — preserve user-configured servers.
-- Add `.mcp.json` to `.gitignore` if it contains any environment variable references (it may expose which env vars are expected).
+- If `.mcp.json` contains any `${ENV_VAR}` references, add it to `.gitignore` AND write a tracked companion file `.mcp.json.<SUFFIX>` with the same structure (matching the project's existing convention — look for `.env.TEMPLATE`, `.env.EXAMPLE`, `.env.example`, `.env.sample`; default to `.example` if none found).
