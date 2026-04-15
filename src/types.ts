@@ -105,7 +105,7 @@ export interface TaskDefinition {
 }
 
 export const DEFAULTS: HarnessConfig & { outputDir: string } = {
-  parallel: 6,
+  parallel: 12,
   timeout: 1800,
   maxRetries: 2,
   maxTurns: 100,

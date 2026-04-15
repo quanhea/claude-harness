@@ -68,7 +68,7 @@ load TASK_MANIFEST → spawn N claude -p processes → collect results
 ```
 
 All 28 tasks run in one flat parallel pool (up to `--parallel` concurrent workers,
-default 6). There are no phases, no gates, no cross-task dependencies.
+default 12). There are no phases, no gates, no cross-task dependencies.
 
 Each prompt is self-contained: it reads the project directly (`package.json`, source
 files, git log) and, if the task doesn't apply to this project, writes a one-line
@@ -128,7 +128,7 @@ docs/
 ## Options
 
 ```
-  -j, --parallel <n>       Parallel workers per phase   (default: 6)
+  -j, --parallel <n>       Parallel workers per phase   (default: 12)
   -t, --timeout <seconds>  Per-task timeout             (default: 1800)
       --resume             (legacy no-op — every run is a resume now)
       --retry              Also re-run failed/timed-out tasks

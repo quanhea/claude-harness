@@ -6,7 +6,7 @@ Initial release.
 
 ### Core orchestrator
 
-- 28 independent tasks run in one flat parallel pool — no phases, no gates, no cross-task dependencies
+- 28 independent tasks run in one flat parallel pool — no phases, no gates, no cross-task dependencies; default concurrency raised to 12 workers
 - Each prompt is self-contained: reads the project directly and self-skips if the task doesn't apply (e.g. frontend docs on a backend-only project)
 - Adaptive concurrency: reduces parallelism on rate-limit responses, restores it on consecutive successes
 - Graceful shutdown: first Ctrl+C drains the queue, second kills all workers immediately
