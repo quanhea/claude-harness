@@ -23,10 +23,10 @@ Create these tasks now with TaskCreate. Steps 5–8 are where the real work happ
 2. "Compute the project slug from {{PROJECT_DIR}} (replace / with -, prefix with -)"
 3. "Write the embedded extraction script to .claude-harness/extract-conversations.cjs"
 4. "Run the script: node .claude-harness/extract-conversations.cjs <slug> .claude-harness/conversations/"
-5. "Cluster candidate patterns from the user-messages files (3+ conversations each)"
+5. "Cluster candidate patterns from the user-messages files (3+ total occurrences each, within or across conversations)"
 6. "For each candidate, partial-Read the source .jsonl files and classify each conversation as SUCCESS or FAIL"
-7. "For each SUCCESS conversation, extract the working flow (assistant turns AFTER the last user pivot, UP TO the success signal)"
-8. "Synthesize each skill's steps from the intersection of working flows; drop any candidate with fewer than 2 SUCCESS conversations"
+7. "For each SUCCESS occurrence, extract the working flow (assistant turns AFTER the last user pivot, UP TO the success signal)"
+8. "Synthesize each skill's steps from the intersection of working flows; drop any candidate with fewer than 2 SUCCESS occurrences"
 9. "mkdir -p .claude/skills/<each-surviving-skill-name>/ via Bash"
 10. "Write each SKILL.md following the official Claude Code skills format (see Reference Skill Formats below)"
 11. "Update CLAUDE.md Skills table with the actual skills generated"
@@ -192,9 +192,9 @@ After the extraction script gives you the user-messages files, follow this pipel
 
 #### Step A — Cluster candidate patterns
 
-Read every `.claude-harness/conversations/<slug>-user-messages-part*.md` file. Group user messages into candidate patterns. A pattern qualifies as a skill candidate only if it appears in **3 or more distinct conversations**.
+Read every `.claude-harness/conversations/<slug>-user-messages-part*.md` file. Group user messages into candidate patterns. A pattern qualifies as a skill candidate if it has **3 or more total occurrences** — either across multiple conversations OR repeated within a single long conversation. Both count.
 
-For each candidate, record the list of conversation IDs where it appears.
+For each candidate, record every occurrence with its conversation ID AND a short snippet (or message index) locating it within that conversation. You need this to find each occurrence in Step B.
 
 Look for:
 - **Repeated command sequences** — same multi-step operation 3+ times.
@@ -203,37 +203,38 @@ Look for:
 - **Deployment / release steps** — repeated sequences around shipping.
 - **Recurring debug patterns** — same diagnosis flow for the same bug class.
 
-#### Step B — For each candidate, classify each conversation as SUCCESS or FAIL
+#### Step B — For each candidate OCCURRENCE, classify it as SUCCESS or FAIL
 
-The user-messages files tell you WHICH conversations to look at. Now you must read those conversations' raw `.jsonl` files to see the full flow. The `.jsonl` files live at `~/.claude/projects/<project-slug>/<convId>.jsonl`.
+An "occurrence" is one specific ask within one conversation. A single long conversation can contain multiple occurrences of the same pattern (the user asked for the same kind of thing three times) — classify each one independently.
 
-**Use the Read tool with offset/limit to read .jsonl files partially.** Do NOT load whole conversations into context — they can be huge. Strategy:
+The user-messages files tell you which conversation each occurrence is in. Now you must read those conversations' raw `.jsonl` files to see the flow around each occurrence. The `.jsonl` files live at `~/.claude/projects/<project-slug>/<convId>.jsonl`.
 
-1. First, use Grep to locate the user message that introduces the pattern within the .jsonl: `grep -n '"text":"<user-prompt-snippet>"' <convId>.jsonl`. This gives you the line number.
-2. Read 50–200 lines starting from that line to see the assistant's first attempt.
-3. Read the LAST 200 lines of the .jsonl to see how the conversation ended.
-4. Read intermediate sections only if you need to disambiguate.
+**Use the Read tool with offset/limit to read .jsonl files partially.** Do NOT load whole conversations into context — they can be huge. Strategy, per occurrence:
 
-Classify each conversation against the pattern as one of:
+1. Use Grep to locate THIS specific occurrence in the .jsonl: `grep -n '"text":"<user-prompt-snippet>"' <convId>.jsonl` using a snippet unique enough to pick one match.
+2. Read 50–200 lines starting from that line to see the assistant's response to this specific ask.
+3. Stop reading at the NEXT user message — that message is either closure (SUCCESS), a correction (FAIL), or a new unrelated ask (neutral; end of this occurrence's window). If there is no next user message, the conversation ended there.
 
-- **SUCCESS** — the assistant ultimately produced a working solution AND the user signaled acceptance. Signals:
-  - The last user message is positive / closing: "perfect", "thanks", "done", "ship it", "looks good", "great", a `/commit`, a `git push`, OR no further user message at all (the user moved on satisfied).
-  - The last assistant message reports completion with verifiable outcomes ("tests pass", "deployed", "PR opened").
-  - Tool calls toward the end succeeded (no terminal errors that went unaddressed).
-- **FAIL** — the conversation never reached a working state for this pattern. Signals:
-  - The last user message is corrective / unhappy: "still broken", "no, that's wrong", "you missed", "try again", "actually...".
-  - The conversation was abandoned mid-flow (no closure).
-  - Many revert / undo operations near the end.
+Classify each occurrence as one of:
 
-#### Step C — For each SUCCESS conversation, extract the WORKING flow
+- **SUCCESS** — the assistant produced a working solution for this ask AND the user signaled acceptance at the end of the window. Signals:
+  - The next user message is positive / closing: "perfect", "thanks", "done", "ship it", "looks good", "great", a `/commit`, a `git push`, OR the user moves on to a different topic, OR there is no next user message (end of conversation).
+  - The assistant's last message before that reports completion with verifiable outcomes ("tests pass", "deployed", "PR opened").
+  - Tool calls in the window succeeded (no terminal errors that went unaddressed).
+- **FAIL** — the occurrence never reached a working state. Signals:
+  - The next user message is corrective / unhappy: "still broken", "no, that's wrong", "you missed", "try again", "actually...".
+  - The occurrence was abandoned mid-flow (the user pivoted without closure).
+  - Many revert / undo operations near the end of the window.
 
-Read the .jsonl section between the LAST user pivot/correction and the final success signal. That window contains the actual working flow.
+#### Step C — For each SUCCESS occurrence, extract the WORKING flow
+
+Read the .jsonl section between the LAST user pivot/correction within this occurrence's window and its success signal. That window contains the actual working flow for this specific ask.
 
 Heuristic for "last pivot":
 - Walk user messages backwards from the success signal until you find one
-  that is NOT positive/closing — that's the pivot.
+  that is NOT positive/closing AND is still about the same ask — that's the pivot.
 - The assistant turns AFTER the pivot, UP TO the success signal, are the
-  working flow.
+  working flow for this occurrence.
 
 From those assistant turns, extract:
 - The exact tool calls in order: `Bash(npm test)`, `Read(src/auth.ts)`, `Edit(...)` etc.
@@ -244,20 +245,20 @@ Discard everything before the last pivot — it's the failed-attempt history.
 
 #### Step D — Synthesize the skill from the unioned working flows
 
-For a candidate that has, say, 4 SUCCESS conversations, you now have 4 working flows. They will not be identical (different files touched, different specifics) but should share a CORE SEQUENCE of steps.
+For a candidate that has, say, 4 SUCCESS occurrences, you now have 4 working flows. They will not be identical (different files touched, different specifics) but should share a CORE SEQUENCE of steps.
 
 Synthesize:
 - The **steps** in the SKILL.md should be the intersection / common core, not the union.
-- The **example invocations** can vary across conversations.
-- If two conversations diverge significantly in approach, that's a sign you have TWO skills, not one — split them.
-- Each step in the skill should reference a real command the assistant actually ran in a SUCCESS conversation. Do not invent generic-sounding steps.
+- The **example invocations** can vary across occurrences.
+- If two occurrences diverge significantly in approach, that's a sign you have TWO skills, not one — split them.
+- Each step in the skill should reference a real command the assistant actually ran in a SUCCESS occurrence. Do not invent generic-sounding steps.
 
-If a candidate has fewer than 2 SUCCESS conversations (regardless of total occurrences), DROP IT. The pattern repeats, but no working flow has been demonstrated enough to encode reliably.
+If a candidate has fewer than 2 SUCCESS occurrences, DROP IT. The pattern repeats, but no working flow has been demonstrated enough to encode reliably.
 
 #### Step E — Sanity-check the skill before writing
 
 Before Writing the SKILL.md, ask yourself for each step:
-- Was this step in the working window of at least 2 SUCCESS conversations?
+- Was this step in the working window of at least 2 SUCCESS occurrences?
 - If a future agent runs this step, what's the failure mode? Does the skill warn about it (because the original conversations hit and corrected that failure)?
 - Does the skill capture the LAST working version, not an interim attempt?
 
@@ -393,7 +394,7 @@ If CLAUDE.md doesn't exist yet (running this task in isolation before `claude-md
 ## Rules
 
 - DO `mkdir -p .claude/skills/<name>/` via Bash before any Write into that path.
-- DO NOT generate any skill that doesn't have 2+ SUCCESS conversations behind it.
+- DO NOT generate any skill that doesn't have 2+ SUCCESS occurrences behind it.
 - DO NOT invent skills to fill empty space — zero is the correct count for greenfield projects.
 - DO NOT overwrite existing skills — read `.claude/skills/` first; only ADD missing.
 - The extraction script writes to `.claude-harness/conversations/`, not into the project's `docs/` or `.claude/`.
