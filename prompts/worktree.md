@@ -127,7 +127,7 @@ script="$repo_root/.claude/hooks/post-checkout.sh"
 **Idempotent merge:** if `.git/hooks/post-checkout` already exists and
 does NOT contain the sentinel `claude-harness:worktree-isolation`, append a call to our script to the END of the existing hook (not overwrite). If it already contains the sentinel, leave it alone.
 
-Claude Code sets `core.hooksPath` per-worktree back to the main repo's `.git/hooks/` (see `/Users/anhqtran/code/opensource/claude-code/src/utils/worktree.ts:565`), so one install covers every worktree created by `claude -w` too.
+The `.git/hooks/post-checkout` install covers every worktree created via `git worktree add`.
 
 ## Step 5 — Wire a cleanup command
 
@@ -168,11 +168,11 @@ worktree using the pattern `{{projectName}}_wt_<slug>`:
 
 **Create a worktree:**
 ```bash
-claude -w                       # Preferred — also names the branch for you git worktree add ../myapp-wt-foo -b wt/foo   # Equivalent
+git worktree add ../myapp-wt-foo -b wt/foo
 ```
 
 On checkout, `.git/hooks/post-checkout` fires, invokes
-`.claude/hooks/post-checkout.js`, and:
+`.claude/hooks/post-checkout.sh`, and:
 1. Computes a slug from the branch name.
 2. Skips if the branch is in the shared-branch allowlist (`main`, `master`, `trunk`, `develop`).
 3. Creates the isolated resources (DB, vhost, Redis db-number, …).
@@ -206,7 +206,7 @@ git worktree remove ../myapp-wt-foo npm run wt:cleanup              # Drops stal
 | Symptom | Fix |
 |---------|-----|
 | `permission denied to create database` | Set `WORKTREE_ADMIN_DATABASE_URL` to a role with `CREATEDB`. |
-| `.env.local` missing after `claude -w` with sparse-checkout | Claude Code uses `--no-checkout` for sparse repos and suppresses hooks. Run manually: `bash .claude/hooks/post-checkout.sh 0 HEAD 1`. |
+| `.env.local` missing after `git worktree add` with sparse-checkout | Git uses `--no-checkout` for sparse repos and suppresses hooks. Run manually: `bash .claude/hooks/post-checkout.sh 0 HEAD 1`. |
 | Resources left behind after a crash | `npm run wt:cleanup` — reconciles against `git worktree list`. |
 
 ## Why worktrees are mandatory

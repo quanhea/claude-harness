@@ -66,7 +66,7 @@ Two rules apply to every change in this repo — no exceptions. Everything else 
 
 ### Rule 1 — Worktree-first local development
 
-Never edit code on the current branch. Open a worktree first: `claude -w` (preferred — auto-names the branch) or `git worktree add <path> -b <branch>`. The post-checkout hook auto-provisions an isolated database, queue, cache, and `.env.local` for your worktree so parallel work can't corrupt shared state. Branches are for remote history; locally, worktrees always. See `docs/WORKTREE.md` for the provisioning mechanics and safety markers.
+Never edit code on the current branch. Open a worktree first: `git worktree add <path> -b <branch>`. The post-checkout hook auto-provisions an isolated database, queue, cache, and `.env.local` for your worktree so parallel work can't corrupt shared state. Branches are for remote history; locally, worktrees always. See `docs/WORKTREE.md` for the provisioning mechanics and safety markers.
 
 ### Rule 2 — Plans are first-class artifacts
 

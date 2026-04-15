@@ -70,7 +70,7 @@ Code changes happen ONLY inside a git worktree. Branches are for remote
 history; locally, every branch you work on lives in its own worktree with
 its own isolated database, queue, cache, and `.env.local`.
 
-- **Starting a task**: run `claude -w` (preferred — also names the branch) or `git worktree add <path> -b <branch>`.
+- **Starting a task**: `git worktree add <path> -b <branch>`.
 - **NEVER** run `git checkout -b <branch>` in the main repo directory and edit files there. That path bypasses the post-checkout provisioning hook and will corrupt shared local-service state.
 - **When done**: `git worktree remove <path>` then `npm run wt:cleanup` (or the project's equivalent — see `docs/WORKTREE.md`).
 - **If you find yourself about to edit on `main`/`master`/`trunk`**: STOP and open a worktree first.
@@ -193,8 +193,7 @@ if echo "$COMMAND" | grep -qE 'git checkout .*(--branch|-b)'; then
   echo "This repo requires worktree-first development." >&2
   echo "" >&2
   echo "Open a worktree instead:" >&2
-  echo "  claude -w                              # preferred (Claude Code names the branch)" >&2
-  echo "  git worktree add ../<dir> -b <branch>  # manual" >&2
+  echo "  git worktree add ../<dir> -b <branch>" >&2
   echo "" >&2
   echo "Branch naming standard: ${GIT_WORKFLOW_DOC:-.claude/rules/git-workflow.md}" >&2
   exit 2
@@ -306,8 +305,7 @@ if [ -d "$GIT_TOP/.git" ]; then
   echo "This repo requires worktree-first development — no exceptions." >&2
   echo "" >&2
   echo "Open a worktree:" >&2
-  echo "  claude -w                                    # preferred (Claude Code names the branch)" >&2
-  echo "  git worktree add ../<name> -b <branch>       # manual" >&2
+  echo "  git worktree add ../<name> -b <branch>" >&2
   [ -n "${BRANCH_EXAMPLES:-}" ] && echo "  Valid branch names: ${BRANCH_EXAMPLES}" >&2
   echo "" >&2
   echo "See ${WORKTREE_DOC:-docs/WORKTREE.md} for service provisioning and the full workflow." >&2
@@ -332,7 +330,7 @@ writes; parallel tasks could clobber each other:
         "hooks": [
           {
             "type": "command",
-            "command": ".claude/hooks/enforce-worktree.sh",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/enforce-worktree.sh",
             "timeout": 5
           }
         ]
@@ -342,7 +340,7 @@ writes; parallel tasks could clobber each other:
         "hooks": [
           {
             "type": "command",
-            "command": ".claude/hooks/enforce-git-naming.sh",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/enforce-git-naming.sh",
             "timeout": 5
           }
         ]
