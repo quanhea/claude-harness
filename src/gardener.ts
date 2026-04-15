@@ -95,7 +95,7 @@ export async function runGardener(projectPath: string): Promise<number> {
 
   const outputDir = path.join(absProject, ".claude-harness");
   const logPath = path.join(outputDir, "logs", "gardener.log");
-  const rawPath = path.join(outputDir, "raw", "gardener.json");
+  const debugPath = path.join(outputDir, "debug", "gardener.jsonl");
 
   try {
     // First run: full freshness audit. Subsequent runs: only re-check docs
@@ -125,7 +125,7 @@ export async function runGardener(projectPath: string): Promise<number> {
     const loaded = loadPrompt(promptFile);
     const prompt = renderPrompt(loaded.text, promptVars);
 
-    const { promise } = spawnClaude({ prompt, cwd: worktreePath, logPath, rawPath, config });
+    const { promise } = spawnClaude({ prompt, cwd: worktreePath, logPath, debugPath, config });
     const result = await promise;
 
     if (result.killed || result.exitCode !== 0 || result.isError) {

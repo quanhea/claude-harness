@@ -81,8 +81,16 @@ Results from the orchestrator go to `.claude-harness/` (or `--output <dir>`):
 .claude-harness/
 ├── setup-report.md     # Task summary with timing
 ├── state.json          # Run state (powers re-run / --retry / --only)
-└── logs/               # Claude stdout+stderr per task
+├── logs/               # Claude stdout+stderr per task (raw JSON envelope)
+└── debug/              # Orchestrator event trail per task (JSONL: spawn/exit/errors)
 ```
+
+The `.claude-harness/` directory is auto-appended to the project's `.gitignore` on
+the first non-dry-run — it's local run state (retries, resume, summaries) and
+should never be committed. Team members running `claude-harness` against a repo
+that already has the generated output files (CLAUDE.md, ARCHITECTURE.md, etc.)
+will see those tasks auto-detected as COMPLETED via disk reconciliation; only
+the missing ones re-run.
 
 Generated project files are written directly into the target project by each task's
 Claude subprocess:

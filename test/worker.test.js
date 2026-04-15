@@ -99,7 +99,9 @@ describe("spawnTask", () => {
     });
 
     await promise;
-    assert.ok(fs.existsSync(path.join(outputDir, "reports")));
+    // spawnTask creates logs/ (raw stdout) and debug/ (orchestrator events).
+    // The old raw/ dir is gone.
+    assert.ok(fs.existsSync(path.join(outputDir, "logs")), "logs/ directory should exist");
   });
 
   it("kill() terminates the process", async () => {

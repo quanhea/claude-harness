@@ -103,6 +103,23 @@ export function outputExists(rootDir: string, pattern: string): boolean {
   return walkMatch(rootDir, startRel, regex, 0);
 }
 
+// Idempotently append `.claude-harness/` to the target project's .gitignore.
+// Sentinel-marker lets us detect a previous append so we don't add twice.
+function ensureGitignore(targetDir: string): void {
+  const gitignorePath = path.join(targetDir, ".gitignore");
+  const SENTINEL = "# claude-harness: local state — never track";
+  const ENTRY = ".claude-harness/";
+  let existing = "";
+  if (fs.existsSync(gitignorePath)) {
+    existing = fs.readFileSync(gitignorePath, "utf-8");
+    if (existing.includes(SENTINEL)) return;
+    if (existing.split(/\r?\n/).some((l) => l.trim() === ENTRY)) return;
+  }
+  const prefix = existing && !existing.endsWith("\n") ? "\n" : "";
+  const block = `\n${SENTINEL}\n${ENTRY}\n`;
+  fs.writeFileSync(gitignorePath, existing + prefix + block);
+}
+
 function walkMatch(rootDir: string, relPath: string, regex: RegExp, depth: number): boolean {
   if (depth > GLOB_WALK_MAX_DEPTH) return false;
   const absPath = relPath ? path.join(rootDir, relPath) : rootDir;
@@ -151,50 +168,57 @@ export async function setup(options: HarnessOptions): Promise<number> {
     return 0;
   }
 
+  // Append `.claude-harness/` to the target's .gitignore if not already
+  // there. The whole dir is transient — state.json, logs, debug, and the
+  // conversations extraction — no reason to track any of it. Teammates get
+  // the committed output files (CLAUDE.md, docs/, .claude/) and the scanner
+  // reconciles against them.
+  ensureGitignore(absTarget);
+
   // Unified state load — every run behaves like a resume that also picks up
-  // any new tasks added to the manifest since the last run. No interactive
-  // "Resume previous run?" prompt; re-running is always safe.
+  // any new tasks added to the manifest since the last run.
   const allTaskIds = TASK_MANIFEST.map((t) => t.id);
   let state = loadState(absOutput);
 
   if (!state) {
-    // First run for this project
     state = initState(absTarget, allTaskIds, config);
   } else {
     state.config = config;
 
-    // (1) Merge in any tasks added to TASK_MANIFEST since the last run.
-    // This is how `claude-harness` (with no args) picks up new tasks after
-    // an upgrade — they land as PENDING and run on the next execution.
+    // Merge in any tasks added to TASK_MANIFEST since the last run.
     const added = mergeNewTasks(state, allTaskIds);
     if (added > 0) {
       console.log(`Detected ${added} new task(s) from an updated claude-harness version.`);
     }
 
-    // (2) Reset stale RUNNING entries (previous process crashed mid-run).
-    // This used to require --resume; now it's automatic and safe.
+    // Reset stale RUNNING entries (previous process crashed mid-run).
     const stale = resetStaleRunning(state);
     if (stale > 0) console.log(`Reset ${stale} stale in-flight task(s) to pending.`);
 
-    // (3) --retry also resets FAILED/TIMEOUT so they re-run.
+    // --retry also resets FAILED/TIMEOUT.
     if (retry) {
       const failed = resetFailed(state);
       if (failed > 0) console.log(`Retry: reset ${failed} failed/timed-out task(s) to pending.`);
     }
+  }
 
-    // (4) Reconcile state against disk: if a COMPLETED task's declared output
-    // (from prompt frontmatter `outputs:`) is missing, requeue it. Tasks
-    // with no declared outputs (skills, hooks, formatter, ci-workflow,
-    // arch-tests, gardener) are skipped — their output paths are dynamic
-    // or project-type-specific.
-    const requeued: string[] = [];
-    for (const task of TASK_MANIFEST) {
-      const entry = state.tasks[task.id];
-      if (!entry || entry.status !== STATUS.COMPLETED) continue;
-      const outputs = meta.get(task.id)?.meta.outputs;
-      if (!outputs || outputs.length === 0) continue;
-      const missing = outputs.filter((p) => !outputExists(absTarget, p));
-      if (missing.length === 0) continue;
+  // Bidirectional reconciliation against the target's on-disk state.
+  // Runs on EVERY invocation (fresh init or resumed state), covering two
+  // symmetric cases:
+  //   - COMPLETED in state but outputs missing → requeue (user deleted a file)
+  //   - PENDING in state but outputs already present → mark COMPLETED (a
+  //     teammate pulled a repo that already had the generated files; no
+  //     point spawning Claude to regenerate what's already committed).
+  // Tasks with no declared outputs in frontmatter skip this check entirely.
+  const requeued: string[] = [];
+  const detected: string[] = [];
+  for (const task of TASK_MANIFEST) {
+    const entry = state.tasks[task.id];
+    if (!entry) continue;
+    const outputs = meta.get(task.id)?.meta.outputs;
+    if (!outputs || outputs.length === 0) continue;
+    const allPresent = outputs.every((p) => outputExists(absTarget, p));
+    if (entry.status === STATUS.COMPLETED && !allPresent) {
       entry.status = STATUS.PENDING;
       entry.attempts = 0;
       delete entry.completedAt;
@@ -202,9 +226,19 @@ export async function setup(options: HarnessOptions): Promise<number> {
       delete entry.exitCode;
       delete entry.lastError;
       requeued.push(task.id);
+    } else if (entry.status === STATUS.PENDING && allPresent) {
+      entry.status = STATUS.COMPLETED;
+      entry.completedAt = new Date().toISOString();
+      // attempts stays 0 — we never spawned Claude for this one
+      detected.push(task.id);
+    }
+  }
+  if (requeued.length > 0 || detected.length > 0) {
+    state.stats = computeStats(state.tasks);
+    if (detected.length > 0) {
+      console.log(`Detected ${detected.length} task(s) already present on disk — marking completed: ${detected.join(", ")}`);
     }
     if (requeued.length > 0) {
-      state.stats = computeStats(state.tasks);
       console.log(`Detected ${requeued.length} task(s) with missing output(s) — requeuing: ${requeued.join(", ")}`);
     }
   }

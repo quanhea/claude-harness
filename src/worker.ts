@@ -11,7 +11,10 @@ export interface ClaudeSpawnOptions {
   prompt: string;
   cwd: string;
   logPath: string;
-  rawPath: string;
+  // Optional structured debug trail (orchestrator-level events, one JSON
+  // object per line — spawn args, exit code, parsed envelope fields).
+  // Separate from `logPath`, which is the child's raw stdout+stderr.
+  debugPath?: string;
   config: HarnessConfig;
 }
 
@@ -57,15 +60,22 @@ export function parseResetTime(msg: string): number | undefined {
   return waitMs > 0 ? waitMs : undefined;
 }
 
+function appendDebugEvent(debugPath: string | undefined, event: Record<string, unknown>): void {
+  if (!debugPath) return;
+  try {
+    fs.mkdirSync(path.dirname(debugPath), { recursive: true });
+    fs.appendFileSync(debugPath, JSON.stringify({ t: new Date().toISOString(), ...event }) + "\n");
+  } catch { /* best-effort: never let debug logging break a run */ }
+}
+
 export function spawnClaude(options: ClaudeSpawnOptions): {
   child: ChildProcess;
   promise: Promise<ClaudeSpawnResult>;
   kill: () => void;
 } {
-  const { prompt, cwd, logPath, rawPath, config } = options;
+  const { prompt, cwd, logPath, debugPath, config } = options;
 
   fs.mkdirSync(path.dirname(logPath), { recursive: true });
-  fs.mkdirSync(path.dirname(rawPath), { recursive: true });
 
   const args: string[] = [
     // Belt-and-suspenders permission bypass. --dangerously-skip-permissions is the
@@ -91,6 +101,16 @@ export function spawnClaude(options: ClaudeSpawnOptions): {
   if (config.verbose) args.push("--verbose");
 
   const logStream = fs.createWriteStream(logPath, { flags: "w" });
+
+  appendDebugEvent(debugPath, {
+    event: "spawn",
+    cwd,
+    // Omit the full prompt (it can be huge and lives in the log anyway);
+    // record its size so operators can sanity-check what was sent.
+    argv: args.filter((a, i) => !(args[i - 1] === "-p")),
+    promptBytes: prompt.length,
+    config: { maxTurns: config.maxTurns, timeout: config.timeout, model: config.model },
+  });
 
   const child = spawn("claude", args, {
     cwd,
@@ -152,17 +172,18 @@ export function spawnClaude(options: ClaudeSpawnOptions): {
       let claudeResult: string | undefined;
       let cost: number | undefined;
 
+      let parsedEnvelope: Record<string, unknown> | null = null;
       try {
         const raw = lastStdoutChunk.trim() ||
           (fs.existsSync(logPath) ? fs.readFileSync(logPath, "utf-8").trim() : "");
         if (raw) {
           const parsed = JSON.parse(raw);
-          fs.writeFileSync(rawPath, JSON.stringify(parsed, null, 2));
+          parsedEnvelope = parsed;
           isError = parsed.is_error === true;
           claudeResult = parsed.result;
           cost = parsed.total_cost_usd;
         }
-      } catch {}
+      } catch { /* non-JSON stdout (e.g. verbose streaming) — leave fields undefined */ }
 
       // Classify error
       let error: string | undefined;
@@ -187,6 +208,21 @@ export function spawnClaude(options: ClaudeSpawnOptions): {
         }
       }
 
+      appendDebugEvent(debugPath, {
+        event: "exit",
+        code,
+        signal,
+        killed,
+        exitCode,
+        durationMs,
+        isError,
+        error,
+        cost,
+        turns: parsedEnvelope ? parsedEnvelope.num_turns : undefined,
+        permissionDenials: parsedEnvelope ? (parsedEnvelope.permission_denials as unknown[])?.length : undefined,
+        retryAfterMs,
+      });
+
       resolve({ exitCode, durationMs, killed, isError, error, result: claudeResult, cost, retryAfterMs });
     });
 
@@ -194,6 +230,11 @@ export function spawnClaude(options: ClaudeSpawnOptions): {
       if (timeoutTimer) clearTimeout(timeoutTimer);
       if (hangTimer) clearInterval(hangTimer);
       logStream.end();
+      appendDebugEvent(debugPath, {
+        event: "spawn_error",
+        message: err.message,
+        durationMs: Date.now() - startTime,
+      });
       resolve({
         exitCode: null,
         durationMs: Date.now() - startTime,
@@ -229,21 +270,17 @@ export function spawnTask(options: SpawnOptions): {
   const { targetDir, outputDir, taskId, promptTemplate, config } = options;
   const slug = taskToSlug(taskId);
 
-  fs.mkdirSync(path.join(outputDir, "reports"), { recursive: true });
-
-  const reportPath = path.join(outputDir, "reports", slug + ".md");
   const logPath = path.join(outputDir, "logs", slug + ".log");
-  const rawPath = path.join(outputDir, "raw", slug + ".json");
+  const debugPath = path.join(outputDir, "debug", slug + ".jsonl");
 
   const prompt = renderPrompt(promptTemplate, {
     PROJECT_DIR: targetDir,
     OUTPUT_DIR: outputDir,
     TASK_ID: taskId,
-    DISCOVERY_JSON: path.join(outputDir, "discovery.json"),
   });
 
   const { child, promise: claudePromise, kill } = spawnClaude({
-    prompt, cwd: targetDir, logPath, rawPath, config,
+    prompt, cwd: targetDir, logPath, debugPath, config,
   });
 
   const promise = claudePromise.then((r): WorkerResult => {
