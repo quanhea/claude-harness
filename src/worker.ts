@@ -68,6 +68,27 @@ function appendDebugEvent(debugPath: string | undefined, event: Record<string, u
   } catch { /* best-effort: never let debug logging break a run */ }
 }
 
+// Prepended to every rendered prompt. Observed failure mode: when a Write
+// tool call hits a protected-path denial (e.g., `.mcp.json`, `.claude/*`),
+// the agent would compose a "please approve" message and exit without
+// writing anything else — even though the harness has no interactive user
+// to respond. This prefix tells the agent writes are pre-approved and that
+// denials should be reported, not redirected to a non-existent human.
+export const NON_INTERACTIVE_PREFIX = `NON-INTERACTIVE MODE (claude-harness orchestrator):
+- All file writes are pre-approved by the user. Do not ask for permission
+  or emit "please approve" / "would you like me to write" prompts —
+  there is no human watching this run.
+- If a Write/Edit tool returns a permission denial, treat it as an
+  environment-level block (not a user choice). Record the exact file
+  + denial reason in your final output, then continue with remaining work
+  instead of stopping to ask.
+- Complete every write you intend to make before emitting your final
+  response.
+
+---
+
+`;
+
 export function spawnClaude(options: ClaudeSpawnOptions): {
   child: ChildProcess;
   promise: Promise<ClaudeSpawnResult>;
@@ -77,6 +98,8 @@ export function spawnClaude(options: ClaudeSpawnOptions): {
 
   fs.mkdirSync(path.dirname(logPath), { recursive: true });
 
+  const fullPrompt = NON_INTERACTIVE_PREFIX + prompt;
+
   const args: string[] = [
     // Belt-and-suspenders permission bypass. --dangerously-skip-permissions is the
     // legacy flag; --permission-mode bypassPermissions is the newer-API equivalent.
@@ -85,7 +108,7 @@ export function spawnClaude(options: ClaudeSpawnOptions): {
     "--dangerously-skip-permissions",
     "--permission-mode", "bypassPermissions",
     "-p",
-    prompt,
+    fullPrompt,
     "--output-format",
     "json",
     "--no-session-persistence",
@@ -108,7 +131,7 @@ export function spawnClaude(options: ClaudeSpawnOptions): {
     // Omit the full prompt (it can be huge and lives in the log anyway);
     // record its size so operators can sanity-check what was sent.
     argv: args.filter((a, i) => !(args[i - 1] === "-p")),
-    promptBytes: prompt.length,
+    promptBytes: fullPrompt.length,
     config: { maxTurns: config.maxTurns, timeout: config.timeout, model: config.model },
   });
 

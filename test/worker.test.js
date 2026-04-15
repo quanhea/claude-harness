@@ -3,7 +3,7 @@ const assert = require("node:assert/strict");
 const fs = require("fs");
 const path = require("path");
 const os = require("os");
-const { spawnTask, taskToSlug, parseResetTime } = require("../dist/worker");
+const { spawnTask, taskToSlug, parseResetTime, NON_INTERACTIVE_PREFIX } = require("../dist/worker");
 
 describe("parseResetTime", () => {
   it("parses 'resets 2am (Asia/Saigon)'", () => {
@@ -140,6 +140,45 @@ describe("spawnTask", () => {
       tags.includes("spawn") || tags.includes("spawn_error"),
       `expected spawn or spawn_error, got ${tags.join(",")}`,
     );
+  });
+
+  it("prepends NON_INTERACTIVE_PREFIX to the prompt (promptBytes reflects prefix)", async () => {
+    const outputDir = path.join(tmpDir, "output");
+    const userPrompt = "tiny prompt body";
+    const { promise } = spawnTask({
+      targetDir,
+      outputDir,
+      taskId: "claude-md",
+      promptTemplate: userPrompt,
+      config: {
+        parallel: 1,
+        timeout: 1,
+        maxRetries: 0,
+        maxTurns: 5,
+        model: null,
+        verbose: false,
+      },
+    });
+    await promise;
+
+    const debugFile = path.join(outputDir, "debug", "claude-md.jsonl");
+    const events = fs.readFileSync(debugFile, "utf-8")
+      .trim().split("\n").filter(Boolean).map((l) => JSON.parse(l));
+    const spawnEvt = events.find((e) => e.event === "spawn" || e.event === "spawn_error");
+    assert.ok(spawnEvt, "should have a spawn/spawn_error event");
+    if (spawnEvt.event === "spawn") {
+      // promptBytes should be at least the prefix length + user prompt length.
+      assert.ok(
+        spawnEvt.promptBytes >= NON_INTERACTIVE_PREFIX.length + userPrompt.length,
+        `promptBytes=${spawnEvt.promptBytes} should include the prefix (${NON_INTERACTIVE_PREFIX.length})`,
+      );
+    }
+  });
+
+  it("NON_INTERACTIVE_PREFIX has the expected safety language", () => {
+    assert.match(NON_INTERACTIVE_PREFIX, /NON-INTERACTIVE/);
+    assert.match(NON_INTERACTIVE_PREFIX, /pre-approved/i);
+    assert.match(NON_INTERACTIVE_PREFIX, /do not ask/i);
   });
 
   it("uses double-underscore slug for nested task ids in debug and log paths", async () => {
