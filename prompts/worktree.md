@@ -1,6 +1,6 @@
 ---
 description: Generate worktree isolation — post-checkout hook, docs/WORKTREE.md (most important feature)
-outputs: ["docs/WORKTREE.md",".claude/hooks/post-checkout.js",".claude/hooks/worktree-cleanup.js"]
+outputs: ["docs/WORKTREE.md",".claude/hooks/post-checkout.sh",".claude/hooks/worktree-cleanup.sh"]
 max-turns: 200
 ---
 
@@ -8,8 +8,8 @@ max-turns: 200
 
 **Output:**
 - `{{PROJECT_DIR}}/docs/WORKTREE.md` (the living doc for this project)
-- `{{PROJECT_DIR}}/.claude/hooks/post-checkout.js` (the provisioning hook)
-- `{{PROJECT_DIR}}/.claude/hooks/worktree-cleanup.js` (the teardown helper)
+- `{{PROJECT_DIR}}/.claude/hooks/post-checkout.sh` (the provisioning hook)
+- `{{PROJECT_DIR}}/.claude/hooks/worktree-cleanup.sh` (the teardown helper)
 - `{{PROJECT_DIR}}/.git/hooks/post-checkout` (shell wrapper that calls the node script)
 - Merged entries in `{{PROJECT_DIR}}/.claude/settings.json` allow-list
 - Added `wt:cleanup` script to the project manifest where possible (`package.json`, `Makefile`, `justfile`, etc.)
@@ -26,8 +26,8 @@ Create these tasks now with TaskCreate:
 
 1. "Detect the project's local services (database, queue, cache, broker, search, object store) by reading the codebase"
 2. "Decide which env var names to rewrite per-worktree (DATABASE_URL, REDIS_URL, ...)"
-3. "Write .claude/hooks/post-checkout.js — project-specific provisioning script"
-4. "Write .claude/hooks/worktree-cleanup.js — teardown for removed worktrees"
+3. "Write .claude/hooks/post-checkout.sh — project-specific provisioning script (bash)"
+4. "Write .claude/hooks/worktree-cleanup.sh — teardown for removed worktrees (bash)"
 5. "Install .git/hooks/post-checkout shell wrapper (idempotent — merge if present)"
 6. "Wire a `wt:cleanup` convenience command into package.json (or Makefile / justfile / pyproject scripts)"
 7. "Write docs/WORKTREE.md listing the detected services and the lifecycle; verify all generated files"
@@ -66,48 +66,50 @@ For each hit, record:
 
 Write this mapping down as a comment block at the top of `post-checkout.js` so humans can audit what the detector saw.
 
-## Step 2 — Generate `.claude/hooks/post-checkout.js`
+## Step 2 — Generate `.claude/hooks/post-checkout.sh`
 
-Write a self-contained Node.js script with zero non-built-in dependencies **except** the database/queue client libraries the project already uses (re-use what's in `package.json` — don't add new deps).
+Write a self-contained bash script (`#!/usr/bin/env bash`). Bash is always available in
+git hook contexts — no PATH resolution or runtime dependency issues.
+Use CLI tools the project already has: `psql`, `mysql`, `redis-cli`, `curl` (for RabbitMQ).
 
 It must:
 
-1. Read argv: `prev = process.argv[2]`, `newRef = process.argv[3]`, `flag = process.argv[4]`. Exit 0 if `flag !== "1"` (file checkout, not branch/worktree).
-2. Resolve the current branch: `execFileSync("git", ["rev-parse", "--abbrev-ref", "HEAD"])`.
+1. Read positional args: `prev=$1`, `new_ref=$2`, `flag=$3`. Exit 0 if `flag != 1` (file checkout, not branch/worktree).
+2. Resolve the current branch: `git rev-parse --abbrev-ref HEAD`.
 3. Skip provisioning for the shared-branch allowlist — by default `main`, `master`, `trunk`, `develop`. Allow override via env var `WORKTREE_SKIP_BRANCHES` (comma-separated).
 4. Compute `slug = sanitize(branch) + "_" + sha6(branch)`:
-   - Sanitize: lowercase, replace `[^a-z0-9_]` with `_`, collapse repeated `_`, trim to 30 chars.
-   - Append `_` + first 6 hex of `sha256(branch)` so two branches that sanitize to the same slug still get different DBs.
-5. Project name comes from `package.json` `name` / `Cargo.toml` `[package].name` / `pyproject.toml` `[project].name` / the repo directory name as fallback. Sanitize same way.
-6. Resource name template: `` `${project}_wt_${slug}` `` (or `${project}.wt.${slug}` for dotted namespaces like Kafka topics). The `_wt_` literal is a **safety marker** — the cleanup script refuses to touch anything without it.
-7. Acquire a file-lock at `path.join(os.homedir(), ".claude-harness", "locks", `${project}.lock`)` using `fs.openSync(path, "wx")`. If lock taken, retry up to 30 seconds with 500ms backoff, then fail.
+   - Sanitize: lowercase via `tr`, replace `[^a-z0-9_]` with `_` via `sed`, collapse repeated `_`, trim to 30 chars.
+   - Append `_` + first 6 hex of `sha256(branch)` (`printf '%s' "$branch" | sha256sum | cut -c1-6`) so two branches that sanitize to the same slug still get different DBs.
+5. Project name: read from `package.json` with `grep`/`sed`, or `Cargo.toml`, or `pyproject.toml`, or fall back to the repo directory name. Sanitize same way.
+6. Resource name template: `${project}_wt_${slug}` (or `${project}.wt.${slug}` for dotted namespaces). The `_wt_` literal is a **safety marker** — the cleanup script refuses to touch anything without it.
+7. Acquire a file-lock using `mkdir ~/.claude-harness/locks/${project}.lock 2>/dev/null` (atomic on POSIX). Retry up to 30 seconds with 1s sleep, then fail.
 8. For each detected service, provision idempotently:
 
    | Service | Action |
    |---------|--------|
-   | PostgreSQL | `CREATE DATABASE "<name>"` via the admin URL (env `WORKTREE_ADMIN_DATABASE_URL`, default `postgresql://postgres:postgres@localhost/postgres`). Swallow `42P04 database already exists`. |
-   | MySQL / MariaDB | `CREATE DATABASE IF NOT EXISTS \`<name>\`` via admin URL. |
-   | MongoDB | No create needed — writing to the DB creates it implicitly. Just compute the URL. |
-   | Redis | Assign a DB number 0–15 from a registry at `~/.claude-harness/redis-registry.json` (one map per project: slug → dbNumber). Free the number on cleanup. If >16 worktrees, fall back to key-prefix mode (document in the URL as `?prefix=<project>:wt:<slug>:`). |
-   | RabbitMQ | `POST /api/vhosts/<name>` against the management API (default `http://guest:guest@localhost:15672`, env `WORKTREE_ADMIN_RABBITMQ_URL`). Ignore 204 and "already exists". Grant the default user permissions on the new vhost. |
-   | Kafka / NATS | Topic/subject prefix `${project}.wt.${slug}.` — no API call; documented so the app reads a prefix env var and the URL builder adds it. |
+   | PostgreSQL | `psql "$WORKTREE_ADMIN_DATABASE_URL" -c "CREATE DATABASE \"$name\""` (default URL: `postgresql://postgres:postgres@localhost/postgres`). Ignore `already exists` in stderr. |
+   | MySQL / MariaDB | `mysql -e "CREATE DATABASE IF NOT EXISTS \`$name\`"` via admin env. |
+   | MongoDB | No create needed — namespace is implicit. Just compute the URL. |
+   | Redis | Assign a DB number 0–15 from a registry file `~/.claude-harness/redis-registry.json` (slug → dbNumber). Use `python3 -c` or `jq` to read/write JSON. If >16 worktrees, fall back to key-prefix mode and document the URL with `?prefix=<slug>:`. |
+   | RabbitMQ | `curl -su "$user:$pass" -X PUT "$WORKTREE_ADMIN_RABBITMQ_URL/api/vhosts/$name"`. Default URL: `http://guest:guest@localhost:15672`. Ignore 204 and "already exists". |
+   | Kafka / NATS | Topic/subject prefix `${project}.wt.${slug}.` — no API call; documented only. |
    | Elasticsearch / OpenSearch | Index prefix `${project}_wt_${slug}_` — no API call. |
    | MinIO / LocalStack | Bucket prefix `${project}-wt-${slug}-` — no API call. |
 
-9. Write the worktree's `.env.local` (always this filename — works for Next, Vite, Node, Rails, Django-environ, python-dotenv). Seed from `.env` (fallback: `.env.example`) then override every detected env var with the isolated-resource URL. Preserve every other line verbatim. **Skip silently if `.env.local` already exists and already contains `_wt_${slug}`** (idempotency for re-runs).
-10. Release the lock, print a single summary line: `✓ worktree ${slug}: db=... redis=db3 rabbit=...`.
-11. **On any error, never partial-provision:** if any service fails, DROP anything already created for this slug and exit non-zero. Let the next invocation retry cleanly.
+9. Write the worktree's `.env.local`. Seed by copying `.env` (fallback: `.env.example`) then `sed -i` each detected env var to the isolated-resource URL. **Skip silently if `.env.local` already exists and already contains `_wt_${slug}`** (idempotency).
+10. Release the lock (`rm -rf ~/.claude-harness/locks/${project}.lock`), print a single summary line: `✓ worktree ${slug}: db=... redis=db3 rabbit=...`.
+11. **On any error, never partial-provision:** use a `trap ERR` to DROP anything already created for this slug before exiting non-zero.
 
-Optional: detect a migration command and run it for the new DB. Detectors: `prisma/schema.prisma` → `npx prisma migrate deploy`; `alembic.ini` → `alembic upgrade head`; `config/database.yml` → `bundle exec rails db:migrate`; `migrations/*.sql` or `db/migrations/` → skip (too unspecific); no detector → skip, log `migrations: skipped (no tool detected)`. Run the migration with the per-worktree DATABASE_URL **in the environment only**, never persisting it.
+Optional: detect a migration command and run it for the new DB. Detectors: `prisma/schema.prisma` → `npx prisma migrate deploy`; `alembic.ini` → `alembic upgrade head`; `config/database.yml` → `bundle exec rails db:migrate`; no detector → skip, log `migrations: skipped`. Run with `DATABASE_URL="$isolated_url" <migrate-cmd>` — env only, never persisted.
 
-## Step 3 — Generate `.claude/hooks/worktree-cleanup.js`
+## Step 3 — Generate `.claude/hooks/worktree-cleanup.sh`
 
-Manually invoked. Never runs from the checkout hook itself — cleanup on checkout would delete a live worktree's DB during a rollback.
+Manually invoked bash script. Never runs from the checkout hook itself — cleanup on checkout would delete a live worktree's DB during a rollback.
 
 Logic:
 1. `git worktree list --porcelain` → set of live worktree paths and branches.
 2. Derive the live-slug set (apply the same slug function used at provision time).
-3. For each service, enumerate provisioned resources (e.g. `SELECT datname FROM pg_database WHERE datname LIKE '<project>_wt_%'`).
+3. For each service, enumerate provisioned resources (e.g. `psql -t -c "SELECT datname FROM pg_database WHERE datname LIKE '${project}_wt_%'"`).
 4. For each resource:
    - **Assert** the name contains `_wt_` (or `.wt.` for dotted). Refuse otherwise — print an error and skip.
    - If the slug extracted from the name is NOT in the live set, drop it.
@@ -124,9 +126,8 @@ Write this file with `0o755`:
 #!/bin/sh
 # claude-harness:worktree-isolation  (do not remove this line)
 repo_root="$(git rev-parse --show-toplevel)"
-if [ -f "$repo_root/.claude/hooks/post-checkout.js" ]; then
-  exec node "$repo_root/.claude/hooks/post-checkout.js" "$@"
-fi
+script="$repo_root/.claude/hooks/post-checkout.sh"
+[ -f "$script" ] && exec bash "$script" "$@"
 ```
 
 **Idempotent merge:** if `.git/hooks/post-checkout` already exists and
@@ -136,7 +137,7 @@ Claude Code sets `core.hooksPath` per-worktree back to the main repo's `.git/hoo
 
 ## Step 5 — Wire a cleanup command
 
-- If `package.json` exists and has a `scripts` block: add `"wt:cleanup": "node .claude/hooks/worktree-cleanup.js"` (skip if already present).
+- If `package.json` exists and has a `scripts` block: add `"wt:cleanup": "bash .claude/hooks/worktree-cleanup.sh"` (skip if already present).
 - If `Makefile` exists: append a `wt-cleanup:` target.
 - If `justfile` exists: append `wt-cleanup:` recipe.
 - If `pyproject.toml` has `[tool.poetry.scripts]` or similar, note the manual invocation in WORKTREE.md — don't modify pyproject automatically.
@@ -213,8 +214,8 @@ git worktree remove ../myapp-wt-foo npm run wt:cleanup              # Drops stal
 | Symptom | Fix |
 |---------|-----|
 | `permission denied to create database` | Set `WORKTREE_ADMIN_DATABASE_URL` to a role with `CREATEDB`. |
-| Stuck lock file in `~/.claude-harness/locks/` | Remove it after confirming no `post-checkout.js` is running. |
-| `.env.local` missing after `claude -w` with sparse-checkout | Claude Code uses `--no-checkout` for sparse repos and suppresses hooks. Run manually: `node .claude/hooks/post-checkout.js 0 HEAD 1`. |
+| Stuck lock file in `~/.claude-harness/locks/` | Remove it after confirming no `post-checkout.sh` is running. |
+| `.env.local` missing after `claude -w` with sparse-checkout | Claude Code uses `--no-checkout` for sparse repos and suppresses hooks. Run manually: `bash .claude/hooks/post-checkout.sh 0 HEAD 1`. |
 | Resources left behind after a crash | `npm run wt:cleanup` — it reconciles against `git worktree list`. |
 
 ## Why worktrees are mandatory
@@ -225,8 +226,8 @@ top-of-CLAUDE.md statement. This is the most important rule in the repo.
 
 ## Step 7 — Verify
 
-Run `node --check` on all generated `.js` files. Confirm every file listed in the outputs
-exists. Print a summary of what was created.
+Run `bash -n` on all generated `.sh` files to syntax-check them. Confirm every file listed
+in the outputs exists and is executable. Print a summary of what was created.
 
 ## Rules
 
