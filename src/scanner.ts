@@ -1,4 +1,5 @@
 // src/scanner.ts — top-level orchestrator (flat parallel task runner)
+import * as fs from "fs";
 import * as path from "path";
 import { HarnessOptions, STATUS, TASK_MANIFEST, TaskDefinition } from "./types";
 import { runPreflight, removeLockFile } from "./preflight";
@@ -81,6 +82,30 @@ export async function setup(options: HarnessOptions): Promise<number> {
     if (retry) {
       const failed = resetFailed(state);
       if (failed > 0) console.log(`Retry: reset ${failed} failed/timed-out task(s) to pending.`);
+    }
+
+    // (4) Reconcile state against disk: if a COMPLETED task's declared output
+    // is missing (user deleted the file), requeue it. Tasks with no declared
+    // outputs (skills, hooks, formatter, ci-workflow, arch-tests, gardener)
+    // are skipped — their output paths are dynamic or project-type-specific.
+    const requeued: string[] = [];
+    for (const task of TASK_MANIFEST) {
+      const entry = state.tasks[task.id];
+      if (!entry || entry.status !== STATUS.COMPLETED) continue;
+      if (!task.outputs || task.outputs.length === 0) continue;
+      const missing = task.outputs.filter((p) => !fs.existsSync(path.join(absTarget, p)));
+      if (missing.length === 0) continue;
+      entry.status = STATUS.PENDING;
+      entry.attempts = 0;
+      delete entry.completedAt;
+      delete entry.durationMs;
+      delete entry.exitCode;
+      delete entry.lastError;
+      requeued.push(task.id);
+    }
+    if (requeued.length > 0) {
+      state.stats = computeStats(state.tasks);
+      console.log(`Detected ${requeued.length} task(s) with missing output(s) — requeuing: ${requeued.join(", ")}`);
     }
   }
 
@@ -266,17 +291,30 @@ export async function setup(options: HarnessOptions): Promise<number> {
   state.stats = computeStats(state.tasks);
   saveState(state, absOutput);
 
+  // Count outcomes for THIS invocation only (not state-wide).
+  const plannedIds = new Set(pendingTasks.map((t) => t.id));
+  let runOk = 0, runFailed = 0, runTimeout = 0;
+  for (const id of plannedIds) {
+    const s = state.tasks[id]?.status;
+    if (s === STATUS.COMPLETED) runOk++;
+    else if (s === STATUS.FAILED) runFailed++;
+    else if (s === STATUS.TIMEOUT) runTimeout++;
+  }
+
   const reportPath = writeReport(absOutput, state);
   const elapsed = formatDuration(Date.now() - startTime);
 
-  console.log(`\nDone. ${state.stats.completed}/${state.stats.totalTasks} tasks in ${elapsed}.`);
-  if (state.stats.failed > 0 || state.stats.timeout > 0) {
-    console.log(`  ${state.stats.failed} failed, ${state.stats.timeout} timed out.`);
+  console.log(
+    `\nDone. ${runOk}/${plannedIds.size} task(s) this run in ${elapsed} ` +
+    `(${state.stats.completed}/${state.stats.totalTasks} complete overall).`,
+  );
+  if (runFailed > 0 || runTimeout > 0) {
+    console.log(`  ${runFailed} failed, ${runTimeout} timed out this run.`);
     const targetBit = options.targetArg ? `${options.targetArg} ` : "";
     console.log(`  Retry:  claude-harness ${targetBit}--retry`);
   }
   console.log(`  Report: ${reportPath}`);
 
   removeLockFile(absOutput);
-  return state.stats.failed > 0 ? 1 : 0;
+  return runFailed > 0 ? 1 : 0;
 }

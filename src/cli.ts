@@ -70,7 +70,10 @@ async function main(): Promise<void> {
     else if ((arg === "--output" || arg === "-o") && i + 1 < args.length) { options.output = args[++i]; }
     else if (arg === "--model" && i + 1 < args.length) { options.model = args[++i]; }
     else if (arg === "--max-turns" && i + 1 < args.length) { options.maxTurns = args[++i]; }
-    else if (arg === "--only" && i + 1 < args.length) { options.only = args[++i]; }
+    else if (arg === "--only" && i + 1 < args.length) {
+      const val = args[++i];
+      options.only = options.only ? `${options.only},${val}` : val;
+    }
     else if (!arg.startsWith("-")) { targetDir = arg; }
     else { console.error(`Unknown option: ${arg}`); process.exit(1); }
   }

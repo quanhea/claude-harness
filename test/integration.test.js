@@ -94,6 +94,10 @@ describe("integration", () => {
       { encoding: "utf-8", env, timeout: 30000 },
     );
 
+    // Mock claude doesn't actually write files; create the expected output
+    // so the reconciliation check doesn't short-circuit our --only test.
+    fs.writeFileSync(path.join(projectDir, "CLAUDE.md"), "# placeholder\n");
+
     const statePath = path.join(outputDir, "state.json");
     const before = JSON.parse(fs.readFileSync(statePath, "utf-8"));
     assert.equal(before.tasks["claude-md"].status, "COMPLETED", "first run should complete the task");
@@ -108,18 +112,53 @@ describe("integration", () => {
       [CLI, projectDir, "--output", outputDir, "--only", "claude-md", "--parallel", "1", "--timeout", "10", "--max-turns", "5"],
       { encoding: "utf-8", env, timeout: 30000 },
     );
-    assert.ok(out.includes("Forcing re-run"), "should announce the forced re-run");
+    assert.ok(out.includes("Forcing re-run"), "should announce the forced re-run, got:\n" + out);
 
     const after = JSON.parse(fs.readFileSync(statePath, "utf-8"));
     assert.equal(after.tasks["claude-md"].status, "COMPLETED", "re-run should complete again");
     assert.ok(after.tasks["claude-md"].completedAt !== firstCompletedAt, "completedAt should have been refreshed by the re-run");
   });
 
+  it("requeues tasks whose declared output was deleted from disk", () => {
+    const env = { ...process.env, PATH: MOCK_CLAUDE + ":" + process.env.PATH };
+
+    // Seed state.json marking claude-md as COMPLETED, but DON'T create CLAUDE.md
+    fs.mkdirSync(outputDir, { recursive: true });
+    const seedState = {
+      version: 2,
+      runId: "test9999",
+      targetDir: projectDir,
+      startedAt: new Date().toISOString(),
+      config: { parallel: 1, timeout: 10, maxRetries: 2, maxTurns: 5, model: null, verbose: false },
+      stats: { totalTasks: 1, completed: 1, failed: 0, timeout: 0, skipped: 0, pending: 0, running: 0 },
+      tasks: {
+        "claude-md": { status: "COMPLETED", attempts: 1, completedAt: new Date().toISOString(), durationMs: 1000, exitCode: 0 },
+      },
+    };
+    fs.writeFileSync(path.join(outputDir, "state.json"), JSON.stringify(seedState, null, 2));
+
+    // Run claude-harness — CLAUDE.md is missing on disk, so claude-md should be requeued
+    const out = execFileSync(
+      "node",
+      [CLI, projectDir, "--output", outputDir, "--only", "claude-md", "--parallel", "1", "--timeout", "10", "--max-turns", "5"],
+      { encoding: "utf-8", env, timeout: 30000 },
+    );
+    assert.ok(
+      out.includes("missing output") || out.includes("Forcing re-run"),
+      "scanner should notice missing file and re-run (or --only forced it), got: " + out,
+    );
+
+    const after = JSON.parse(fs.readFileSync(path.join(outputDir, "state.json"), "utf-8"));
+    assert.equal(after.tasks["claude-md"].status, "COMPLETED", "task should have re-run and completed");
+  });
+
   it("auto-merges new manifest tasks into existing state", () => {
     const env = { ...process.env, PATH: MOCK_CLAUDE + ":" + process.env.PATH };
 
-    // Seed state.json with an older "manifest" — just claude-md
+    // Seed state.json with an older "manifest" — just claude-md — and create
+    // its declared output so reconciliation doesn't requeue it.
     fs.mkdirSync(outputDir, { recursive: true });
+    fs.writeFileSync(path.join(projectDir, "CLAUDE.md"), "# placeholder\n");
     const seedState = {
       version: 2,
       runId: "test1234",
