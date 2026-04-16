@@ -1,6 +1,7 @@
 // src/scanner.ts — top-level orchestrator (flat parallel task runner)
 import * as fs from "fs";
 import * as path from "path";
+import { checkbox } from "@inquirer/prompts";
 import { HarnessOptions, STATUS, TASK_MANIFEST, TaskDefinition } from "./types";
 import { runPreflight, removeLockFile } from "./preflight";
 import { loadPrompt, renderPrompt, buildPromptVars } from "./prompt";
@@ -346,8 +347,30 @@ export async function setup(options: HarnessOptions): Promise<number> {
     return 0;
   }
 
-  console.log(`Running ${pendingTasks.length} tasks in parallel (up to ${parallel} concurrent workers)...`);
-  for (const t of pendingTasks) console.log(`  [${t.id}] ${desc(t.id)}`);
+  // Interactive task selection — only when running in a TTY and the user
+  // hasn't already narrowed the set with --only. All tasks checked by default.
+  let tasksToRun = pendingTasks;
+  if (isTTY && !only) {
+    const selected = await checkbox({
+      message: `Select tasks to run (${pendingTasks.length} pending):`,
+      choices: pendingTasks.map((t) => ({
+        name: `[${t.id}] ${desc(t.id)}`,
+        value: t.id,
+        checked: true,
+      })),
+      pageSize: 15,
+    });
+    tasksToRun = pendingTasks.filter((t) => selected.includes(t.id));
+    if (tasksToRun.length === 0) {
+      console.log("No tasks selected — nothing to run.");
+      removeLockFile(absOutput);
+      return 0;
+    }
+  } else {
+    console.log(`Running ${tasksToRun.length} tasks in parallel (up to ${parallel} concurrent workers)...`);
+    for (const t of tasksToRun) console.log(`  [${t.id}] ${desc(t.id)}`);
+  }
+
   saveState(state, absOutput);
 
   // Build prompt map. Per-task `max-turns` override (from prompt frontmatter)
@@ -355,7 +378,7 @@ export async function setup(options: HarnessOptions): Promise<number> {
   // heavy prompt. We re-use the meta cache loaded above.
   const prompts = new Map<string, PromptEntry>();
   const overrides: string[] = [];
-  for (const task of pendingTasks) {
+  for (const task of tasksToRun) {
     const loaded = meta.get(task.id);
     if (!loaded) continue; // shouldn't happen — manifest is the source of truth
     const vars = buildPromptVars({ taskId: task.id, targetDir: absTarget, outputDir: absOutput });
@@ -374,7 +397,7 @@ export async function setup(options: HarnessOptions): Promise<number> {
   }
 
   const pool = new WorkerPool({
-    tasks: pendingTasks.map((t) => t.id),
+    tasks: tasksToRun.map((t) => t.id),
     prompts,
     concurrency: parallel,
     targetDir: absTarget,
@@ -510,7 +533,7 @@ export async function setup(options: HarnessOptions): Promise<number> {
   saveState(state, absOutput);
 
   // Count outcomes for THIS invocation only (not state-wide).
-  const plannedIds = new Set(pendingTasks.map((t) => t.id));
+  const plannedIds = new Set(tasksToRun.map((t) => t.id));
   let runOk = 0, runFailed = 0, runTimeout = 0;
   for (const id of plannedIds) {
     const s = state.tasks[id]?.status;
