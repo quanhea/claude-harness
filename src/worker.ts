@@ -112,6 +112,7 @@ export function spawnClaude(options: ClaudeSpawnOptions): {
     fullPrompt,
     "--output-format",
     "stream-json",
+    "--verbose",               // required by claude when using stream-json with -p
     "--no-session-persistence",
   ];
 
@@ -122,7 +123,6 @@ export function spawnClaude(options: ClaudeSpawnOptions): {
   }
 
   if (config.model) args.push("--model", config.model);
-  if (config.verbose) args.push("--verbose");
 
   const logStream = fs.createWriteStream(logPath, { flags: "w" });
 
@@ -151,17 +151,17 @@ export function spawnClaude(options: ClaudeSpawnOptions): {
   let timeoutTimer: NodeJS.Timeout | null = null;
   let hangTimer: NodeJS.Timeout | null = null;
   let lastActivity = Date.now();
-  let lastStdoutChunk = "";
+  let stderrTail = "";   // last ~500 chars of stderr, for debug event on early exit
 
   if (child.stdout) {
-    child.stdout.on("data", (data: Buffer) => {
-      lastActivity = Date.now();
-      lastStdoutChunk = data.toString();
-    });
+    child.stdout.on("data", (data: Buffer) => { lastActivity = Date.now(); });
     child.stdout.pipe(logStream);
   }
   if (child.stderr) {
-    child.stderr.on("data", () => { lastActivity = Date.now(); });
+    child.stderr.on("data", (data: Buffer) => {
+      lastActivity = Date.now();
+      stderrTail = (stderrTail + data.toString()).slice(-500);
+    });
     child.stderr.pipe(logStream);
   }
 
@@ -256,6 +256,9 @@ export function spawnClaude(options: ClaudeSpawnOptions): {
         turns: parsedEnvelope ? parsedEnvelope.num_turns : undefined,
         permissionDenials: parsedEnvelope ? (parsedEnvelope.permission_denials as unknown[])?.length : undefined,
         retryAfterMs,
+        // Capture stderr tail for fast failures (e.g. bad flags, auth errors)
+        // where the log file may have no stream-json events to inspect.
+        stderrTail: (!parsedEnvelope && stderrTail) ? stderrTail.trim() : undefined,
       });
 
       resolve({ exitCode, durationMs, killed, isError, error, result: claudeResult, cost, retryAfterMs });
