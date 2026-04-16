@@ -88,8 +88,7 @@ Results from the orchestrator go to `.claude-harness/` (or `--output <dir>`):
 .claude-harness/
 ├── setup-report.md     # Task summary with timing
 ├── state.json          # Run state (powers re-run / --retry / --only)
-├── logs/               # Claude stdout+stderr per task (raw JSON envelope)
-└── debug/              # Orchestrator event trail per task (JSONL: spawn/exit/errors)
+└── logs/               # Full conversation log per task (JSONL: prompt + stream-json events)
 ```
 
 The `.claude-harness/` directory is auto-appended to the project's `.gitignore` on

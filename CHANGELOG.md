@@ -1,5 +1,31 @@
 # Changelog
 
+## 1.1.0
+
+### Logging
+
+- Full turn-by-turn conversation log: switched to `--output-format stream-json --verbose` so every tool call, tool result, and assistant turn is captured as JSONL in `logs/<task>.log`
+- Rendered prompt written as the first JSONL line (`{"type":"prompt",...}`) in every log — the log file now contains both input and output in a single self-contained file
+- Removed `debug/` directory: the stream-json `result` envelope already carries cost, turns, `is_error`, `permission_denials`, and errors; the separate orchestrator event trail was redundant
+
+### Prompts
+
+- Added `effort` frontmatter field (`low | medium | high | max`) to set `CLAUDE_CODE_EFFORT_LEVEL` for individual tasks; omitting the field leaves the default
+- `worktree` task uses `effort: max` for best results on the most complex generated artifact
+- `worktree` task: `- Ultrathink` added as the final rule, triggering extended reasoning
+
+### Worktree isolation (generated hooks)
+
+- Generated hooks converted from Node.js to bash — eliminates PATH issues in GUI git clients (Fork, Tower, SourceTree) and pre-commit environments where `node` is not on `$PATH`
+- Hook paths in `settings.json` now use `"$CLAUDE_PROJECT_DIR"/.claude/hooks/...` — fixes "No such file or directory" when the hook working directory is not the repo root
+- Portability rules enforced: POSIX-only `sed` patterns (`[[:space:]]`, not `\s`), `shasum -a 256` instead of `sha256sum` — both required on macOS/BSD
+- Docker postgres fallback: if `psql` is not in `PATH`, hook tries `docker exec $(docker ps --filter ancestor=postgres ...)` — supports projects running Postgres in Docker without a local client
+- Hook always exits 0 — a provisioning failure (service unreachable, DB exists) logs a warning but never blocks a `git checkout`, `commit`, or stash
+- Simplified: removed file lock, Redis DB-number registry, and `trap ERR` rollback — Redis uses key-prefix mode only; no registry file needed
+- Removed all `claude -w` references from worktree and git-workflow prompts — `git worktree add` is the canonical command
+- Mandatory end-to-end test step (Step 7) added to `worktree.md`: syntax check → dry run → real worktree creation → verify resources exist → cleanup; agent must iterate until clean
+- `CLAUDE_HARNESS_SETUP=1` env var injected into all subprocesses so enforcement hooks skip during initial scaffolding
+
 ## 1.0.0
 
 Initial release.
