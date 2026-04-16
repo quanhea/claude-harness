@@ -120,11 +120,10 @@ remediation into context. You don't need to invoke them — they fire on PostToo
 
 ## Principles
 
-1. **Worktrees and plans are first-class** — see Rules 1 and 2 above
-2. **Repository is the system of record** — if it's not in the repo, it doesn't exist
-3. **This file is the map** — read linked docs on demand, don't load everything
-4. **Enforce mechanically** — rules and hooks catch violations, not memory
-5. **Correct > clever** — well-tested, composable, boring code wins
+1. **Repository is the system of record** — if it's not in the repo, it doesn't exist
+2. **This file is the map** — read linked docs on demand, don't load everything
+3. **Enforce mechanically** — rules and hooks catch violations, not memory
+4. **Correct > clever** — well-tested, composable, boring code wins
 ```
 
 ## Rules
