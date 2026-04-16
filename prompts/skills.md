@@ -2,6 +2,7 @@
 description: Generate project-specific skills from conversation history
 outputs: [".claude/skills/*/SKILL.md"]
 max-turns: null
+effort: max
 ---
 
 # Task: Generate `.claude/skills/` from conversation history
@@ -46,18 +47,34 @@ Use Write to put the following into `{{PROJECT_DIR}}/.claude-harness/extract-con
 // .claude-harness/extract-conversations.cjs
 //
 // Extract user messages from Claude Code conversation history (.jsonl files).
-// Outputs markdown files with user messages grouped by conversation ID.
+// Reads each file line-by-line (streaming) so arbitrarily large conversations
+// never load fully into memory. Outputs markdown files chunked by conversation.
 //
 // Usage: node extract-conversations.cjs <project-slug> [output-dir]
 
 const fs = require("fs");
 const os = require("os");
 const path = require("path");
+const readline = require("readline");
 
 const CHUNK_SIZE = 15;             // conversations per output file
 const MAX_MSG_LEN = 500;           // truncate paste-dumps
 
-function extract(projectSlug, outputDir) {
+// Stream a .jsonl file line by line — no full-file load into memory.
+function readLinesStream(filepath) {
+  return new Promise((resolve, reject) => {
+    const lines = [];
+    const rl = readline.createInterface({
+      input: fs.createReadStream(filepath, { encoding: "utf-8" }),
+      crlfDelay: Infinity,
+    });
+    rl.on("line", (line) => lines.push(line));
+    rl.on("close", () => resolve(lines));
+    rl.on("error", reject);
+  });
+}
+
+async function extract(projectSlug, outputDir) {
   const baseDir = path.join(os.homedir(), ".claude", "projects", projectSlug);
   if (!fs.existsSync(baseDir)) {
     console.error(`No conversation history at ${baseDir}`);
@@ -79,6 +96,7 @@ function extract(projectSlug, outputDir) {
     process.exit(0);
   }
 
+  console.log(`Processing ${jsonlFiles.length} conversation files...`);
   const conversations = [];
 
   for (const filepath of jsonlFiles) {
@@ -88,7 +106,7 @@ function extract(projectSlug, outputDir) {
 
     let lines;
     try {
-      lines = fs.readFileSync(filepath, "utf-8").split("\n");
+      lines = await readLinesStream(filepath);
     } catch (err) {
       console.error(`Skip ${filepath}: ${err.message}`);
       continue;
@@ -142,17 +160,17 @@ function extract(projectSlug, outputDir) {
     const suffix = conversations.length > CHUNK_SIZE ? `-part${fileIdx}` : "";
     const outFile = path.join(outputDir, `${projectSlug}-user-messages${suffix}.md`);
 
-    const lines = [`# User Messages from \`${projectSlug}\` (Part ${fileIdx})`, ""];
+    const outLines = [`# User Messages from \`${projectSlug}\` (Part ${fileIdx})`, ""];
     for (const { convId, userMessages } of chunk) {
-      lines.push(`### Conversation \`${convId}\`:`);
+      outLines.push(`### Conversation \`${convId}\`:`);
       userMessages.forEach((msg, idx) => {
         const escaped = msg.replace(/\n/g, "\n> ");
-        lines.push(`**User message ${idx + 1}**: ${escaped}`);
-        lines.push("");
+        outLines.push(`**User message ${idx + 1}**: ${escaped}`);
+        outLines.push("");
       });
-      lines.push("---", "");
+      outLines.push("---", "");
     }
-    fs.writeFileSync(outFile, lines.join("\n"));
+    fs.writeFileSync(outFile, outLines.join("\n"));
     console.log(`Written: ${outFile} (${chunk.length} conversations)`);
     fileIdx++;
   }
@@ -166,7 +184,10 @@ if (!slug) {
   console.error("Usage: node extract-conversations.cjs <project-slug> [output-dir]");
   process.exit(1);
 }
-extract(slug, outDir);
+extract(slug, outDir).catch((err) => {
+  console.error("Fatal:", err.message);
+  process.exit(1);
+});
 ```
 
 ## CRITICAL — Analyze conversations thoroughly BEFORE writing any skill
@@ -209,7 +230,7 @@ An "occurrence" is one specific ask within one conversation. A single long conve
 
 The user-messages files tell you which conversation each occurrence is in. Now you must read those conversations' raw `.jsonl` files to see the flow around each occurrence. The `.jsonl` files live at `~/.claude/projects/<project-slug>/<convId>.jsonl`.
 
-**Use the Read tool with offset/limit to read .jsonl files partially.** Do NOT load whole conversations into context — they can be huge. Strategy, per occurrence:
+**Use the Read tool with offset/limit to read .jsonl files partially.** Do NOT load whole conversations into context — they can be hundreds of MB. Take as many Read calls as needed across as many turns as needed — there is no turn limit on this task. Strategy, per occurrence:
 
 1. Use Grep to locate THIS specific occurrence in the .jsonl: `grep -n '"text":"<user-prompt-snippet>"' <convId>.jsonl` using a snippet unique enough to pick one match.
 2. Read 50–200 lines starting from that line to see the assistant's response to this specific ask.
