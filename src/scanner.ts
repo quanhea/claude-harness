@@ -205,13 +205,32 @@ export async function setup(options: HarnessOptions): Promise<number> {
 
   // Unified state load — every run behaves like a resume that also picks up
   // any new tasks added to the manifest since the last run.
-  const allTaskIds = TASK_MANIFEST.map((t) => t.id);
+  //
+  // Only enabled (non-disabled) tasks go into state. This keeps totalTasks
+  // accurate and prevents disabled tasks from inflating the denominator in
+  // the progress bar or the Remaining count.
+  const enabledIds = new Set(
+    TASK_MANIFEST
+      .filter((t) => { try { return !meta.get(t.id)?.meta.disabled; } catch { return true; } })
+      .map((t) => t.id)
+  );
+  const allTaskIds = [...enabledIds];
   let state = loadState(absOutput);
 
   if (!state) {
     state = initState(absTarget, allTaskIds, config);
   } else {
     state.config = config;
+
+    // Prune tasks that became disabled since the last run (e.g. a package
+    // upgrade disabled previously-enabled tasks). Remove them so stats stay
+    // accurate — disabled tasks have no business being in state.
+    const pruned = Object.keys(state.tasks).filter((id) => !enabledIds.has(id));
+    if (pruned.length > 0) {
+      for (const id of pruned) delete state.tasks[id];
+      state.stats = computeStats(state.tasks);
+      console.log(`Removed ${pruned.length} disabled task(s) from state: ${pruned.join(", ")}`);
+    }
 
     // Merge in any tasks added to TASK_MANIFEST since the last run.
     const added = mergeNewTasks(state, allTaskIds);
@@ -328,6 +347,7 @@ export async function setup(options: HarnessOptions): Promise<number> {
   }
 
   console.log(`Running ${pendingTasks.length} tasks in parallel (up to ${parallel} concurrent workers)...`);
+  for (const t of pendingTasks) console.log(`  [${t.id}] ${desc(t.id)}`);
   saveState(state, absOutput);
 
   // Build prompt map. Per-task `max-turns` override (from prompt frontmatter)
