@@ -1,6 +1,6 @@
 ---
 description: Generate .mcp.json server recommendations
-outputs: [".mcp.json"]
+outputs: [".mcp.json{,.TEMPLATE,.EXAMPLE,.example,.sample}"]
 ---
 
 # Task: Generate .mcp.json
