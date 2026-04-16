@@ -74,7 +74,6 @@ Two or three sentences. The chosen direction — not the exhaustive design. Link
 
 ## Tasks
 
-- [ ] Set up the feature branch via `git worktree add`
 - [ ] Parent task 1 — one-line description
   - [ ] Subtask 1a
   - [ ] Subtask 1b
@@ -119,7 +118,7 @@ Append an entry whenever you make a non-obvious choice or hit a surprise. Keep e
 1. **Start**: copy the template to `docs/exec-plans/active/<slug>.md`, fill
    in Context / Approach / initial Tasks, and commit. This is the handoff
    point — if you stop here, the next agent knows where to pick up.
-2. **Work**: open the worktree (`git worktree add`), tick boxes as you go, append
+2. **Work**: tick boxes as you go, append
    to the decision log on non-obvious choices, add new tasks when scope
    becomes clearer. The plan is a living document, not a pre-commitment.
 3. **Complete**: when every task is checked and verification passes,
