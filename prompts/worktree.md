@@ -92,7 +92,7 @@ It must:
 
    | Service | Action |
    |---------|--------|
-   | PostgreSQL | Try `psql` first. If not in PATH, try `docker exec $(docker ps --filter ancestor=postgres --format '{{.Names}}' \| head -1) psql`. Admin URL env: `WORKTREE_ADMIN_DATABASE_URL` (default `postgresql://postgres:postgres@localhost/postgres`). Ignore `already exists`. |
+   | PostgreSQL | **Clone** the source DB — do NOT create an empty database. Read the source DB name from `POSTGRES_DB` in `.env` (fallback: `.env.example`). Run `pg_terminate_backend` to drop active connections to the source, then `CREATE DATABASE "$name" TEMPLATE "$source_db"`. If the source DB is unknown or TEMPLATE fails, fall back to a plain `CREATE DATABASE "$name"` and log a warning. Try `psql` first; if not in PATH, try `docker exec $(docker ps --filter ancestor=postgres --format '{{.Names}}' \| head -1) psql`. Admin URL env: `WORKTREE_ADMIN_DATABASE_URL` (default `postgresql://postgres:postgres@localhost/postgres`). Ignore `already exists`. |
    | MySQL / MariaDB | `mysql -e "CREATE DATABASE IF NOT EXISTS \`$name\`"`. |
    | MongoDB | No create needed — namespace is implicit. Just compute the URL. |
    | Redis | Key-prefix mode only: set `REDIS_PREFIX="${project}:wt:${slug}:"` in `.env.local`. No DB numbers, no registry file. |
@@ -105,7 +105,7 @@ It must:
 9. Print a summary line: `✓ worktree ${slug}: db=... redis-prefix=... rabbit=...`.
 10. **Always exit 0.** Log service errors as warnings (`⚠ service: reason`) but never exit non-zero — a provisioning failure must never block a git checkout, commit, or stash. If a service is unreachable, log it and move on; the developer can re-run manually.
 
-Optional: detect a migration tool and run it against the new DB. `prisma/schema.prisma` → `npx prisma migrate deploy`; `alembic.ini` → `alembic upgrade head`; `config/database.yml` → `bundle exec rails db:migrate`. Run with the isolated DB URL in env only. Log `migrations: skipped` if no tool detected. Migration failure is non-fatal — log as warning.
+After cloning, detect a migration tool and run pending migrations against the new DB — the clone already has the source schema and data, migrations just bring it up to the branch tip. `prisma/schema.prisma` → `npx prisma migrate deploy`; `alembic.ini` → `alembic upgrade head`; `config/database.yml` → `bundle exec rails db:migrate`. Run with the isolated DB URL in env only. Log `migrations: skipped` if no tool detected. Migration failure is non-fatal — log as warning.
 
 ## Step 3 — Generate `.claude/hooks/worktree-cleanup.sh`
 
