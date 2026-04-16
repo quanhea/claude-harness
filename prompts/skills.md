@@ -18,14 +18,14 @@ in the conversation history. If no pattern qualifies, generate zero skills — d
 
 ## Your Tasks
 
-Create these tasks now with TaskCreate. Steps 5–8 are where the real work happens — do not collapse them into one step.
+Create these tasks now with TaskCreate. Steps 5–9 are where the real work happens — do not collapse them into one step, and do not skip any. Each step produces a specific artifact on disk so you can't accidentally shortcut past it.
 
 1. "Detect project info (language, framework, commands)"
 2. "Compute the project slug from {{PROJECT_DIR}} (replace / with -, prefix with -)"
 3. "Write the embedded extraction script to .claude-harness/extract-conversations.cjs"
 4. "Run the script: node .claude-harness/extract-conversations.cjs <slug> .claude-harness/conversations/"
-5. "Cluster candidate patterns from the user-messages files (3+ total occurrences each, within or across conversations)"
-6. "For each candidate, partial-Read the source .jsonl files and classify each conversation as SUCCESS or FAIL"
+5. "Read EVERY user-messages part file and enumerate candidate patterns to .claude-harness/skill-candidates.md (target: ~0.3–0.5 candidates per conversation; re-extract if under-counted)"
+6. "For each candidate, classify every occurrence SUCCESS/FAIL by reading the raw .jsonl files — dispatch subagents in parallel where possible — write results to .claude-harness/skill-classifications.md"
 7. "For each SUCCESS occurrence, extract the working flow (assistant turns AFTER the last user pivot, UP TO the success signal)"
 8. "Synthesize each skill's steps from the intersection of working flows; drop any candidate with fewer than 2 SUCCESS occurrences"
 9. "mkdir -p .claude/skills/<each-surviving-skill-name>/ via Bash"
@@ -33,6 +33,8 @@ Create these tasks now with TaskCreate. Steps 5–8 are where the real work happ
 11. "Update CLAUDE.md Skills table with the actual skills generated"
 
 Use TaskUpdate to mark each complete. Use TaskList before finishing.
+
+**Gate check**: before writing any SKILL.md, both `.claude-harness/skill-candidates.md` AND `.claude-harness/skill-classifications.md` must exist on disk. If either is missing, go back and produce it — don't generate skills from memory.
 
 ## Important: directory creation
 
@@ -207,11 +209,11 @@ If we extract approach A as the skill, the next agent invoking the skill will re
 
 After the extraction script gives you the user-messages files, follow this pipeline. Do NOT skip steps.
 
-#### Step A — Cluster candidate patterns
+#### Step A — Enumerate candidate patterns (write the list to disk)
 
-Read every `.claude-harness/conversations/<slug>-user-messages-part*.md` file. Group user messages into candidate patterns. A pattern qualifies as a skill candidate if it has **3 or more total occurrences** — either across multiple conversations OR repeated within a single long conversation. Both count.
+Read **every single** `.claude-harness/conversations/<slug>-user-messages-part*.md` file end-to-end — no skimming, no stopping at part1 because you saw "enough". The whole history is the input. If a chunk file has 10,000 lines, read it in 2,000-line slices; keep going until you've covered every part file.
 
-For each candidate, record every occurrence with its conversation ID AND a short snippet (or message index) locating it within that conversation. You need this to find each occurrence in Step B.
+A pattern qualifies as a skill candidate if it has **3 or more total occurrences** — either across multiple conversations OR repeated within a single long conversation. Both count.
 
 Look for:
 - **Repeated command sequences** — same multi-step operation 3+ times.
@@ -219,29 +221,74 @@ Look for:
 - **Review workflows** — pre-PR checks that happen repeatedly.
 - **Deployment / release steps** — repeated sequences around shipping.
 - **Recurring debug patterns** — same diagnosis flow for the same bug class.
+- **Slash-command-style asks** — repeated direct invocations ("/commit", "/review", "check deploy", "update the linear story").
+- **Domain operations** — operations specific to this project's domain that recur (e.g. "run the migrations on staging", "bump the SDK version").
 
-#### Step B — For each candidate OCCURRENCE, classify it as SUCCESS or FAIL
+**Write the candidate list to `.claude-harness/skill-candidates.md` BEFORE moving to Step B.** This is a mandatory auditable artifact. Format:
 
-An "occurrence" is one specific ask within one conversation. A single long conversation can contain multiple occurrences of the same pattern (the user asked for the same kind of thing three times) — classify each one independently.
+```markdown
+# Skill Candidates — Step A output
 
-The user-messages files tell you which conversation each occurrence is in. Now you must read those conversations' raw `.jsonl` files to see the flow around each occurrence. The `.jsonl` files live at `~/.claude/projects/<project-slug>/<convId>.jsonl`.
+## Candidate: <slug-name>
+Description: <what the user keeps asking for, in their words>
+Occurrences: N total
 
-**Use the Read tool with offset/limit to read .jsonl files partially.** Do NOT load whole conversations into context — they can be hundreds of MB. Take as many Read calls as needed across as many turns as needed — there is no turn limit on this task. Strategy, per occurrence:
+- Conversation `<convId-1>`: "<short user-message snippet or index>"
+- Conversation `<convId-2>`: "<short user-message snippet or index>"
+- ...
 
-1. Use Grep to locate THIS specific occurrence in the .jsonl: `grep -n '"text":"<user-prompt-snippet>"' <convId>.jsonl` using a snippet unique enough to pick one match.
-2. Read 50–200 lines starting from that line to see the assistant's response to this specific ask.
-3. Stop reading at the NEXT user message — that message is either closure (SUCCESS), a correction (FAIL), or a new unrelated ask (neutral; end of this occurrence's window). If there is no next user message, the conversation ended there.
+## Candidate: <next-slug-name>
+...
+```
 
-Classify each occurrence as one of:
+**Coverage sanity check** before finishing Step A:
+- Count the distinct conversations in the part files (grep `^### Conversation` across all parts).
+- If the corpus has **≥ 20 conversations** and you produced **< 10 candidates**, you under-extracted. Re-read the parts and expand. Typical yield is ~0.3–0.5 candidates per conversation.
+- Every candidate needs ≥ 3 occurrences with specific conversation IDs — not vague "saw this a few times". If you can't cite 3 conversations by ID, drop it from the list (or search more).
 
-- **SUCCESS** — the assistant produced a working solution for this ask AND the user signaled acceptance at the end of the window. Signals:
-  - The next user message is positive / closing: "perfect", "thanks", "done", "ship it", "looks good", "great", a `/commit`, a `git push`, OR the user moves on to a different topic, OR there is no next user message (end of conversation).
-  - The assistant's last message before that reports completion with verifiable outcomes ("tests pass", "deployed", "PR opened").
+#### Step B — For each candidate, classify every occurrence (SUCCESS / FAIL)
+
+**This step is NOT optional.** If `.claude-harness/skill-candidates.md` exists and `.claude-harness/skill-classifications.md` does not, you have not done Step B — go do it. Skipping straight from Step A to skill writing produces wrong skills.
+
+An "occurrence" is one specific ask within one conversation. A single long conversation can contain multiple occurrences of the same pattern — classify each one independently.
+
+**Preferred execution: dispatch subagents in parallel.** For each candidate in `skill-candidates.md`, launch a subagent (`Task` tool with `subagent_type=general-purpose` or an Explore agent) with this brief:
+
+> "Classify occurrences of pattern **<pattern-name>** in conversation history.
+>
+> For each of these conversations — `<convId-1>`, `<convId-2>`, … — open `~/.claude/projects/<project-slug>/<convId>.jsonl` and locate the user message matching `<snippet>`. Read 50–200 lines starting there. Stop at the next user message.
+>
+> Return JSON: `{ conversationId, classification: 'SUCCESS'|'FAIL', winning_tool_calls: [...], user_signal: '...' }`.
+>
+> SUCCESS = next user message is positive/closing ("perfect", "thanks", "/commit", silence) OR assistant reports verifiable completion. FAIL = next user message corrects ("no", "still broken", "try again") OR occurrence abandoned mid-flow."
+
+Subagents keep per-candidate .jsonl reads out of main context. Fire **all candidates in parallel in a single message** (multiple `Task` tool calls in one turn) — the subagent results stream back concurrently.
+
+**If you cannot use subagents** (e.g. only 1-2 candidates), fall back to inline: use Grep to locate each occurrence in its .jsonl, Read 50–200 lines starting there, stop at the next user message.
+
+**Use Read with offset/limit on .jsonl files — never whole-file.** They can be hundreds of MB. There is no turn limit on this task; take as many Read calls as you need.
+
+Classification signals:
+
+- **SUCCESS** — assistant produced a working solution AND user signaled acceptance at end of window:
+  - Next user message is positive / closing: "perfect", "thanks", "done", "ship it", "looks good", a `/commit`, a `git push`, user moved on to a different topic, OR no next user message (end of conversation).
+  - Assistant's last message before that reports verifiable completion ("tests pass", "deployed", "PR opened").
   - Tool calls in the window succeeded (no terminal errors that went unaddressed).
-- **FAIL** — the occurrence never reached a working state. Signals:
-  - The next user message is corrective / unhappy: "still broken", "no, that's wrong", "you missed", "try again", "actually...".
-  - The occurrence was abandoned mid-flow (the user pivoted without closure).
-  - Many revert / undo operations near the end of the window.
+- **FAIL** — occurrence never reached a working state:
+  - Next user message is corrective / unhappy: "still broken", "no, that's wrong", "you missed", "try again", "actually...".
+  - Occurrence abandoned mid-flow (user pivoted without closure).
+  - Many revert / undo operations near end of window.
+
+**Write the results to `.claude-harness/skill-classifications.md`** — this is the second mandatory audit artifact. Format per candidate:
+
+```markdown
+## Candidate: <slug-name>
+- `<convId-1>`: SUCCESS — signal: "/commit", winning flow: Read → Edit → Bash(pytest) → Bash(git commit)
+- `<convId-2>`: FAIL — next user msg was "no, you missed the migration step"
+- `<convId-3>`: SUCCESS — silence after assistant reported "PR opened #4231"
+```
+
+Only candidates with **≥ 2 SUCCESS** occurrences survive to Step C.
 
 #### Step C — For each SUCCESS occurrence, extract the WORKING flow
 
