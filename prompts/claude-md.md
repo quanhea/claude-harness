@@ -113,17 +113,6 @@ These are in `.claude/rules/` and are loaded automatically:
 |-------|-------------|
 | `/skill-name` | See `.claude/skills/` for project-specific skills generated from usage history |
 
-## Hooks — Run Automatically
-
-Custom linters in `.claude/hooks/` run after every file edit and inject
-remediation into context. You don't need to invoke them — they fire on PostToolUse.
-
-## Principles
-
-1. **Repository is the system of record** — if it's not in the repo, it doesn't exist
-2. **This file is the map** — read linked docs on demand, don't load everything
-3. **Enforce mechanically** — rules and hooks catch violations, not memory
-4. **Correct > clever** — well-tested, composable, boring code wins
 ```
 
 ## Rules
