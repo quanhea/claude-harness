@@ -358,7 +358,10 @@ export async function setup(options: HarnessOptions): Promise<number> {
         value: t.id,
         checked: true,
       })),
-      pageSize: 15,
+      // Show the whole list without requiring the user to scroll — tasks
+      // below the fold were being missed (reported: skills appeared hidden
+      // when it's item #21 of 27). Cap at a sane upper bound anyway.
+      pageSize: Math.min(Math.max(pendingTasks.length, 10), 40),
     });
     tasksToRun = pendingTasks.filter((t) => selected.includes(t.id));
     if (tasksToRun.length === 0) {
