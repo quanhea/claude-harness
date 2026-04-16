@@ -291,4 +291,5 @@ Only mark this task complete when 7d passes cleanly and 7e leaves no stale resou
 - The `_wt_` marker is non-negotiable. Every DROP path asserts it.
 - The `.git/hooks/post-checkout` install MUST be idempotent and merge-safe (see Step 4).
 - If `docs/WORKTREE.md` already exists, read it first. Preserve any user customizations outside the auto-generated sections (mark the auto section with `<!-- claude-harness:worktree -->` sentinels).
+- If the hook creates `.env.local` or any other sensitive file, verify the project's `.gitignore` already covers it. If not, append the pattern (e.g. `.env.local`) so secrets are never committed.
 - Ultrathink
