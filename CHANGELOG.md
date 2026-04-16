@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.2.0
+
+### Worktree isolation
+
+- PostgreSQL provisioning now clones the source DB (`CREATE DATABASE new_db TEMPLATE source_db`) instead of creating an empty one — worktrees start with all existing data, seeds, and fixtures intact
+- Source DB is read from `POSTGRES_DB` in `.env`; active connections to the source are terminated before cloning (required by PostgreSQL TEMPLATE); falls back to empty `CREATE DATABASE` if source is unknown
+- Migrations run on top of the clone (not from scratch) to bring the worktree DB to the branch tip
+
 ## 1.1.1
 
 ### Bug fixes
