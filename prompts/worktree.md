@@ -30,7 +30,8 @@ Create these tasks now with TaskCreate:
 4. "Write .claude/hooks/worktree-cleanup.sh — teardown for removed worktrees (bash)"
 5. "Install .git/hooks/post-checkout shell wrapper (idempotent — merge if present)"
 6. "Wire a `wt:cleanup` convenience command into package.json (or Makefile / justfile / pyproject scripts)"
-7. "Write docs/WORKTREE.md listing the detected services and the lifecycle; verify all generated files"
+7. "Write docs/WORKTREE.md listing detected services and the lifecycle"
+8. "End-to-end test: syntax check, dry run, create test worktree, verify DB created, clean up"
 
 Use TaskUpdate to mark each complete. Use TaskList before finishing.
 
@@ -70,7 +71,11 @@ Write this mapping down as a comment block at the top of `post-checkout.js` so h
 
 Write a self-contained bash script (`#!/usr/bin/env bash`). Bash is always available in
 git hook contexts — no PATH resolution or runtime dependency issues.
-Use CLI tools the project already has: `psql`, `mysql`, `redis-cli`, `curl` (for RabbitMQ).
+
+**Portability rules (macOS/BSD bash — non-negotiable):**
+- All `sed` patterns must use POSIX character classes only: `[[:space:]]`, `[[:upper:]]`, etc. Never use GNU extensions like `\s`, `\w`, `\d` — they silently fail on macOS and produce wrong output.
+- Use `shasum -a 256` not `sha256sum` (macOS ships `shasum`, not `sha256sum`).
+- Test every sed/awk pattern mentally on macOS before writing it.
 
 It must:
 
@@ -78,27 +83,28 @@ It must:
 2. Resolve the current branch: `git rev-parse --abbrev-ref HEAD`.
 3. Skip provisioning for the shared-branch allowlist — by default `main`, `master`, `trunk`, `develop`. Allow override via env var `WORKTREE_SKIP_BRANCHES` (comma-separated).
 4. Compute `slug = sanitize(branch)_sha6(branch)`:
-   - Sanitize: lowercase, replace `[^a-z0-9]` with `_`, collapse repeated `_`, trim to 30 chars.
-   - Append `_` + first 6 hex of `sha256(branch)` so two branches with the same sanitized form still get distinct resources.
-5. Project name: read from `package.json`, `Cargo.toml`, `pyproject.toml`, or fall back to the repo directory name. Sanitize same way.
+   - Sanitize: lowercase via `tr '[:upper:]' '[:lower:]'`, replace non-alphanumeric with `_` via `sed 's/[^a-z0-9]/_/g'`, collapse `sed 's/__*/_/g'`, trim to 30 chars.
+   - Append `_` + first 6 hex of `shasum -a 256` so two branches with the same sanitized form get distinct resources.
+5. Project name: read from `package.json` (`grep -m1 '"name"' | sed 's/.*"name":[[:space:]]*"//;s/".*//'`), `Cargo.toml`, `pyproject.toml` (`grep -m1 '^name' | sed 's/.*=[[:space:]]*"//;s/".*//'`), or fall back to the repo directory name. Sanitize same way.
 6. Resource name: `${project}_wt_${slug}`. The `_wt_` literal is a **safety marker** — the cleanup script refuses to touch anything without it.
 7. For each detected service, provision idempotently:
 
    | Service | Action |
    |---------|--------|
-   | PostgreSQL | `psql "$WORKTREE_ADMIN_DATABASE_URL" -c "CREATE DATABASE \"$name\""`. Default URL: `postgresql://postgres:postgres@localhost/postgres`. Ignore `already exists`. |
+   | PostgreSQL | Try `psql` first. If not in PATH, try `docker exec $(docker ps --filter ancestor=postgres --format '{{.Names}}' \| head -1) psql`. Admin URL env: `WORKTREE_ADMIN_DATABASE_URL` (default `postgresql://postgres:postgres@localhost/postgres`). Ignore `already exists`. |
    | MySQL / MariaDB | `mysql -e "CREATE DATABASE IF NOT EXISTS \`$name\`"`. |
    | MongoDB | No create needed — namespace is implicit. Just compute the URL. |
-   | Redis | Always use key-prefix mode: set `REDIS_PREFIX="${project}:wt:${slug}:"` in `.env.local`. No DB numbers, no registry file. |
+   | Redis | Key-prefix mode only: set `REDIS_PREFIX="${project}:wt:${slug}:"` in `.env.local`. No DB numbers, no registry file. |
    | RabbitMQ | `curl -su "$user:$pass" -X PUT "$WORKTREE_ADMIN_RABBITMQ_URL/api/vhosts/$name"`. Default: `http://guest:guest@localhost:15672`. Ignore 204/"already exists". |
    | Kafka / NATS | Topic prefix `${project}.wt.${slug}.` — document in `.env.local`, no API call. |
    | Elasticsearch / OpenSearch | Index prefix `${project}_wt_${slug}_` — document in `.env.local`, no API call. |
    | MinIO / LocalStack | Bucket prefix `${project}-wt-${slug}-` — document in `.env.local`, no API call. |
 
-8. Write `.env.local` in the worktree. Copy `.env` (fallback: `.env.example`) then rewrite each detected env var to the isolated URL. Skip silently if `.env.local` already contains `_wt_${slug}` (idempotent re-run).
-9. Print a summary line: `✓ worktree ${slug}: db=... redis-prefix=... rabbit=...`. Exit non-zero on any provisioning failure — `wt:cleanup` handles partial state.
+8. Write `.env.local` in the worktree. Copy `.env` (fallback: `.env.example`) then append the isolated env vars. Skip silently if `.env.local` already contains `_wt_${slug}` (idempotent re-run).
+9. Print a summary line: `✓ worktree ${slug}: db=... redis-prefix=... rabbit=...`.
+10. **Always exit 0.** Log service errors as warnings (`⚠ service: reason`) but never exit non-zero — a provisioning failure must never block a git checkout, commit, or stash. If a service is unreachable, log it and move on; the developer can re-run manually.
 
-Optional: detect a migration tool and run it against the new DB. `prisma/schema.prisma` → `npx prisma migrate deploy`; `alembic.ini` → `alembic upgrade head`; `config/database.yml` → `bundle exec rails db:migrate`. Run with `DATABASE_URL="$isolated_url"` in env only. Log `migrations: skipped` if no tool detected.
+Optional: detect a migration tool and run it against the new DB. `prisma/schema.prisma` → `npx prisma migrate deploy`; `alembic.ini` → `alembic upgrade head`; `config/database.yml` → `bundle exec rails db:migrate`. Run with the isolated DB URL in env only. Log `migrations: skipped` if no tool detected. Migration failure is non-fatal — log as warning.
 
 ## Step 3 — Generate `.claude/hooks/worktree-cleanup.sh`
 
@@ -215,10 +221,67 @@ See also: `.claude/rules/git-workflow.md` (loaded every session) and the
 top-of-CLAUDE.md statement. This is the most important rule in the repo.
 ```
 
-## Step 7 — Verify
+## Step 7 — End-to-end test, fix, and clean up
 
-Run `bash -n` on all generated `.sh` files to syntax-check them. Confirm every file listed
-in the outputs exists and is executable. Print a summary of what was created.
+This step is mandatory. Do not skip it.
+
+**7a — Syntax check**
+
+```bash
+bash -n .claude/hooks/post-checkout.sh
+bash -n .claude/hooks/worktree-cleanup.sh
+```
+
+Fix any syntax errors before continuing.
+
+**7b — Dry run**
+
+Invoke the provisioning hook directly (simulating a branch checkout):
+
+```bash
+bash .claude/hooks/post-checkout.sh 0 HEAD 1 2>&1
+```
+
+Read the output carefully:
+- `✓ worktree ...: db=... redis-prefix=...` means success.
+- `⚠ service: reason` means a service warning — check if the service is actually used by this project. If it's a false positive (service not used), remove it from the script.
+- Any error that causes the script to exit non-zero is a bug — fix it.
+
+**7c — Iterate until clean**
+
+If the hook output shows errors or wrong values (wrong project name, wrong slug, etc.), read the script, identify the root cause, fix it, and re-run. Repeat until the output is correct. Common issues:
+- Project name resolves wrong → check the sed/grep parsing against the actual file format.
+- Service unreachable → verify the service is actually running (`docker ps`, `brew services list`). If not running and not used, remove it from the provisioned set.
+- `.env.local` written with wrong URLs → inspect and fix the URL rewrite logic.
+
+**7d — Create a real test worktree**
+
+```bash
+git worktree add /tmp/wt-harness-test -b wt/harness-test-$(date +%s)
+```
+
+Check that:
+1. `.env.local` exists in `/tmp/wt-harness-test/` and contains `_wt_` with the correct slug.
+2. Each provisioned resource actually exists (e.g. `psql ... -c '\l'` shows the new DB).
+
+If anything is wrong, fix `post-checkout.sh` and re-run the provisioning manually:
+
+```bash
+bash .claude/hooks/post-checkout.sh 0 HEAD 1
+```
+
+**7e — Clean up**
+
+Remove the test worktree and drop all resources created for it:
+
+```bash
+git worktree remove /tmp/wt-harness-test --force
+bash .claude/hooks/worktree-cleanup.sh
+```
+
+Verify the test DB and vhost are gone. If `worktree-cleanup.sh` fails to drop them, fix it and re-run.
+
+Only mark this task complete when 7d passes cleanly and 7e leaves no stale resources.
 
 ## Rules
 
