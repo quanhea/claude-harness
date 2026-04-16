@@ -16,6 +16,7 @@ export interface ClaudeSpawnOptions {
   // Separate from `logPath`, which is the child's raw stdout+stderr.
   debugPath?: string;
   config: HarnessConfig;
+  effort?: "low" | "medium" | "high" | "max";
 }
 
 export interface ClaudeSpawnResult {
@@ -135,13 +136,15 @@ export function spawnClaude(options: ClaudeSpawnOptions): {
     config: { maxTurns: config.maxTurns, timeout: config.timeout, model: config.model },
   });
 
+  const childEnv: NodeJS.ProcessEnv = { ...process.env, CLAUDE_HARNESS_SETUP: "1" };
+  // CLAUDE_HARNESS_SETUP=1 signals the worktree-enforcement hook to skip during setup.
+  // CLAUDE_CODE_EFFORT_LEVEL sets the thinking budget for this task's subprocess.
+  if (options.effort) childEnv.CLAUDE_CODE_EFFORT_LEVEL = options.effort;
+
   const child = spawn("claude", args, {
     cwd,
     stdio: ["ignore", "pipe", "pipe"],
-    // CLAUDE_HARNESS_SETUP=1 signals the worktree-enforcement hook (.claude/hooks/enforce-worktree.sh)
-    // to skip its check so the harness can write project files during initial setup. Without this,
-    // the hook would block harness agents from creating any files in the main working tree.
-    env: { ...process.env, CLAUDE_HARNESS_SETUP: "1" },
+    env: childEnv,
   });
 
   let killed = false;
@@ -282,6 +285,7 @@ export interface SpawnOptions {
   taskId: string;
   promptTemplate: string;
   config: HarnessConfig;
+  effort?: "low" | "medium" | "high" | "max";
 }
 
 export function taskToSlug(taskId: string): string {
@@ -306,7 +310,7 @@ export function spawnTask(options: SpawnOptions): {
   });
 
   const { child, promise: claudePromise, kill } = spawnClaude({
-    prompt, cwd: targetDir, logPath, debugPath, config,
+    prompt, cwd: targetDir, logPath, debugPath, config, effort: options.effort,
   });
 
   const promise = claudePromise.then((r): WorkerResult => {

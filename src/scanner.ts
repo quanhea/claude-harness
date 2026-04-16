@@ -342,6 +342,7 @@ export async function setup(options: HarnessOptions): Promise<number> {
     prompts.set(task.id, {
       text: renderPrompt(loaded.text, vars),
       maxTurns: loaded.meta.maxTurns,
+      effort: loaded.meta.effort,
     });
     if (loaded.meta.maxTurns !== undefined) {
       const label = loaded.meta.maxTurns === null ? "unlimited" : String(loaded.meta.maxTurns);

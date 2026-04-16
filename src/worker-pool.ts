@@ -15,6 +15,7 @@ export interface PoolEvents {
 export interface PromptEntry {
   text: string;
   maxTurns?: number | null;
+  effort?: "low" | "medium" | "high" | "max";
 }
 
 export class WorkerPool extends EventEmitter {
@@ -135,6 +136,7 @@ export class WorkerPool extends EventEmitter {
       taskId,
       promptTemplate: entry?.text ?? "",
       config: taskConfig,
+      effort: entry?.effort,
     };
 
     const { child, promise, kill } = spawnTask(spawnOpts);

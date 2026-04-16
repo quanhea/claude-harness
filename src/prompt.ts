@@ -32,6 +32,9 @@ export interface PromptMeta {
   // with --only. Use to temporarily disable tasks under active development
   // without removing them from the manifest.
   disabled?: boolean;
+  // Sets CLAUDE_CODE_EFFORT_LEVEL for this task's subprocess.
+  // Omit for the global default; use "max" for the heaviest tasks (e.g. worktree).
+  effort?: "low" | "medium" | "high" | "max";
 }
 
 export interface LoadedPrompt {
@@ -80,6 +83,11 @@ function parseFrontmatter(content: string): { meta: PromptMeta; body: string } {
         break;
       case "disabled":
         meta.disabled = raw === "true" || raw === "yes" || raw === "1";
+        break;
+      case "effort":
+        if (raw === "low" || raw === "medium" || raw === "high" || raw === "max") {
+          meta.effort = raw;
+        }
         break;
     }
   }
