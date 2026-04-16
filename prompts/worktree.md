@@ -286,7 +286,7 @@ Only mark this task complete when 7d passes cleanly and 7e leaves no stale resou
 ## Rules
 
 - Do NOT skip this task for libraries — libraries with integration tests that hit local services need isolation too. (The previous version of this prompt had a "skip if not an app" gate; it's gone.)
-- Detect only what the codebase actually uses. If no local service is found, still generate `docs/WORKTREE.md` and the hook skeleton, but note in WORKTREE.md: "No local services detected — the hook is a no-op placeholder. If you add Postgres/Redis/etc. later, re-run `claude-harness --only worktree`."
+- Detect only what the codebase actually uses. If no local service is found, still generate `docs/WORKTREE.md` and the hook skeleton, but note in WORKTREE.md: "No local services detected — the hook is a no-op placeholder. If you add Postgres/Redis/etc. later, re-run the project scaffold to regenerate this file."
 - NEVER hardcode credentials in the generated scripts. Always read admin URLs from env vars with sensible localhost defaults.
 - The `_wt_` marker is non-negotiable. Every DROP path asserts it.
 - The `.git/hooks/post-checkout` install MUST be idempotent and merge-safe (see Step 4).

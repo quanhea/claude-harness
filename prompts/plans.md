@@ -140,7 +140,7 @@ needs a plan. When in doubt, write one — they are cheap.
 
 {{if the README or issue tracker surfaces near-term direction, list it here under "Near term" / "Later". Otherwise write "_Not yet defined. Individual plans track in-flight work._"}}
 
-_Updated: {{today's date}}. Re-run `claude-harness --only plans` to refresh the index._
+_Updated: {{today's date}}._
 ```
 
 ## Rules
