@@ -58,7 +58,6 @@ const path = require("path");
 const readline = require("readline");
 
 const CHUNK_SIZE = 15;             // conversations per output file
-const MAX_MSG_LEN = 500;           // truncate paste-dumps
 
 // Stream a .jsonl file line by line — no full-file load into memory.
 function readLinesStream(filepath) {
@@ -139,9 +138,6 @@ async function extract(projectSlug, outputDir) {
         content = content.trim();
         if (!content) continue;
         if (content.startsWith("<system-reminder>")) continue;
-        if (content.length > MAX_MSG_LEN) {
-          content = content.slice(0, MAX_MSG_LEN) + "... [truncated]";
-        }
         if (seen.has(content)) continue;
         seen.add(content);
         userMessages.push(content);
