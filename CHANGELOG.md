@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.1.1
+
+### Bug fixes
+
+- Raise hang detector threshold to 15 min (from 2 min) — extended thinking can be silent between tool calls for several minutes.
+
 ## 1.1.0
 
 ### Logging

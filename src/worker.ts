@@ -155,14 +155,8 @@ export function spawnClaude(options: ClaudeSpawnOptions): {
     timeoutTimer = setTimeout(() => { if (!killed) kill(); }, config.timeout * 1000);
   }
 
-  // Extended thinking (effort: high/max) can be silent for several minutes
-  // between tool calls while the model reasons — scale the hang threshold up
-  // so we don't kill a legitimately thinking agent.
   const HANG_CHECK_INTERVAL = 30_000;
-  const HANG_THRESHOLD =
-    options.effort === "max"  ? 10 * 60_000 :  // 10 min
-    options.effort === "high" ?  5 * 60_000 :  //  5 min
-                                 2 * 60_000;   //  2 min (default)
+  const HANG_THRESHOLD = 15 * 60_000;  // 15 min — extended thinking can be silent between tool calls
   hangTimer = setInterval(() => {
     if (Date.now() - lastActivity > HANG_THRESHOLD && !killed) kill();
   }, HANG_CHECK_INTERVAL);
