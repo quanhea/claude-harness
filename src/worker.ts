@@ -111,7 +111,7 @@ export function spawnClaude(options: ClaudeSpawnOptions): {
     "-p",
     fullPrompt,
     "--output-format",
-    "json",
+    "stream-json",
     "--no-session-persistence",
   ];
 
@@ -176,14 +176,12 @@ export function spawnClaude(options: ClaudeSpawnOptions): {
     timeoutTimer = setTimeout(() => { if (!killed) kill(); }, config.timeout * 1000);
   }
 
-  // Hang detection only with --verbose (json mode has no output until done)
-  if (config.verbose) {
-    const HANG_CHECK_INTERVAL = 30_000;
-    const HANG_THRESHOLD = 120_000;
-    hangTimer = setInterval(() => {
-      if (Date.now() - lastActivity > HANG_THRESHOLD && !killed) kill();
-    }, HANG_CHECK_INTERVAL);
-  }
+  // stream-json emits events continuously, so hang detection works for all runs.
+  const HANG_CHECK_INTERVAL = 30_000;
+  const HANG_THRESHOLD = 120_000;
+  hangTimer = setInterval(() => {
+    if (Date.now() - lastActivity > HANG_THRESHOLD && !killed) kill();
+  }, HANG_CHECK_INTERVAL);
 
   const startTime = Date.now();
 
@@ -196,23 +194,31 @@ export function spawnClaude(options: ClaudeSpawnOptions): {
       const durationMs = Date.now() - startTime;
       const exitCode = code ?? (signal ? 128 + (signalNumber(signal) || 0) : 1);
 
-      // Parse JSON response
+      // Parse stream-json log: scan for the final {"type":"result"} line.
+      // With --output-format stream-json every turn event is a JSONL line;
+      // the last line with type=result carries cost, turns, and the final text.
       let isError = false;
       let claudeResult: string | undefined;
       let cost: number | undefined;
 
       let parsedEnvelope: Record<string, unknown> | null = null;
       try {
-        const raw = lastStdoutChunk.trim() ||
-          (fs.existsSync(logPath) ? fs.readFileSync(logPath, "utf-8").trim() : "");
-        if (raw) {
-          const parsed = JSON.parse(raw);
-          parsedEnvelope = parsed;
-          isError = parsed.is_error === true;
-          claudeResult = parsed.result;
-          cost = parsed.total_cost_usd;
+        const raw = fs.existsSync(logPath) ? fs.readFileSync(logPath, "utf-8") : "";
+        for (const line of raw.split("\n").reverse()) {
+          const trimmed = line.trim();
+          if (!trimmed) continue;
+          try {
+            const obj = JSON.parse(trimmed);
+            if (obj.type === "result") {
+              parsedEnvelope = obj;
+              isError = obj.is_error === true;
+              claudeResult = obj.result;
+              cost = obj.total_cost_usd;
+              break;
+            }
+          } catch { continue; }
         }
-      } catch { /* non-JSON stdout (e.g. verbose streaming) — leave fields undefined */ }
+      } catch { /* log unreadable — leave fields undefined */ }
 
       // Classify error
       let error: string | undefined;
