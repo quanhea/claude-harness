@@ -88,24 +88,23 @@ It must:
    - Append `_` + first 6 hex of `shasum -a 256` so two branches with the same sanitized form get distinct resources.
 5. Project name: read from `package.json` (`grep -m1 '"name"' | sed 's/.*"name":[[:space:]]*"//;s/".*//'`), `Cargo.toml`, `pyproject.toml` (`grep -m1 '^name' | sed 's/.*=[[:space:]]*"//;s/".*//'`), or fall back to the repo directory name. Sanitize same way.
 6. Resource name: `${project}_wt_${slug}`. The `_wt_` literal is a **safety marker** — the cleanup script refuses to touch anything without it.
-7. For each detected service, provision idempotently:
+7. For each detected service, provision idempotently. **DB clone principle:** always use the engine's native filesystem clone — instant and exact. Never fall back to dump/restore for databases that support native clone.
 
    | Service | Action |
    |---------|--------|
-   | PostgreSQL | **Clone** the source DB — do NOT create an empty database. Read the source DB name from `POSTGRES_DB` in `.env` (fallback: `.env.example`). Run `pg_terminate_backend` to drop active connections to the source, then `CREATE DATABASE "$name" TEMPLATE "$source_db"`. If the source DB is unknown or TEMPLATE fails, fall back to a plain `CREATE DATABASE "$name"` and log a warning. Try `psql` first; if not in PATH, try `docker exec $(docker ps --filter ancestor=postgres --format '{{.Names}}' \| head -1) psql`. Admin URL env: `WORKTREE_ADMIN_DATABASE_URL` (default `postgresql://postgres:postgres@localhost/postgres`). Ignore `already exists`. |
+   | PostgreSQL | Use `CREATE DATABASE new TEMPLATE source` — filesystem-level clone, instant and exact. Run terminate + clone in a single `docker exec bash -c` call to close the reconnect window (microseconds): `docker exec "$container" bash -c "psql -U '$pg_user' -c \"SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname='$source_db' AND pid <> pg_backend_pid()\" >/dev/null 2>&1 && psql -U '$pg_user' -c \"CREATE DATABASE \\\"$db_name\\\" TEMPLATE \\\"$source_db\\\"\""`. Read source from `POSTGRES_DB` in `.env` (fallback `.env.example`); if unknown, fall back to `CREATE DATABASE` (empty) and log a warning. Container: `docker ps --format '{{.Names}}' \| grep -iE 'db\|postgres\|pgvector' \| head -1`. |
    | MySQL / MariaDB | `mysql -e "CREATE DATABASE IF NOT EXISTS \`$name\`"`. |
    | MongoDB | No create needed — namespace is implicit. Just compute the URL. |
    | Redis | Key-prefix mode only: set `REDIS_PREFIX="${project}:wt:${slug}:"` in `.env.local`. No DB numbers, no registry file. |
    | RabbitMQ | `curl -su "$user:$pass" -X PUT "$WORKTREE_ADMIN_RABBITMQ_URL/api/vhosts/$name"`. Default: `http://guest:guest@localhost:15672`. Ignore 204/"already exists". |
-   | Kafka / NATS | Topic prefix `${project}.wt.${slug}.` — document in `.env.local`, no API call. |
-   | Elasticsearch / OpenSearch | Index prefix `${project}_wt_${slug}_` — document in `.env.local`, no API call. |
-   | MinIO / LocalStack | Bucket prefix `${project}-wt-${slug}-` — document in `.env.local`, no API call. |
+
+   For other database engines: if native clone exists (e.g. Neo4j Enterprise `CREATE DATABASE ... COPY OF`, SQLite file copy), use it; otherwise create an empty database and document it.
 
 8. Write `.env.local` in the worktree. Copy `.env` (fallback: `.env.example`) then append the isolated env vars. Skip silently if `.env.local` already contains `_wt_${slug}` (idempotent re-run).
 9. Print a summary line: `✓ worktree ${slug}: db=... redis-prefix=... rabbit=...`.
 10. **Always exit 0.** Log service errors as warnings (`⚠ service: reason`) but never exit non-zero — a provisioning failure must never block a git checkout, commit, or stash. If a service is unreachable, log it and move on; the developer can re-run manually.
 
-After cloning, detect a migration tool and run pending migrations against the new DB — the clone already has the source schema and data, migrations just bring it up to the branch tip. `prisma/schema.prisma` → `npx prisma migrate deploy`; `alembic.ini` → `alembic upgrade head`; `config/database.yml` → `bundle exec rails db:migrate`. Run with the isolated DB URL in env only. Log `migrations: skipped` if no tool detected. Migration failure is non-fatal — log as warning.
+Do NOT run migrations. The cloned DB is an exact copy of the source — schema and data are already in the correct state. Migrations are the developer's responsibility if the branch introduces new ones.
 
 ## Step 3 — Generate `.claude/hooks/worktree-cleanup.sh`
 

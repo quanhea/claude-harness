@@ -1,6 +1,6 @@
 {
   "name": "@eastagile/claude-harness",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "Agent-first project scaffold for Claude Code. Sets up CLAUDE.md, architecture docs, rules, skills, and a doc-gardening cron that keeps them fresh.",
   "license": "MIT",
   "author": "East Agile <dev@eastagile.com> (https://eastagile.com)",

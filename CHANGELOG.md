@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.2.1
+
+### Worktree isolation prompt
+
+- PostgreSQL provisioning updated to use `CREATE DATABASE ... TEMPLATE` (native filesystem clone) instead of `pg_dump | pg_restore` — instant, exact copy, no dump overhead
+- Added general DB clone principle: always prefer engine-native clone; no dump fallback for databases that support it
+- One-sentence note covers other engines (Neo4j Enterprise, SQLite) and databases without native clone
+- Removed Kafka/NATS, Elasticsearch/OpenSearch, and MinIO/LocalStack rows from the provisioning table — not commonly needed at setup time
+
 ## 1.2.0
 
 ### Worktree isolation
