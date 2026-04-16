@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.2.2 (unreleased)
+
+### Orchestrator
+
+- Temporarily removes the `enforce-worktree.sh` PreToolUse hook from `process.cwd()/.claude/settings.json` before spawning claude subprocesses, then restores the exact original content on exit (via `process.on("exit")`). Prevents the worktree enforcement hook from blocking file writes during scaffold runs. No-op if file or hook entry is absent. Skipped on `--dry-run`.
+
 ## 1.2.1
 
 ### Worktree isolation prompt
