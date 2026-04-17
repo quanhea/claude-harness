@@ -55,17 +55,13 @@ export async function removeCommand(args: string[]): Promise<number> {
 
   migrateOldStateDir(targetDir, outputDir);
 
-  const state = loadState(outputDir);
-  if (!state) {
-    console.log("No harness state found. Nothing to remove.");
-    return 0;
-  }
-
-  const completedWithOutputs = TASK_MANIFEST
-    .filter((t) => state.tasks[t.id]?.status === STATUS.COMPLETED)
+  // Filesystem is the source of truth — show tasks whose output files
+  // actually exist on disk, regardless of what state.json says.
+  const presentOnDisk = TASK_MANIFEST
     .filter((t) => {
       const outputs = meta.get(t.id)?.meta.outputs;
-      return outputs && outputs.length > 0;
+      if (!outputs || outputs.length === 0) return false;
+      return outputs.some((p) => outputExists(targetDir, p));
     })
     .map((t) => {
       const outputs = meta.get(t.id)!.meta.outputs!;
@@ -77,14 +73,14 @@ export async function removeCommand(args: string[]): Promise<number> {
       };
     });
 
-  if (completedWithOutputs.length === 0) {
-    console.log("No completed tasks with output files to remove.");
+  if (presentOnDisk.length === 0) {
+    console.log("No generated files found on disk. Nothing to remove.");
     return 0;
   }
 
   if (dryRun) {
     console.log("Would show these features for removal:");
-    for (const c of completedWithOutputs) console.log(`  ${c.name}`);
+    for (const c of presentOnDisk) console.log(`  ${c.name}`);
     return 0;
   }
 
@@ -94,15 +90,18 @@ export async function removeCommand(args: string[]): Promise<number> {
   }
 
   const selected = await checkbox({
-    message: `Select features to remove (${completedWithOutputs.length} available):`,
-    choices: completedWithOutputs,
-    pageSize: Math.min(completedWithOutputs.length, 40),
+    message: `Select features to remove (${presentOnDisk.length} on disk):`,
+    choices: presentOnDisk,
+    pageSize: Math.min(presentOnDisk.length, 40),
   });
 
   if (selected.length === 0) {
     console.log("Nothing selected.");
     return 0;
   }
+
+  // Update state if it exists (optional — filesystem is the authority)
+  const state = loadState(outputDir);
 
   let totalDeleted = 0;
   for (const taskId of selected) {
@@ -111,24 +110,28 @@ export async function removeCommand(args: string[]): Promise<number> {
     for (const output of outputs) {
       deleted.push(...deleteOutput(targetDir, output));
     }
-    state.tasks[taskId] = {
-      ...state.tasks[taskId],
-      status: STATUS.PENDING as any,
-      attempts: 0,
-    };
-    delete (state.tasks[taskId] as any).completedAt;
-    delete (state.tasks[taskId] as any).durationMs;
-    delete (state.tasks[taskId] as any).exitCode;
+    if (state?.tasks[taskId]) {
+      state.tasks[taskId] = {
+        ...state.tasks[taskId],
+        status: STATUS.PENDING as any,
+        attempts: 0,
+      };
+      delete (state.tasks[taskId] as any).completedAt;
+      delete (state.tasks[taskId] as any).durationMs;
+      delete (state.tasks[taskId] as any).exitCode;
+    }
     totalDeleted += deleted.length;
     if (deleted.length > 0) {
       console.log(`  [${taskId}] deleted: ${deleted.join(", ")}`);
     } else {
-      console.log(`  [${taskId}] no files found on disk (state reset only)`);
+      console.log(`  [${taskId}] files already absent`);
     }
   }
 
-  state.stats = computeStats(state.tasks);
-  saveState(state, outputDir);
+  if (state) {
+    state.stats = computeStats(state.tasks);
+    saveState(state, outputDir);
+  }
   console.log(`\nRemoved ${selected.length} feature(s), ${totalDeleted} file(s). Re-run claude-harness to regenerate.`);
   return 0;
 }
