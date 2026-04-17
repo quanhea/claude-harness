@@ -119,32 +119,52 @@ export const DEFAULTS: HarnessConfig & { outputDir: string } = {
 // max-turns live in each prompt's YAML frontmatter. Each prompt
 // self-checks applicability and no-ops if not relevant.
 export const TASK_MANIFEST: TaskDefinition[] = [
+  // ── Project docs ──
   { id: "claude-md",          promptFile: "claude-md.md" },
-  { id: "settings-json",      promptFile: "settings-json.md" },
   { id: "architecture-md",    promptFile: "architecture-md.md" },
   { id: "docs-structure",     promptFile: "docs-structure.md" },
   { id: "git-workflow",       promptFile: "git-workflow.md" },
-  { id: "infrastructure-md",  promptFile: "infrastructure-md.md" },
-  { id: "quality-score",      promptFile: "quality-score.md" },
-  { id: "core-beliefs",       promptFile: "core-beliefs.md" },
-  { id: "tech-debt-tracker",  promptFile: "tech-debt-tracker.md" },
   { id: "plans",              promptFile: "plans.md" },
+  { id: "infrastructure-md",  promptFile: "infrastructure-md.md" },
   { id: "product-sense",      promptFile: "product-sense.md" },
   { id: "reliability",        promptFile: "reliability.md" },
   { id: "security",           promptFile: "security.md" },
+  { id: "quality-score",      promptFile: "quality-score.md" },
+  { id: "observability",      promptFile: "observability.md" },
   { id: "design",             promptFile: "design.md" },
   { id: "frontend",           promptFile: "frontend.md" },
-  { id: "observability",      promptFile: "observability.md" },
+  { id: "core-beliefs",       promptFile: "core-beliefs.md" },
+  { id: "tech-debt-tracker",  promptFile: "tech-debt-tracker.md" },
+  // ── Rules & config ──
+  { id: "settings-json",      promptFile: "settings-json.md" },
   { id: "rule-architecture",  promptFile: "rule-architecture.md" },
   { id: "rule-testing",       promptFile: "rule-testing.md" },
   { id: "rule-documentation", promptFile: "rule-documentation.md" },
   { id: "rule-git",           promptFile: "rule-git.md" },
-  { id: "skills",             promptFile: "skills.md" },
-  { id: "gardener",           promptFile: "gardener.md" },
-  { id: "hooks",              promptFile: "hooks.md" },
-  { id: "formatter",          promptFile: "formatter.md" },
-  { id: "ci-workflow",        promptFile: "ci-workflow.md" },
-  { id: "arch-tests",         promptFile: "arch-tests.md" },
+  // ── Automation ──
   { id: "worktree",           promptFile: "worktree.md" },
+  { id: "hooks",              promptFile: "hooks.md" },
+  { id: "skills",             promptFile: "skills.md" },
   { id: "mcp-config",         promptFile: "mcp-config.md" },
+  { id: "formatter",          promptFile: "formatter.md" },
+  { id: "gardener",           promptFile: "gardener.md" },
+  { id: "arch-tests",         promptFile: "arch-tests.md" },
+  { id: "ci-workflow",        promptFile: "ci-workflow.md" },
+];
+
+export const TASK_GROUPS: { label: string; ids: Set<string> }[] = [
+  { label: "Project docs", ids: new Set([
+    "claude-md", "architecture-md", "docs-structure", "git-workflow",
+    "plans", "infrastructure-md", "product-sense", "reliability",
+    "security", "quality-score", "observability", "design", "frontend",
+    "core-beliefs", "tech-debt-tracker",
+  ])},
+  { label: "Rules & config", ids: new Set([
+    "settings-json", "rule-architecture", "rule-testing",
+    "rule-documentation", "rule-git",
+  ])},
+  { label: "Automation", ids: new Set([
+    "worktree", "hooks", "skills", "mcp-config",
+    "formatter", "gardener", "arch-tests", "ci-workflow",
+  ])},
 ];

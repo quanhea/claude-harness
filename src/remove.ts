@@ -2,6 +2,7 @@
 import * as fs from "fs";
 import * as path from "path";
 import { checkbox } from "@inquirer/prompts";
+import { buildGroupedChoices } from "./ui";
 import { TASK_MANIFEST, STATUS } from "./types";
 import { loadPrompt } from "./prompt";
 import { loadState, saveState, computeStats } from "./state";
@@ -91,8 +92,8 @@ export async function removeCommand(args: string[]): Promise<number> {
 
   const selected = await checkbox({
     message: `Select features to remove (${presentOnDisk.length} on disk):`,
-    choices: presentOnDisk,
-    pageSize: Math.min(presentOnDisk.length, 40),
+    choices: buildGroupedChoices(presentOnDisk),
+    pageSize: Math.min(presentOnDisk.length + 6, 50),
   });
 
   if (selected.length === 0) {

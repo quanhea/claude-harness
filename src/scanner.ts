@@ -2,6 +2,7 @@
 import * as fs from "fs";
 import * as path from "path";
 import { checkbox } from "@inquirer/prompts";
+import { buildGroupedChoices } from "./ui";
 import { HarnessOptions, STATUS, TASK_MANIFEST, TaskDefinition } from "./types";
 import { runPreflight, removeLockFile } from "./preflight";
 import { loadPrompt, renderPrompt, buildPromptVars } from "./prompt";
@@ -348,17 +349,15 @@ export async function setup(options: HarnessOptions): Promise<number> {
   // hasn't already narrowed the set with --only. All tasks checked by default.
   let tasksToRun = pendingTasks;
   if (isTTY && !only) {
+    const rawChoices = pendingTasks.map((t) => ({
+      name: `[${t.id}] ${desc(t.id)}`,
+      value: t.id,
+      checked: true,
+    }));
     const selected = await checkbox({
       message: `Select tasks to run (${pendingTasks.length} pending):`,
-      choices: pendingTasks.map((t) => ({
-        name: `[${t.id}] ${desc(t.id)}`,
-        value: t.id,
-        checked: true,
-      })),
-      // Show the whole list without requiring the user to scroll — tasks
-      // below the fold were being missed (reported: skills appeared hidden
-      // when it's item #21 of 27). Cap at a sane upper bound anyway.
-      pageSize: Math.min(Math.max(pendingTasks.length, 10), 40),
+      choices: buildGroupedChoices(rawChoices),
+      pageSize: Math.min(Math.max(pendingTasks.length + 6, 10), 50),
     });
     tasksToRun = pendingTasks.filter((t) => selected.includes(t.id));
     if (tasksToRun.length === 0) {
