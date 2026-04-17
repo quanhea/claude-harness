@@ -6,7 +6,7 @@ import { TASK_MANIFEST, STATUS } from "./types";
 import { loadPrompt } from "./prompt";
 import { loadState, saveState, computeStats } from "./state";
 import { getProjectDir } from "./paths";
-import { outputExists, globToRegex, staticPrefix } from "./scanner";
+import { outputExists, globToRegex, staticPrefix, migrateOldStateDir } from "./scanner";
 
 function walkDelete(rootDir: string, relPath: string, regex: RegExp, depth: number): string[] {
   if (depth > 10) return [];
@@ -52,6 +52,8 @@ export async function removeCommand(args: string[]): Promise<number> {
   for (const task of TASK_MANIFEST) {
     try { meta.set(task.id, loadPrompt(task.promptFile)); } catch {}
   }
+
+  migrateOldStateDir(targetDir, outputDir);
 
   const state = loadState(outputDir);
   if (!state) {

@@ -116,7 +116,7 @@ export function outputExists(rootDir: string, pattern: string): boolean {
 // match that treats `.claude-harness`, `.claude-harness/`, `/.claude-harness`,
 // and `/.claude-harness/` as equivalent — all of them ignore our state dir.
 // Migrate old <project>/.claude-harness/ to ~/.claude-harness/projects/<slug>/.
-function migrateOldStateDir(targetDir: string, newOutputDir: string): void {
+export function migrateOldStateDir(targetDir: string, newOutputDir: string): void {
   const oldDir = path.join(targetDir, ".claude-harness");
   if (!fs.existsSync(path.join(oldDir, "state.json"))) return;
   if (fs.existsSync(path.join(newOutputDir, "state.json"))) return;
