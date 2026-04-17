@@ -4,7 +4,9 @@ import * as path from "path";
 import { setup } from "./scanner";
 import { gardenerCommand } from "./gardener-api";
 import { startClaude } from "./start-claude";
+import { removeCommand } from "./remove";
 import { DEFAULTS } from "./types";
+import { getProjectDir } from "./paths";
 import { suspendWorktreeHook, restoreWorktreeHook } from "./hooks-suspension";
 
 function printHelp(): void {
@@ -13,6 +15,7 @@ claude-harness — agent-first project scaffold powered by Claude Code
 
 Usage:
   claude-harness [target-dir] [options]      Set up a project
+  claude-harness remove [target-dir]         Selectively remove generated features
   claude-harness start-claude [target-dir]   Start claude with harness context
   claude-harness gardener <subcommand>       Manage doc-gardening schedules
 
@@ -22,7 +25,7 @@ Setup options:
       --resume               (legacy no-op — every run is now a resume)
       --retry                Also re-run failed/timed-out tasks
       --only <id,...>        Run only these task IDs — forces re-run even if already completed (e.g. --only claude-md,rule-git)
-  -o, --output <dir>        Output directory            (default: .claude-harness)
+  -o, --output <dir>        Output directory            (default: ~/.claude-harness/projects/<slug>)
       --model <model>        Claude model to use
       --max-turns <n>        Max Claude turns per task   (default: ${DEFAULTS.maxTurns})
       --dry-run              List tasks without running
@@ -67,6 +70,12 @@ async function main(): Promise<void> {
     return;
   }
 
+  if (args[0] === "remove") {
+    const exitCode = await removeCommand(args.slice(1));
+    process.exit(exitCode);
+    return;
+  }
+
   // Parse setup args
   const options: Record<string, string | boolean> = {};
   let targetDir = "";
@@ -107,7 +116,7 @@ async function main(): Promise<void> {
   const resolvedTarget = targetDir ? path.resolve(targetDir) : process.cwd();
   const outputDir = typeof options.output === "string"
     ? options.output
-    : path.join(resolvedTarget, DEFAULTS.outputDir);
+    : getProjectDir(resolvedTarget);
 
   // --retry implies --resume (retrying only makes sense on an existing run)
   const retry = !!options.retry;

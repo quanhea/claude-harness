@@ -61,7 +61,7 @@ function escapeRegex(s: string): string {
   return s.replace(/[.+^$|()[\]\\]/g, "\\$&");
 }
 
-function globToRegex(glob: string): RegExp {
+export function globToRegex(glob: string): RegExp {
   let out = "";
   let i = 0;
   while (i < glob.length) {
@@ -93,7 +93,7 @@ function globToRegex(glob: string): RegExp {
 }
 
 // Deepest path prefix free of glob metacharacters — start the walk there.
-function staticPrefix(glob: string): string {
+export function staticPrefix(glob: string): string {
   const meta = glob.search(/[*?{]/);
   if (meta === -1) return glob;
   const slash = glob.lastIndexOf("/", meta);
@@ -115,28 +115,25 @@ export function outputExists(rootDir: string, pattern: string): boolean {
 // Guards against duplicates via (a) our sentinel comment and (b) a normalized
 // match that treats `.claude-harness`, `.claude-harness/`, `/.claude-harness`,
 // and `/.claude-harness/` as equivalent — all of them ignore our state dir.
-export function ensureGitignore(targetDir: string): void {
+// Migrate old <project>/.claude-harness/ to ~/.claude-harness/projects/<slug>/.
+function migrateOldStateDir(targetDir: string, newOutputDir: string): void {
+  const oldDir = path.join(targetDir, ".claude-harness");
+  if (!fs.existsSync(path.join(oldDir, "state.json"))) return;
+  if (fs.existsSync(path.join(newOutputDir, "state.json"))) return;
+  fs.mkdirSync(newOutputDir, { recursive: true });
+  fs.cpSync(oldDir, newOutputDir, { recursive: true });
+  fs.rmSync(oldDir, { recursive: true, force: true });
+  console.log(`Migrated .claude-harness/ to ${newOutputDir}`);
+  // Clean up the gitignore entry we used to add
   const gitignorePath = path.join(targetDir, ".gitignore");
   const SENTINEL = "# claude-harness: local state — never track";
-  const ENTRY = ".claude-harness/";
-  const TARGET = ".claude-harness";
-  let existing = "";
   if (fs.existsSync(gitignorePath)) {
-    existing = fs.readFileSync(gitignorePath, "utf-8");
-    if (existing.includes(SENTINEL)) return;
-    const alreadyIgnored = existing.split(/\r?\n/).some((l) => {
-      const trimmed = l.trim();
-      if (!trimmed || trimmed.startsWith("#")) return false;
-      // Strip optional leading `/` and trailing `/` — they don't change
-      // whether the entry ignores our state directory.
-      const normalized = trimmed.replace(/^\//, "").replace(/\/$/, "");
-      return normalized === TARGET;
-    });
-    if (alreadyIgnored) return;
+    const content = fs.readFileSync(gitignorePath, "utf-8");
+    if (content.includes(SENTINEL)) {
+      const cleaned = content.replace(new RegExp(`\\n?${SENTINEL.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\n\\.claude-harness/\\n?`, "g"), "\n");
+      fs.writeFileSync(gitignorePath, cleaned.replace(/\n{3,}/g, "\n\n"));
+    }
   }
-  const prefix = existing && !existing.endsWith("\n") ? "\n" : "";
-  const block = `\n${SENTINEL}\n${ENTRY}\n`;
-  fs.writeFileSync(gitignorePath, existing + prefix + block);
 }
 
 function walkMatch(rootDir: string, relPath: string, regex: RegExp, depth: number): boolean {
@@ -202,7 +199,7 @@ export async function setup(options: HarnessOptions): Promise<number> {
   // conversations extraction — no reason to track any of it. Teammates get
   // the committed output files (CLAUDE.md, docs/, .claude/) and the scanner
   // reconciles against them.
-  ensureGitignore(absTarget);
+  migrateOldStateDir(absTarget, absOutput);
 
   // Unified state load — every run behaves like a resume that also picks up
   // any new tasks added to the manifest since the last run.
