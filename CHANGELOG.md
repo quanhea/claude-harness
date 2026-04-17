@@ -1,6 +1,23 @@
 # Changelog
 
-## 1.3.0 (unreleased)
+## 1.4.0
+
+### `claude-harness remove`
+
+- New command: `claude-harness remove [target-dir]` — interactive checkbox to selectively delete generated features and reset their state to pending. All unchecked by default (safe). Supports `--dry-run`.
+- Filesystem is the source of truth — shows tasks whose output files exist on disk, regardless of state.json. If you delete files then `git checkout` them back, remove correctly reflects reality.
+
+### State directory moved to `~/.claude-harness/`
+
+- Default output directory is now `~/.claude-harness/projects/<slug>/` (slug uses Claude Code's `sanitizePath` convention: all non-alphanumeric → hyphen). No `.gitignore` entry needed.
+- Old `<project>/.claude-harness/` is auto-migrated on first run of either `claude-harness` or `claude-harness remove`. The stale `.gitignore` sentinel is cleaned up.
+
+### Checkbox UX
+
+- Tasks grouped with separator labels: **Project docs**, **Rules & config**, **Automation**. Non-selectable divider lines via `@inquirer/prompts` Separator.
+- `TASK_MANIFEST` reordered to match visual grouping (`settings-json` moved to Rules & config).
+
+## 1.3.0
 
 ### Orchestrator
 
