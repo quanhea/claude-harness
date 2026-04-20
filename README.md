@@ -1,9 +1,8 @@
 # claude-harness
 
-TypeScript CLI that scaffolds any project for agent-first development.
+Harness engineering for Claude Code — scaffold any project for agent-first development in one parallel run.
 
-Spawns one `claude -p` process per setup task — 28 tasks, flat parallel — so each step
-gets its own focused context window. No one prompt tries to do everything.
+A coding agent harness that generates CLAUDE.md, architecture docs, rules, hooks, and skills from parallel Claude Code prompts. Each task gets its own focused context window. No one prompt tries to do everything.
 
 ## Background
 
@@ -17,7 +16,7 @@ The original approach was a monolithic skill — one 100-line `SKILL.md` that tr
 generate 20+ files in a single Claude session. The problem: too much in one prompt gets
 overlooked. Sections merge. Files get skipped. Quality is uneven.
 
-**claude-harness is the task-parallel implementation.** Each of the 28 setup tasks gets
+**claude-harness is the task-parallel implementation.** Each setup task gets
 its own subprocess, its own focused prompt, and the full context window. The orchestrator
 handles the boring parts — parallel execution, crash recovery, progress display — so each
 Claude invocation can do one thing well.
@@ -57,6 +56,9 @@ claude-harness
 # Retry failed / timed-out tasks
 claude-harness --retry
 
+# Selectively remove generated features
+claude-harness remove
+
 # Or pass a path explicitly
 claude-harness /path/to/project
 ```
@@ -67,7 +69,7 @@ claude-harness /path/to/project
 load TASK_MANIFEST → spawn N claude -p processes → collect results
 ```
 
-All 28 tasks run in one flat parallel pool (up to `--parallel` concurrent workers,
+All tasks run in one flat parallel pool (up to `--parallel` concurrent workers,
 default 12). There are no phases, no gates, no cross-task dependencies.
 
 Each prompt is self-contained: it reads the project directly (`package.json`, source
@@ -82,46 +84,58 @@ project and write output files without confirmation prompts.
 
 ## Output
 
-Results from the orchestrator go to `.claude-harness/` (or `--output <dir>`):
+Orchestrator state lives at `~/.claude-harness/projects/<slug>/` (not in the project dir — no `.gitignore` entry needed):
 
 ```
-.claude-harness/
-├── setup-report.md     # Task summary with timing
+~/.claude-harness/projects/-Users-you-code-my-project/
 ├── state.json          # Run state (powers re-run / --retry / --only)
 └── logs/               # Full conversation log per task (JSONL: prompt + stream-json events)
 ```
 
-The `.claude-harness/` directory is auto-appended to the project's `.gitignore` on
-the first non-dry-run — it's local run state (retries, resume, summaries) and
-should never be committed. Team members running `claude-harness` against a repo
-that already has the generated output files (CLAUDE.md, ARCHITECTURE.md, etc.)
-will see those tasks auto-detected as COMPLETED via disk reconciliation; only
-the missing ones re-run.
+Team members running `claude-harness` against a repo that already has the
+generated output files (CLAUDE.md, ARCHITECTURE.md, etc.) will see those tasks
+auto-detected as COMPLETED via disk reconciliation; only the missing ones re-run.
 
 Generated project files are written directly into the target project by each task's
 Claude subprocess:
 
 ```
-CLAUDE.md                          # Table of contents (~100 lines)
-ARCHITECTURE.md                    # Module map and invariants
-GIT_WORKFLOW.md                    # Branching, commit, PR conventions
-INFRASTRUCTURE.md                  # Services, CI/CD, databases
-QUALITY_SCORE.md                   # Quality grades per domain
-PLANS.md                           # Active / completed execution plans
-PRODUCT_SENSE.md                   # Domain terminology and UX conventions
-RELIABILITY.md                     # Error handling, SLAs, observability
-SECURITY.md                        # Auth, data handling, secrets
-
-.claude/
-├── settings.json                  # Tool permissions
-├── rules/                         # Architecture, testing, doc, git rules
-├── hooks/                         # PostToolUse linters + PreToolUse enforcement (worktree, git naming)
-└── skills/                        # /sync, /review + project-specific skills
-
+── Project docs ──
+CLAUDE.md                                # Table of contents — the agent's entry point
+ARCHITECTURE.md                          # Module map, layers, dependency rules
 docs/
-├── design-docs/core-beliefs.md
-├── exec-plans/tech-debt-tracker.md
-└── generated/                     # Auto-generated docs (db-schema, api-routes, ...)
+├── GIT_WORKFLOW.md                      # Branching, commit, PR conventions
+├── PLANS.md                             # Execution plan template and lifecycle
+├── INFRASTRUCTURE.md                    # Services, CI/CD, databases
+├── PRODUCT_SENSE.md                     # Domain terminology and UX conventions
+├── RELIABILITY.md                       # Error handling, SLAs, observability
+├── SECURITY.md                          # Auth, data handling, secrets
+├── QUALITY_SCORE.md                     # Quality grades per domain
+├── OBSERVABILITY.md                     # Logging, metrics, tracing
+├── DESIGN.md                            # High-level system design
+├── FRONTEND.md                          # Frontend conventions (if applicable)
+├── WORKTREE.md                          # Worktree-first dev, per-worktree service isolation
+├── design-docs/core-beliefs.md          # Team operating principles
+└── exec-plans/tech-debt-tracker.md      # Known technical debt backlog
+
+── Rules & config ──
+.claude/
+├── settings.json                        # Tool permissions
+├── rules/
+│   ├── architecture.md                  # Module boundary rules
+│   ├── testing.md                       # Test conventions
+│   ├── documentation.md                 # Doc update rules
+│   └── git-workflow.md                  # Git naming + worktree enforcement
+├── git-conventions.sh                   # Machine-readable naming patterns
+
+── Automation ──
+├── hooks/
+│   ├── post-checkout.sh                 # Worktree isolation provisioning
+│   ├── worktree-cleanup.sh              # Stale worktree resource cleanup
+│   ├── enforce-worktree.sh              # PreToolUse: block edits outside worktrees
+│   └── enforce-git-naming.sh            # PreToolUse: validate branch/commit naming
+├── skills/                              # Project-specific skills from conversation history
+└── .mcp.json                            # MCP server recommendations
 ```
 
 ## Options
@@ -132,7 +146,7 @@ docs/
       --resume             (legacy no-op — every run is a resume now)
       --retry              Also re-run failed/timed-out tasks
       --only <ids>         Run ONLY these task IDs and force re-run even if they already completed (comma-separated, e.g. claude-md,rule-git)
-  -o, --output <dir>       Output directory             (default: .claude-harness)
+  -o, --output <dir>       Output directory             (default: ~/.claude-harness/projects/<slug>)
       --model <model>      Claude model to use
       --max-turns <n>      Max Claude turns per task    (default: 100)
       --dry-run            List tasks without running
