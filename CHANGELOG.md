@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.4.1
+
+- Updated package description and keywords for discoverability
+- README: removed hardcoded task count, added `remove` to Quick Start, updated file structure tree to show all generated outputs, updated output directory path to `~/.claude-harness/`
+
 ## 1.4.0
 
 ### `claude-harness remove`
