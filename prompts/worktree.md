@@ -105,10 +105,13 @@ It must:
    - `node_modules/`, `vendor/`, `.bundle/` — symlink if the corresponding lockfile (`package-lock.json`, `yarn.lock`, `pnpm-lock.yaml`, `go.sum`, `composer.lock`, `Gemfile.lock`) has the same hash in both trees (or doesn't exist in the worktree yet). If lockfiles differ, skip and log: `"lockfile differs — run install manually"`. Use `ln -s "$main_repo/<dir>" "$repo_root/<dir>"`.
    - `.venv/` / `venv/` — **do NOT symlink** (Python venvs have hardcoded paths in `pyvenv.cfg` and `bin/activate`). Instead log the install command: `"run: python -m venv .venv && pip install -r requirements.txt"` (or poetry/pipenv equivalent if detected).
    - Skip if the directory already exists in the worktree (idempotent).
-10. Print a summary line: `✓ worktree ${slug}: db=... redis-prefix=... rabbit=...`.
-11. **Always exit 0.** Log service errors as warnings (`⚠ service: reason`) but never exit non-zero — a provisioning failure must never block a git checkout, commit, or stash. If a service is unreachable, log it and move on; the developer can re-run manually.
+10. **Port isolation** — if the project has a dev server (detected via `package.json` scripts like `dev`, `start`, or frameworks like Next.js, Vite, webpack, Django, Rails), write a unique `PORT` to `.env.local` derived from the slug hash (e.g. `PORT=$((3000 + $(echo -n "$slug" | cksum | cut -d' ' -f1) % 100))`). This avoids port conflicts when multiple worktrees run dev servers simultaneously. Document the port in the summary line.
+11. Print a summary line: `✓ worktree ${slug}: db=... redis-prefix=... port=...`.
+12. **Always exit 0.** Log service errors as warnings (`⚠ service: reason`) but never exit non-zero — a provisioning failure must never block a git checkout, commit, or stash. If a service is unreachable, log it and move on; the developer can re-run manually.
 
 Do NOT run migrations. The cloned DB is an exact copy of the source — schema and data are already in the correct state. Migrations are the developer's responsibility if the branch introduces new ones.
+
+**Browser testing note:** if this is a browser client project (SPA, SSR, or any project with a frontend), the testing setup should always read `PORT` from `.env.local` — never hardcode a port. When end-to-end testing is needed, use browser MCP tools (Playwright, Puppeteer, etc.) pointed at the worktree's configured port.
 
 ## Step 3 — Generate `.claude/hooks/worktree-cleanup.sh`
 
