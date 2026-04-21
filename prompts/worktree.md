@@ -101,8 +101,12 @@ It must:
    For other database engines: if native clone exists (e.g. Neo4j Enterprise `CREATE DATABASE ... COPY OF`, SQLite file copy), use it; otherwise create an empty database and document it.
 
 8. Write `.env.local` in the worktree. Copy `.env` (fallback: `.env.example`) then append the isolated env vars. Skip silently if `.env.local` already contains `_wt_${slug}` (idempotent re-run).
-9. Print a summary line: `✓ worktree ${slug}: db=... redis-prefix=... rabbit=...`.
-10. **Always exit 0.** Log service errors as warnings (`⚠ service: reason`) but never exit non-zero — a provisioning failure must never block a git checkout, commit, or stash. If a service is unreachable, log it and move on; the developer can re-run manually.
+9. **Symlink dependency directories** from the main working tree so the worktree is usable immediately without re-installing. For each directory that exists in `$main_repo`:
+   - `node_modules/`, `vendor/`, `.bundle/` — symlink if the corresponding lockfile (`package-lock.json`, `yarn.lock`, `pnpm-lock.yaml`, `go.sum`, `composer.lock`, `Gemfile.lock`) has the same hash in both trees (or doesn't exist in the worktree yet). If lockfiles differ, skip and log: `"lockfile differs — run install manually"`. Use `ln -s "$main_repo/<dir>" "$repo_root/<dir>"`.
+   - `.venv/` / `venv/` — **do NOT symlink** (Python venvs have hardcoded paths in `pyvenv.cfg` and `bin/activate`). Instead log the install command: `"run: python -m venv .venv && pip install -r requirements.txt"` (or poetry/pipenv equivalent if detected).
+   - Skip if the directory already exists in the worktree (idempotent).
+10. Print a summary line: `✓ worktree ${slug}: db=... redis-prefix=... rabbit=...`.
+11. **Always exit 0.** Log service errors as warnings (`⚠ service: reason`) but never exit non-zero — a provisioning failure must never block a git checkout, commit, or stash. If a service is unreachable, log it and move on; the developer can re-run manually.
 
 Do NOT run migrations. The cloned DB is an exact copy of the source — schema and data are already in the correct state. Migrations are the developer's responsibility if the branch introduces new ones.
 
