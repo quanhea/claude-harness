@@ -1,5 +1,22 @@
 # Changelog
 
+## 1.4.2
+
+### Worktree isolation
+
+- Hook now symlinks `node_modules/`, `vendor/`, `.bundle/` from the main working tree if lockfiles match — worktree is usable instantly without re-installing deps. Skips with a warning if lockfiles differ. `.venv` is excluded from symlinking (hardcoded paths); logs the install command instead.
+
+## 1.4.2
+
+### Worktree isolation
+
+- Hook now symlinks `node_modules/`, `vendor/`, `.bundle/` from the main working tree if lockfiles match — worktree is usable instantly without re-installing deps. Skips with a warning if lockfiles differ. `.venv` excluded from symlinking (hardcoded paths); logs the install command instead.
+- Dev server port isolation: derives a unique `PORT` from the slug hash and writes it to `.env.local`, so multiple worktrees can run dev servers simultaneously without port conflicts. Detected via `package.json` scripts or framework config files (Next.js, Vite, webpack).
+
+### Testing rules
+
+- Browser/E2E testing section added to `rule-testing.md` — instructs agents to read the dev server port from config (never hardcode), use browser MCP tools (Playwright, Puppeteer) for E2E, and respect per-worktree `PORT` in `.env.local`. Omitted for backend-only projects.
+
 ## 1.4.1
 
 - Updated package description and keywords for discoverability
