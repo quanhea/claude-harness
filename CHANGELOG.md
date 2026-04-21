@@ -4,12 +4,6 @@
 
 ### Worktree isolation
 
-- Hook now symlinks `node_modules/`, `vendor/`, `.bundle/` from the main working tree if lockfiles match — worktree is usable instantly without re-installing deps. Skips with a warning if lockfiles differ. `.venv` is excluded from symlinking (hardcoded paths); logs the install command instead.
-
-## 1.4.2
-
-### Worktree isolation
-
 - Hook now symlinks `node_modules/`, `vendor/`, `.bundle/` from the main working tree if lockfiles match — worktree is usable instantly without re-installing deps. Skips with a warning if lockfiles differ. `.venv` excluded from symlinking (hardcoded paths); logs the install command instead.
 - Dev server port isolation: derives a unique `PORT` from the slug hash and writes it to `.env.local`, so multiple worktrees can run dev servers simultaneously without port conflicts. Detected via `package.json` scripts or framework config files (Next.js, Vite, webpack).
 
