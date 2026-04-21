@@ -7,82 +7,62 @@ outputs: [".mcp.json{,.TEMPLATE,.EXAMPLE,.example,.sample}"]
 
 **Output:** `{{PROJECT_DIR}}/.mcp.json`
 
-You are generating the MCP (Model Context Protocol) server configuration for this project. This gives Claude access to project-specific tools — database queries, API clients, monitoring queries — without leaving the editor.
+You are generating the MCP (Model Context Protocol) server configuration for this project. This gives Claude access to project-specific tools — database queries, issue trackers, monitoring — without leaving the editor.
 
 ## Your Tasks
 
 Create these tasks now with TaskCreate:
 
-1. "Detect project info (language, framework, commands) from the project manifest (`package.json`, `Cargo.toml`, `go.mod`, `pyproject.toml`, or equivalent)"
-2. "Detect infrastructure that benefits from MCP (database, monitoring, GitHub, Slack)"
-3. "Check for existing .mcp.json (merge, do not overwrite user entries)"
-4. "Generate .mcp.json with servers appropriate for this project"
-5. "Verify all mcpServers entries have accurate command/args for this project"
+1. "Detect project info and infrastructure (database, monitoring, issue tracker, CI) from codebase"
+2. "Check for existing .mcp.json (merge, do not overwrite user entries)"
+3. "Match detected infrastructure to available MCP servers"
+4. "Generate .mcp.json with only relevant servers"
 
 Use TaskUpdate to mark each complete. Use TaskList before finishing.
 
-## Which MCP Servers to Include
+## Infrastructure Detection
 
-Only include servers relevant to the detected infrastructure:
+Scan the same sources as the worktree task — `.env*`, `docker-compose*.yml`, `package.json` deps, `pyproject.toml`, `go.mod`, source imports — to detect:
 
-### Always available
-```json
-{
-  "mcpServers": {}
-}
-```
+- **Database**: PostgreSQL, MySQL, SQLite, MongoDB
+- **Issue tracker**: Linear, GitHub Issues, Jira
+- **Monitoring**: Grafana, Datadog, Sentry, New Relic
+- **Communication**: Slack
+- **CI/CD**: GitHub Actions
 
-Start empty. Add only what's relevant.
+## Finding MCP Servers
 
-### If infrastructure includes PostgreSQL
-```json
-"postgres": {
-  "command": "npx",
-  "args": ["-y", "@modelcontextprotocol/server-postgres", "{{DATABASE_URL}}"],
-  "description": "Query the {{projectName}} database directly"
-}
-```
-Use `${DATABASE_URL}` env var reference, not hardcoded credentials.
+For each detected service (database, issue tracker, monitoring, etc.), **search the web** for its MCP server installation guide. MCP servers change frequently — do not guess package names or URLs from memory.
 
-### If infrastructure includes GitHub Actions or CI
-```json
-"github": {
-  "command": "npx",
-  "args": ["-y", "@modelcontextprotocol/server-github"],
-  "env": {
-    "GITHUB_PERSONAL_ACCESS_TOKEN": "${GITHUB_TOKEN}"
-  },
-  "description": "Access GitHub PRs, issues, and CI runs"
-}
-```
+Search queries to use:
+- `"mcp server <service-name> install"` (e.g. `"mcp server grafana install"`)
+- `"<service-name> mcp claude code"` (e.g. `"linear mcp claude code"`)
+- Check `github.com/modelcontextprotocol/servers` for the official registry
 
-### If infrastructure includes filesystem tools
-```json
-"filesystem": {
-  "command": "npx",
-  "args": ["-y", "@modelcontextprotocol/server-filesystem", "{{PROJECT_DIR}}"],
-  "description": "File access within project directory"
-}
-```
+From the search results, get the **exact** package name, command, args, and env vars. Prefer HTTP remote servers (no local process) over stdio when both are available. Do not include a server unless the search confirms it exists.
 
-### If infrastructure includes a SQLite database
-```json
-"sqlite": {
-  "command": "npx",
-  "args": ["-y", "@modelcontextprotocol/server-sqlite", "{{path-to-db-file}}"],
-  "description": "Query the {{projectName}} SQLite database"
-}
-```
-
-## Template
+## `.mcp.json` Format
 
 ```json
 {
   "mcpServers": {
-    {{only include servers for detected infrastructure}}
+    "server-name": {
+      "command": "npx",
+      "args": ["-y", "@some/package"],
+      "env": { "API_KEY": "${API_KEY}" }
+    },
+    "remote-server": {
+      "type": "http",
+      "url": "https://example.com/mcp",
+      "headers": { "Authorization": "Bearer ${TOKEN}" }
+    }
   }
 }
 ```
+
+Two transport types:
+- **stdio** (default): local process, `command` + `args` + optional `env`
+- **http**: remote server, `type: "http"` + `url` + optional `headers`
 
 ## Rules
 
