@@ -101,13 +101,16 @@ It must:
    For other database engines: if native clone exists (e.g. Neo4j Enterprise `CREATE DATABASE ... COPY OF`, SQLite file copy), use it; otherwise create an empty database and document it.
 
 8. Write `.env.local` in the worktree. Copy `.env` (fallback: `.env.example`) then append the isolated env vars. Skip silently if `.env.local` already contains `_wt_${slug}` (idempotent re-run).
-9. **Symlink dependency directories** from the main working tree so the worktree is usable immediately without re-installing. For each directory that exists in `$main_repo`:
-   - `node_modules/`, `vendor/`, `.bundle/` — symlink if the corresponding lockfile (`package-lock.json`, `yarn.lock`, `pnpm-lock.yaml`, `go.sum`, `composer.lock`, `Gemfile.lock`) has the same hash in both trees (or doesn't exist in the worktree yet). If lockfiles differ, skip and log: `"lockfile differs — run install manually"`. Use `ln -s "$main_repo/<dir>" "$repo_root/<dir>"`.
-   - `.venv/` / `venv/` — **copy with path rewrite**, not symlink (files in `bin/` + `pyvenv.cfg` have hardcoded absolute paths; `lib/` is fine). Use `cp -c -a` (APFS reflink, instant) with fallback to `cp -a`, then rewrite paths: `grep -rl "$main_repo/.venv" "$repo_root/.venv/bin" "$repo_root/.venv/pyvenv.cfg" | xargs sed -i '' "s|$main_repo/.venv|$repo_root/.venv|g"`. Do NOT use `find -exec sed -i ''` — it silently fails in git hook context. Only the rewritten files break their reflinks; `lib/` stays shared.
+9. **Symlink dependency directories** from the main working tree so the worktree is usable immediately without re-installing. Scan the project's `.gitignore` for dependency/build directories that exist in `$main_repo` but not in the worktree. Common examples: `node_modules`, `vendor`, `.bundle`, `target`, `deps`, `_build`, `.dart_tool`, `Pods` — but read `.gitignore` to find what THIS project actually ignores.
+
+   For each candidate directory:
+   - If it has a corresponding lockfile (e.g. `package-lock.json`, `yarn.lock`, `go.sum`, `Gemfile.lock`, `Cargo.lock`, `pubspec.lock`, `mix.lock`) and the lockfile hash differs between main and worktree: skip and log `"lockfile differs — run install manually"`.
+   - Otherwise: `ln -s "$main_repo/<dir>" "$repo_root/<dir>"`.
+   - **Exception — Python venvs** (`.venv/`, `venv/`): copy with path rewrite, not symlink (files in `bin/` + `pyvenv.cfg` have hardcoded absolute paths). Use `cp -c -a` (APFS reflink, instant) with fallback to `cp -a`, then rewrite: `grep -rl "$main_repo/.venv" "$repo_root/.venv/bin" "$repo_root/.venv/pyvenv.cfg" | xargs sed -i '' "s|$main_repo/.venv|$repo_root/.venv|g"`. Do NOT use `find -exec sed -i ''` — it silently fails in git hook context.
    - Skip if the directory already exists in the worktree (idempotent).
 10. **Dev server port isolation** — if the project has a dev server (detected via `package.json` scripts containing `dev`, `start`, `serve`, or presence of `next.config.*`, `vite.config.*`, `webpack.config.*`), derive a unique port from the slug hash (e.g. `PORT=$((3000 + $(echo -n "$slug" | cksum | cut -d' ' -f1) % 100))`) and write `PORT=<value>` to `.env.local`. This avoids port conflicts when multiple worktrees run dev servers simultaneously. Most frameworks (Next.js, Vite, CRA) respect the `PORT` env var.
 11. Print a summary line: `✓ worktree ${slug}: db=... redis-prefix=... port=...`.
-11. **Always exit 0.** Log service errors as warnings (`⚠ service: reason`) but never exit non-zero — a provisioning failure must never block a git checkout, commit, or stash. If a service is unreachable, log it and move on; the developer can re-run manually.
+12. **Always exit 0.** Log service errors as warnings (`⚠ service: reason`) but never exit non-zero — a provisioning failure must never block a git checkout, commit, or stash. If a service is unreachable, log it and move on; the developer can re-run manually.
 
 Do NOT run migrations. The cloned DB is an exact copy of the source — schema and data are already in the correct state. Migrations are the developer's responsibility if the branch introduces new ones.
 
