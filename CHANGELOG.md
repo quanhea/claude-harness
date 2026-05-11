@@ -1,5 +1,20 @@
 # Changelog
 
+## 1.4.3
+
+### Worktree
+
+- Dep symlinking is now generic across frameworks. Instead of hardcoding `node_modules`, `vendor`, `.bundle`, the hook scans `.gitignore` for dependency directories that exist in main and symlinks any whose lockfiles match. Covers Rust (`target`), Elixir (`deps`, `_build`), Dart (`.dart_tool`), iOS (`Pods`), and any future framework.
+- Python `.venv` is now cloned (APFS reflink via `cp -c`) and patched in place instead of skipped. `grep -rl` finds the ~186 bin/ files containing hardcoded paths and `xargs sed` rewrites them. (`find -exec sed -i ''` silently fails in git-hook context — avoid it.)
+
+### MCP config
+
+- Search-first approach replaces the hardcoded server table. The agent now web-searches each detected service's MCP installation guide to get exact package names from current docs, instead of relying on a static list that drifted as packages were deprecated.
+
+### Bug fixes
+
+- Fix `ERR_REQUIRE_ESM` crash on Node `<20.19` / `<22.12`: pinned `@inquirer/prompts` to `^7.10.1` (was `^8.4.1`). v8 dropped its CommonJS entrypoint, but `dist/` is compiled to CJS, so older Node versions could not `require()` the package. v7.10.1 dual-publishes CJS+ESM via its `exports` map and matches the `>=18` engines field.
+
 ## 1.4.2
 
 ### Worktree isolation
