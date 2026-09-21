@@ -105,6 +105,8 @@ CLAUDE.md                                # Table of contents — the agent's ent
 ARCHITECTURE.md                          # Module map, layers, dependency rules
 docs/
 ├── GIT_WORKFLOW.md                      # Branching, commit, PR conventions
+├── VERIFY.md                            # How to verify, per change type
+├── TDD-RULES.md                         # The test doctrine (non-negotiable)
 ├── PLANS.md                             # Execution plan template and lifecycle
 ├── INFRASTRUCTURE.md                    # Services, CI/CD, databases
 ├── PRODUCT_SENSE.md                     # Domain terminology and UX conventions
@@ -133,7 +135,8 @@ docs/
 │   ├── worktree-cleanup.sh              # Stale worktree resource cleanup
 │   ├── enforce-worktree.sh              # PreToolUse: block edits outside worktrees
 │   └── enforce-git-naming.sh            # PreToolUse: validate branch/commit naming
-├── skills/                              # Project-specific skills from conversation history
+├── skills/                              # Seeded process skills + project-specific
+│                                        #   ones mined from conversation history
 └── .mcp.json                            # MCP server recommendations
 ```
 

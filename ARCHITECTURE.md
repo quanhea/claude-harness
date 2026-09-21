@@ -85,6 +85,12 @@ status, updated every 500ms. In non-TTY mode (CI, piped): simple timestamped log
 **`reporter.ts`** — Reads completed task state and writes `setup-report.md` to the output
 directory, summarizing which tasks completed, failed, or were skipped with timing information.
 
+**`seed-skills.ts`** — Copies the bundled `skills/` directory into the target's
+`.claude/skills/` before any task runs. Deterministic copy, not generation: the
+content is fixed, so a model transcribing it is only a source of drift. Never
+overwrites a directory that already exists — an edited seed belongs to the
+project from then on.
+
 **`types.ts`** — Shared type definitions: `STATUS` enum, `TaskEntry`, `HarnessState`,
 `TaskDefinition`, `TASK_MANIFEST` (the unordered 28-task list), and `DEFAULTS`. This
 is the single source of truth for what the harness runs.
