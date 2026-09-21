@@ -67,6 +67,10 @@ Generate if: project has clear layer structure in ARCHITECTURE.md. Check: read A
 
 set -euo pipefail
 
+# Skip while claude-harness is scaffolding — the harness sets this on every
+# subprocess it spawns so setup writes are never second-guessed by a linter.
+[ "${CLAUDE_HARNESS_SETUP:-}" = "1" ] && exit 0
+
 # Read the file path from PostToolUse JSON input
 INPUT=$(cat)
 FILE_PATH=$(echo "$INPUT" | python3 -c "import json,sys; d=json.load(sys.stdin); print(d.get('tool_input',{}).get('file_path',''))" 2>/dev/null || echo "")
@@ -92,7 +96,7 @@ Add PostToolUse hooks to `.claude/settings.json`:
         "hooks": [
           {
             "type": "command",
-            "command": ".claude/hooks/lint-{{name}}.sh",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/lint-{{name}}.sh",
             "timeout": 5
           }
         ]
@@ -104,9 +108,15 @@ Add PostToolUse hooks to `.claude/settings.json`:
 
 Merge with existing hooks — do not overwrite.
 
+Always wire the command through `"$CLAUDE_PROJECT_DIR"` (quoted — project paths
+contain spaces). A bare relative path like `.claude/hooks/lint-naming.sh` only
+resolves when Claude's cwd happens to be the project root, which in a
+worktree-first setup is the exception, not the rule.
+
 ## Rules
 
 - ONLY generate linters for conventions that ACTUALLY EXIST in the project.
+- Every script starts with the `CLAUDE_HARNESS_SETUP` guard shown above.
 - Every linter's check logic comes from Explore agent discovery, never from this template.
 - Remediation messages must reference the project's actual tools and file paths.
 - All scripts must exit 0 — these are warnings injected into context, not blockers.
