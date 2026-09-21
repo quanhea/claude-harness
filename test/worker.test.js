@@ -104,44 +104,6 @@ describe("spawnTask", () => {
     assert.ok(fs.existsSync(path.join(outputDir, "logs")), "logs/ directory should exist");
   });
 
-  it("writes a debug JSONL file with spawn and exit events", async () => {
-    const outputDir = path.join(tmpDir, "output");
-    const { promise } = spawnTask({
-      targetDir,
-      outputDir,
-      taskId: "architecture-md",
-      promptTemplate: "task {{TASK_ID}}",
-      config: {
-        parallel: 1,
-        timeout: 1,
-        maxRetries: 0,
-        maxTurns: 5,
-        model: null,
-        verbose: false,
-      },
-    });
-    await promise;
-
-    const debugFile = path.join(outputDir, "debug", "architecture-md.jsonl");
-    assert.ok(fs.existsSync(debugFile), "debug/<slug>.jsonl should exist");
-
-    const lines = fs.readFileSync(debugFile, "utf-8").trim().split("\n").filter(Boolean);
-    assert.ok(lines.length >= 1, "should have at least one event");
-
-    const events = lines.map((l) => JSON.parse(l));
-    // Every event is timestamped + tagged.
-    for (const e of events) {
-      assert.ok(e.t, "every event has a timestamp");
-      assert.ok(e.event, "every event is tagged");
-    }
-    // Either spawn-then-exit (claude found) OR spawn_error (claude missing).
-    const tags = events.map((e) => e.event);
-    assert.ok(
-      tags.includes("spawn") || tags.includes("spawn_error"),
-      `expected spawn or spawn_error, got ${tags.join(",")}`,
-    );
-  });
-
   it("prepends NON_INTERACTIVE_PREFIX to the prompt (promptBytes reflects prefix)", async () => {
     const outputDir = path.join(tmpDir, "output");
     const userPrompt = "tiny prompt body";
@@ -161,18 +123,18 @@ describe("spawnTask", () => {
     });
     await promise;
 
-    const debugFile = path.join(outputDir, "debug", "claude-md.jsonl");
-    const events = fs.readFileSync(debugFile, "utf-8")
-      .trim().split("\n").filter(Boolean).map((l) => JSON.parse(l));
-    const spawnEvt = events.find((e) => e.event === "spawn" || e.event === "spawn_error");
-    assert.ok(spawnEvt, "should have a spawn/spawn_error event");
-    if (spawnEvt.event === "spawn") {
-      // promptBytes should be at least the prefix length + user prompt length.
-      assert.ok(
-        spawnEvt.promptBytes >= NON_INTERACTIVE_PREFIX.length + userPrompt.length,
-        `promptBytes=${spawnEvt.promptBytes} should include the prefix (${NON_INTERACTIVE_PREFIX.length})`,
-      );
-    }
+    // worker.ts writes the rendered prompt as the log's first JSONL line —
+    // stream-json never echoes the -p bootstrap prompt back, so this line is
+    // the only record of what was actually sent.
+    const logFile = path.join(outputDir, "logs", "claude-md.log");
+    const firstLine = fs.readFileSync(logFile, "utf-8").split("\n")[0];
+    const sent = JSON.parse(firstLine);
+    assert.equal(sent.type, "prompt");
+    assert.ok(
+      sent.prompt.startsWith(NON_INTERACTIVE_PREFIX),
+      "the rendered prompt should lead with NON_INTERACTIVE_PREFIX",
+    );
+    assert.ok(sent.prompt.endsWith(userPrompt), "the user prompt should follow the prefix");
   });
 
   it("NON_INTERACTIVE_PREFIX has the expected safety language", () => {
@@ -181,7 +143,7 @@ describe("spawnTask", () => {
     assert.match(NON_INTERACTIVE_PREFIX, /do not ask/i);
   });
 
-  it("uses double-underscore slug for nested task ids in debug and log paths", async () => {
+  it("uses double-underscore slug for nested task ids in log paths", async () => {
     const outputDir = path.join(tmpDir, "output");
     const { promise } = spawnTask({
       targetDir,
@@ -199,7 +161,6 @@ describe("spawnTask", () => {
     });
     await promise;
     assert.ok(fs.existsSync(path.join(outputDir, "logs", "rule__architecture.log")));
-    assert.ok(fs.existsSync(path.join(outputDir, "debug", "rule__architecture.jsonl")));
   });
 
   it("kill() terminates the process", async () => {

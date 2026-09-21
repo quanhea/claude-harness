@@ -112,11 +112,9 @@ export function outputExists(rootDir: string, pattern: string): boolean {
   return walkMatch(rootDir, startRel, regex, 0);
 }
 
-// Idempotently append `.claude-harness/` to the target project's .gitignore.
-// Guards against duplicates via (a) our sentinel comment and (b) a normalized
-// match that treats `.claude-harness`, `.claude-harness/`, `/.claude-harness`,
-// and `/.claude-harness/` as equivalent — all of them ignore our state dir.
-// Migrate old <project>/.claude-harness/ to ~/.claude-harness/projects/<slug>/.
+// Migrate old <project>/.claude-harness/ to ~/.claude-harness/projects/<slug>/,
+// then strip the .gitignore entry the pre-1.4 layout needed. State no longer
+// lives inside the project, so nothing there needs ignoring.
 export function migrateOldStateDir(targetDir: string, newOutputDir: string): void {
   const oldDir = path.join(targetDir, ".claude-harness");
   if (!fs.existsSync(path.join(oldDir, "state.json"))) return;
@@ -195,11 +193,9 @@ export async function setup(options: HarnessOptions): Promise<number> {
     return 0;
   }
 
-  // Append `.claude-harness/` to the target's .gitignore if not already
-  // there. The whole dir is transient — state.json, logs, debug, and the
-  // conversations extraction — no reason to track any of it. Teammates get
-  // the committed output files (CLAUDE.md, docs/, .claude/) and the scanner
-  // reconciles against them.
+  // Lift any pre-1.4 in-project state dir out to ~/.claude-harness/. Teammates
+  // get the committed output files (CLAUDE.md, docs/, .claude/) and the scanner
+  // reconciles against them; everything transient stays outside the repo.
   migrateOldStateDir(absTarget, absOutput);
 
   // Unified state load — every run behaves like a resume that also picks up
