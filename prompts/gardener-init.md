@@ -27,7 +27,6 @@ These are the living documents the gardener maintains. Audit each one that exist
 - `ARCHITECTURE.md` — module map, layer rules, important types
 - `docs/GIT_WORKFLOW.md` — branching, commit, PR conventions
 - `docs/INFRASTRUCTURE.md` — services, CI/CD, databases
-- `docs/QUALITY_SCORE.md` — quality grades per domain
 - `docs/PLANS.md` — active / completed plans
 - `docs/PRODUCT_SENSE.md` — domain terminology, UX conventions
 - `docs/RELIABILITY.md` — SLOs, failure modes, on-call

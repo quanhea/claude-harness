@@ -43,20 +43,23 @@ Report everything with specific file paths and patterns found.")
 
 **Generate ONLY if the pattern is FOUND in the project:**
 
-### File size linter (`lint-filesize.sh`)
-Generate if: project has a consistent max file size (from lint config or observed pattern). Check: `wc -l` against discovered threshold. Remediation: "File is X lines (project convention is max Y lines). Consider splitting."
-
 ### Naming convention linter (`lint-naming.sh`)
 Generate if: project has a consistent file naming pattern (all kebab-case, all PascalCase, etc.). Check: new file name matches discovered pattern. Remediation: "File uses X naming. This project uses Y (based on existing files like Z)."
 
 ### Structured logging linter (`lint-logging.sh`)
 Generate if: project uses a structured logger AND has consistent anti-raw-logging convention. Check: grep for raw console.log/print that bypass the project's logger. Remediation: "Use the project's logger ({{logger-name}}) instead of raw {{print/console}}."
 
-### Boundary validation linter (`lint-boundaries.sh`)
-Generate if: project validates external data at boundaries with a specific library. Check: grep for unvalidated external data parsing. Remediation: "Validate with {{validation-library}} at entry boundaries."
+These two are the whole catalog, and that is deliberate. A PostToolUse linter
+earns its place only when the rule is mechanical enough to check from one
+file's path and text, and specific enough that a violation is always wrong.
+Naming and raw-logging clear that bar. File-size caps, boundary validation,
+and layering rules do not: each needs project context the hook cannot see, so
+they fire on legitimate code, and a linter that cries wolf gets ignored.
+Enforce those in review or in the real linter, where the whole tree is in
+scope.
 
-### Architecture dependency linter (`lint-architecture.sh`)
-Generate if: project has clear layer structure in ARCHITECTURE.md. Check: read ARCHITECTURE.md for layer definitions, grep imports against allowed direction. Remediation: "This file ({{layer}}) imports from {{higher-layer}}. See ARCHITECTURE.md invariants."
+If the Explore agent surfaces a third convention that genuinely clears the
+bar, generate it — but hold it to the same test.
 
 ## Hook Script Format
 

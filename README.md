@@ -110,12 +110,11 @@ docs/
 ├── PRODUCT_SENSE.md                     # Domain terminology and UX conventions
 ├── RELIABILITY.md                       # Error handling, SLAs, observability
 ├── SECURITY.md                          # Auth, data handling, secrets
-├── QUALITY_SCORE.md                     # Quality grades per domain
 ├── OBSERVABILITY.md                     # Logging, metrics, tracing
 ├── DESIGN.md                            # High-level system design
 ├── FRONTEND.md                          # Frontend conventions (if applicable)
 ├── WORKTREE.md                          # Worktree-first dev, per-worktree service isolation
-├── design-docs/core-beliefs.md          # Team operating principles
+├── design-docs/                         # Dated architecture decisions
 └── exec-plans/tech-debt-tracker.md      # Known technical debt backlog
 
 ── Rules & config ──

@@ -23,7 +23,7 @@ before(() => {
   fs.writeFileSync(path.join(tmp, ".claude/skills/review/SKILL.md"), "x");
   fs.writeFileSync(path.join(tmp, ".claude/hooks/post-checkout.js"), "x");
   fs.writeFileSync(path.join(tmp, ".claude/rules/architecture.md"), "x");
-  fs.writeFileSync(path.join(tmp, "docs/design-docs/core-beliefs.md"), "x");
+  fs.writeFileSync(path.join(tmp, "docs/design-docs/index.md"), "x");
   fs.writeFileSync(path.join(tmp, "CLAUDE.md"), "x");
   fs.writeFileSync(path.join(tmp, "node_modules/should-be-ignored/SKILL.md"), "x");
 });

@@ -84,7 +84,6 @@ Don't load all of these. Read the one relevant to your current task.
 | `docs/WORKTREE.md` | Before starting any local work — worktree-first development, service isolation |
 | `docs/GIT_WORKFLOW.md` | Before branching, committing, or creating PRs |
 | `docs/INFRASTRUCTURE.md` | When working with services, CI/CD, cloud, databases |
-| `docs/QUALITY_SCORE.md` | When assessing or grading code quality per domain |
 | `docs/PLANS.md` | When planning work or checking active/completed plans |
 | `docs/PRODUCT_SENSE.md` | When making UX decisions or using domain terminology |
 | `docs/RELIABILITY.md` | When handling errors, SLAs, or observability |
@@ -92,7 +91,7 @@ Don't load all of these. Read the one relevant to your current task.
 {{if isFrontend}}| `docs/DESIGN.md` | When working on frontend design or component patterns |
 | `docs/FRONTEND.md` | When working on frontend architecture or data fetching |{{end}}
 {{if isApp}}| `docs/OBSERVABILITY.md` | When adding logging, metrics, or tracing |{{end}}
-| `docs/design-docs/core-beliefs.md` | For the team's operating principles |
+| `docs/design-docs/` | For prior architecture decisions |
 | `docs/exec-plans/tech-debt-tracker.md` | For known technical debt items |
 | `docs/references/` | For external API docs and llms.txt files |
 

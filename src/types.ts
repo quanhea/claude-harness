@@ -114,7 +114,7 @@ export const DEFAULTS: HarnessConfig & { outputDir: string } = {
   outputDir: ".claude-harness",
 };
 
-// Unordered task manifest — 28 tasks, all fully independent. Just the
+// Unordered task manifest — 26 tasks, all fully independent. Just the
 // registry of (id, promptFile). Per-task description, outputs, and
 // max-turns live in each prompt's YAML frontmatter. Each prompt
 // self-checks applicability and no-ops if not relevant.
@@ -129,11 +129,9 @@ export const TASK_MANIFEST: TaskDefinition[] = [
   { id: "product-sense",      promptFile: "product-sense.md" },
   { id: "reliability",        promptFile: "reliability.md" },
   { id: "security",           promptFile: "security.md" },
-  { id: "quality-score",      promptFile: "quality-score.md" },
   { id: "observability",      promptFile: "observability.md" },
   { id: "design",             promptFile: "design.md" },
   { id: "frontend",           promptFile: "frontend.md" },
-  { id: "core-beliefs",       promptFile: "core-beliefs.md" },
   { id: "tech-debt-tracker",  promptFile: "tech-debt-tracker.md" },
   // ── Rules & config ──
   { id: "settings-json",      promptFile: "settings-json.md" },
@@ -156,8 +154,8 @@ export const TASK_GROUPS: { label: string; ids: Set<string> }[] = [
   { label: "Project docs", ids: new Set([
     "claude-md", "architecture-md", "docs-structure", "git-workflow",
     "plans", "infrastructure-md", "product-sense", "reliability",
-    "security", "quality-score", "observability", "design", "frontend",
-    "core-beliefs", "tech-debt-tracker",
+    "security", "observability", "design", "frontend",
+    "tech-debt-tracker",
   ])},
   { label: "Rules & config", ids: new Set([
     "settings-json", "rule-architecture", "rule-testing",
