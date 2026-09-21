@@ -34,6 +34,7 @@ These are the living documents the gardener maintains. Audit each one that exist
 - `docs/OBSERVABILITY.md` — logging, metrics, tracing (if present)
 - `docs/DESIGN.md`, `docs/FRONTEND.md` (if present)
 - `docs/design-docs/*.md` — architecture decisions
+- `docs/VERIFY.md` — how each change type is verified
 - `docs/exec-plans/tech-debt-tracker.md` — known tech debt
 - `docs/product-specs/*.md` — product specifications
 

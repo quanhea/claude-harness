@@ -30,7 +30,7 @@ Use TaskUpdate to mark each complete. Use TaskList before finishing.
 Same set as the full audit:
 
 - `CLAUDE.md`, `ARCHITECTURE.md`
-- `docs/*.md` (GIT_WORKFLOW, INFRASTRUCTURE, PLANS, PRODUCT_SENSE, RELIABILITY, SECURITY, OBSERVABILITY, DESIGN, FRONTEND — whichever exist)
+- `docs/*.md` (GIT_WORKFLOW, VERIFY, TDD-RULES, INFRASTRUCTURE, PLANS, PRODUCT_SENSE, RELIABILITY, SECURITY, OBSERVABILITY, DESIGN, FRONTEND — whichever exist)
 - `docs/design-docs/*.md`
 - `docs/exec-plans/tech-debt-tracker.md`
 - `docs/product-specs/*.md`

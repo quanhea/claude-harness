@@ -68,9 +68,14 @@ Local development is worktree-only — see `docs/WORKTREE.md` and `.claude/rules
 
 Every non-trivial change starts with a plan file committed to `docs/exec-plans/active/<slug>.md` BEFORE any code is written. Plans use checkbox lists (`[ ]` pending, `[x]` done) with nested subtasks — they are how you hand off work to the next session or agent without losing context. Update the plan as you work: check off tasks, append to the decision log when you make a non-obvious choice, record surprises. When the plan is complete, move the file to `docs/exec-plans/completed/` so the history stays visible. Small one-off fixes don't need a plan; anything that spans more than one commit does. See `docs/PLANS.md` for the template and lifecycle.
 
+### Rule 2 — Test-driven development is mandatory
+
+`docs/TDD-RULES.md` is **non-negotiable** and governs every change — it is as load-bearing as Rule 1. Red-green-refactor: **no production code without a failing test driving it.** Tests verify behavior through public interfaces only, inject all non-determinism, and are an executable specification of the unit. Read `docs/TDD-RULES.md` in full before writing any test or production code.
+
 ### Other conventions
 
 - **Before writing code**: skim `ARCHITECTURE.md` for module boundaries.
+- **Before declaring a change done**: verify per `docs/VERIFY.md` — classify the change and run the right checks. An unverified change is not done.
 - **Before committing or opening a PR**: follow `docs/GIT_WORKFLOW.md`.
 - **When making a design decision**: check `docs/design-docs/` for prior choices.
 
@@ -82,6 +87,8 @@ Don't load all of these. Read the one relevant to your current task.
 |------|----------------|
 | `ARCHITECTURE.md` | Before adding code — module boundaries, layers, dependency rules |
 | `docs/WORKTREE.md` | Before starting any local work — worktree-first development, service isolation |
+| `docs/TDD-RULES.md` | **Before writing any test or production code** |
+| `docs/VERIFY.md` | Before declaring any change "done" |
 | `docs/GIT_WORKFLOW.md` | Before branching, committing, or creating PRs |
 | `docs/INFRASTRUCTURE.md` | When working with services, CI/CD, cloud, databases |
 | `docs/PLANS.md` | When planning work or checking active/completed plans |
