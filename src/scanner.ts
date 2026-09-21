@@ -4,6 +4,7 @@ import * as path from "path";
 import { checkbox } from "@inquirer/prompts";
 import { buildGroupedChoices } from "./ui";
 import { HarnessOptions, STATUS, TASK_MANIFEST, TaskDefinition } from "./types";
+import { installSeedSkills } from "./seed-skills";
 import { runPreflight, removeLockFile } from "./preflight";
 import { loadPrompt, renderPrompt, buildPromptVars } from "./prompt";
 import {
@@ -197,6 +198,14 @@ export async function setup(options: HarnessOptions): Promise<number> {
   // get the committed output files (CLAUDE.md, docs/, .claude/) and the scanner
   // reconciles against them; everything transient stays outside the repo.
   migrateOldStateDir(absTarget, absOutput);
+
+  // Drop the bundled process skills in before any task runs, so the `skills`
+  // task sees them on disk and mines history for what they don't already
+  // cover. Existing skills of the same name are left untouched.
+  const seeds = installSeedSkills(absTarget);
+  if (seeds.installed.length > 0) {
+    console.log(`  Seed skills installed: ${seeds.installed.join(", ")}`);
+  }
 
   // Unified state load — every run behaves like a resume that also picks up
   // any new tasks added to the manifest since the last run.

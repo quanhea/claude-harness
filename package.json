@@ -1,7 +1,7 @@
 {
   "name": "@eastagile/claude-harness",
   "version": "1.4.3",
-  "description": "Harness engineering for Claude Code — scaffold CLAUDE.md, rules, hooks, skills, and architecture docs in one parallel run",
+  "description": "Harness engineering for Claude Code \u2014 scaffold CLAUDE.md, rules, hooks, skills, and architecture docs in one parallel run",
   "license": "MIT",
   "author": "East Agile <dev@eastagile.com> (https://eastagile.com)",
   "homepage": "https://github.com/quanhea/claude-harness#readme",
@@ -30,6 +30,7 @@
   "files": [
     "dist/",
     "prompts/",
+    "skills/",
     "LICENSE",
     "README.md"
   ],

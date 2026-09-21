@@ -16,20 +16,30 @@ The conversation history lives at `~/.claude/projects/<project-slug>/*.jsonl` wh
 **Important:** there is no always-generated set. Skills come from evidence
 in the conversation history. If no pattern qualifies, generate zero skills — do not invent placeholder skills.
 
+**The seed skills are already on disk.** Before this task ran, the harness
+copied its bundled process skills into `.claude/skills/` — the ones worth having
+in any repo regardless of history (resolving a merge, authoring a PR, writing
+another skill). List that directory first. Do not regenerate, rewrite, or
+duplicate a skill that is already there: if history shows a pattern one of them
+already covers, that is a seed working, not a gap. Mine history for what they
+do **not** cover — the project-specific flows — and add the CLAUDE.md Skills
+table rows for the seeds alongside whatever you generate.
+
 ## Your Tasks
 
-Create these tasks now with TaskCreate. Steps 5–7 are where the real work happens — don't collapse or skip. Each produces a disk artifact so you can't shortcut past it.
+Create these tasks now with TaskCreate. Steps 6–8 are where the real work happens — don't collapse or skip. Each produces a disk artifact so you can't shortcut past it.
 
-1. "Detect project info (language, framework, commands)"
-2. "Compute the project slug from {{PROJECT_DIR}} (replace / with -, prefix with -)"
-3. "Write the embedded extraction script to .claude-harness/extract-conversations.cjs"
-4. "Run the script: node .claude-harness/extract-conversations.cjs <slug> .claude-harness/conversations/"
-5. "Phase 1 — grep user-message part files for recurring patterns; write candidates to .claude-harness/skill-candidates.md"
-6. "Phase 2 — for each candidate, grep the matching .jsonl files for success signals, read a small window around them, extract the working flow; write to .claude-harness/skill-classifications.md (drop candidates with no SUCCESS occurrence)"
-7. "Synthesize each surviving skill's steps from the intersection of working flows"
-8. "mkdir -p .claude/skills/<each-surviving-skill-name>/ via Bash"
-9. "Write each SKILL.md following the official Claude Code skills format (see Reference Skill Formats below)"
-10. "Update CLAUDE.md Skills table with the actual skills generated"
+1. "List .claude/skills/ to see which seed skills are already installed"
+2. "Detect project info (language, framework, commands)"
+3. "Compute the project slug from {{PROJECT_DIR}} (replace / with -, prefix with -)"
+4. "Write the embedded extraction script to .claude-harness/extract-conversations.cjs"
+5. "Run the script: node .claude-harness/extract-conversations.cjs <slug> .claude-harness/conversations/"
+6. "Phase 1 — grep user-message part files for recurring patterns; write candidates to .claude-harness/skill-candidates.md"
+7. "Phase 2 — for each candidate, grep the matching .jsonl files for success signals, read a small window around them, extract the working flow; write to .claude-harness/skill-classifications.md (drop candidates with no SUCCESS occurrence)"
+8. "Synthesize each surviving skill's steps from the intersection of working flows"
+9. "mkdir -p .claude/skills/<each-surviving-skill-name>/ via Bash"
+10. "Write each SKILL.md following the official Claude Code skills format (see Reference Skill Formats below)"
+11. "Update CLAUDE.md Skills table with the actual skills generated"
 
 Use TaskUpdate to mark each complete. Use TaskList before finishing.
 
