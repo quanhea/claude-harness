@@ -13,7 +13,7 @@ You are generating the Claude Code settings file that controls tool permissions 
 
 Create these tasks now with TaskCreate:
 
-1. "Detect project info (language, framework, commands) from the project manifest (`package.json`, `Cargo.toml`, `go.mod`, `pyproject.toml`, or equivalent)"
+1. "Detect project info (language, framework, commands) from the project manifest (`package.json`, `Cargo.toml`, `go.mod`, `pyproject.toml`, or equivalent). If the root has no manifest but its immediate subdirectories do, this is an umbrella repo: detect each sub-project separately and treat the root as the cross-cutting layer"
 2. "Read existing .claude/settings.json if present (merge)"
 3. "Select the correct permission set for the detected language"
 4. "Write .claude/settings.json following the exact schema below"
@@ -155,6 +155,10 @@ linters always exit 0 and warn through stdout.
 
 - Always include `"Read(**)"` — Claude needs to read everything.
 - Always emit the `hooks` skeleton, even if empty — later tasks merge into it.
+- On an umbrella repo, `Write(src/**)` reaches nothing. Emit a Write and Edit
+  entry per sub-project directory (`Write(<sub-project>/**)`), and union the
+  Bash commands across every toolchain the sub-projects use — a Rust engine
+  beside a React frontend needs both `Bash(cargo *)` and `Bash(npm run *)`.
 - Always deny `"Bash(rm -rf *)"` and `"Bash(sudo *)"`.
 - Always include git, ls, find, cat, grep in allow.
 - Create the `.claude/` directory if it doesn't exist.

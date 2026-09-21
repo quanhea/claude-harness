@@ -13,7 +13,7 @@ You are creating the tech debt tracker — a living document that captures known
 
 Create these tasks now with TaskCreate:
 
-1. "Detect project info (language, framework, commands) from the project manifest (`package.json`, `Cargo.toml`, `go.mod`, `pyproject.toml`, or equivalent)"
+1. "Detect project info (language, framework, commands) from the project manifest (`package.json`, `Cargo.toml`, `go.mod`, `pyproject.toml`, or equivalent). If the root has no manifest but its immediate subdirectories do, this is an umbrella repo: detect each sub-project separately and treat the root as the cross-cutting layer"
 2. "Search codebase for TODO/FIXME/HACK/XXX comments"
 3. "Check git log for recurring fix/patch/workaround commits"
 4. "Check for known issues in README or CONTRIBUTING"

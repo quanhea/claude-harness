@@ -13,7 +13,7 @@ You are generating ARCHITECTURE.md — the bird's-eye module map of this project
 
 Create these tasks now with TaskCreate:
 
-1. "Detect project info (language, framework, commands) from the project manifest (`package.json`, `Cargo.toml`, `go.mod`, `pyproject.toml`, or equivalent)"
+1. "Detect project info (language, framework, commands) from the project manifest (`package.json`, `Cargo.toml`, `go.mod`, `pyproject.toml`, or equivalent). If the root has no manifest but its immediate subdirectories do, this is an umbrella repo: detect each sub-project separately and treat the root as the cross-cutting layer"
 2. "Read existing ARCHITECTURE.md if present"
 3. "Launch Explore agent to discover architecture — bird's eye view, module map, entry points, invariants"
 4. "Launch Explore agent to discover cross-cutting concerns — auth, logging, error handling, metrics"
@@ -103,6 +103,18 @@ Important types/files:
 - {{CLI command registration if applicable}}
 - {{Worker/consumer entry if applicable}}
 ```
+
+## Umbrella repos
+
+If the root has no manifest but its subdirectories do, the most valuable thing
+this file can describe is not any one sub-project's internals — it is **how the
+sub-projects couple**. Document the contracts between them: pinned artifact
+versions, shared image or schema definitions, generated clients, release
+ordering, and which direction a change propagates. A reader who knows that
+"`mac` consumes pinned builds from `language`" can predict what a change
+breaks; a reader given four independent module lists cannot.
+
+Each sub-project's internal structure belongs in its own ARCHITECTURE.md.
 
 ## Rules
 

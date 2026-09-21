@@ -19,7 +19,7 @@ This task does NOT generate individual plan files (those are written per change,
 
 Create these tasks now with TaskCreate:
 
-1. "Detect project info (language, framework, commands) from the project manifest"
+1. "Detect project info (language, framework, commands) from the project manifest (`package.json`, `Cargo.toml`, `go.mod`, `pyproject.toml`, or equivalent). If the root has no manifest but its immediate subdirectories do, this is an umbrella repo: detect each sub-project separately and treat the root as the cross-cutting layer"
 2. "List any existing files under `docs/exec-plans/active/` and `docs/exec-plans/completed/`"
 3. "Check README for roadmap or near-term milestones"
 4. "Check git log for themes that suggest in-flight work"

@@ -13,7 +13,7 @@ You are generating the architecture rule file — loaded every Claude session to
 
 Create these tasks now with TaskCreate:
 
-1. "Detect project info (language, framework, commands) from the project manifest (`package.json`, `Cargo.toml`, `go.mod`, `pyproject.toml`, or equivalent)"
+1. "Detect project info (language, framework, commands) from the project manifest (`package.json`, `Cargo.toml`, `go.mod`, `pyproject.toml`, or equivalent). If the root has no manifest but its immediate subdirectories do, this is an umbrella repo: detect each sub-project separately and treat the root as the cross-cutting layer"
 2. "Launch Explore agent to discover architecture rules — dependency direction, layers, file organization"
 3. "Launch Explore agent to discover language-specific conventions — imports, types, async patterns, error handling"
 4. "Read existing .claude/rules/architecture.md if present (merge)"

@@ -12,7 +12,7 @@ You are registering this project with the claude-harness gardener so that the pr
 
 Create these tasks now with TaskCreate:
 
-1. "Detect project info (language, framework, commands) from the project manifest (`package.json`, `Cargo.toml`, `go.mod`, `pyproject.toml`, or equivalent)"
+1. "Detect project info (language, framework, commands) from the project manifest (`package.json`, `Cargo.toml`, `go.mod`, `pyproject.toml`, or equivalent). If the root has no manifest but its immediate subdirectories do, this is an umbrella repo: detect each sub-project separately and treat the root as the cross-cutting layer"
 2. "Check if project is already registered (read ~/.claude-harness/projects.json)"
 3. "Determine gardener schedule from project type"
 4. "Register project with gardener API"

@@ -15,7 +15,7 @@ The thirteen rules below are the doctrine. They are stack-independent and you em
 
 Create these tasks now with TaskCreate:
 
-1. "Detect project info (language, framework, commands) from the project manifest (`package.json`, `Cargo.toml`, `go.mod`, `pyproject.toml`, or equivalent)"
+1. "Detect project info (language, framework, commands) from the project manifest (`package.json`, `Cargo.toml`, `go.mod`, `pyproject.toml`, or equivalent). If the root has no manifest but its immediate subdirectories do, this is an umbrella repo: detect each sub-project separately and treat the root as the cross-cutting layer"
 2. "Detect the test runner and its coverage tool (from the manifest's scripts/dev-dependencies and any CI config)"
 3. "Detect the project's real internal services — databases, caches, queues — from compose files, CI service containers, or connection strings"
 4. "Detect the test-isolation mechanism already in use (transactional rollback, per-test schema, truncation, in-memory) by reading existing test setup/fixture files"

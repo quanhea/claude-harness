@@ -17,7 +17,7 @@ A verification matrix is only worth writing if its rows are real. Every command 
 
 Create these tasks now with TaskCreate:
 
-1. "Detect project info (language, framework, commands) from the project manifest (`package.json`, `Cargo.toml`, `go.mod`, `pyproject.toml`, or equivalent)"
+1. "Detect project info (language, framework, commands) from the project manifest (`package.json`, `Cargo.toml`, `go.mod`, `pyproject.toml`, or equivalent). If the root has no manifest but its immediate subdirectories do, this is an umbrella repo: detect each sub-project separately and treat the root as the cross-cutting layer"
 2. "Launch the Explore agent to enumerate this project's verifiable surfaces (see prompt below)"
 3. "Read ARCHITECTURE.md to learn the module/service boundaries the matrix rows should follow"
 4. "Read docs/INFRASTRUCTURE.md (if present) for how to bring dependencies up locally"

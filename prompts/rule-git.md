@@ -13,7 +13,7 @@ You are generating the git workflow rule file — loaded every Claude session. I
 
 Create these tasks now with TaskCreate:
 
-1. "Detect project info (language, framework, commands) from the project manifest (`package.json`, `Cargo.toml`, `go.mod`, `pyproject.toml`, or equivalent)"
+1. "Detect project info (language, framework, commands) from the project manifest (`package.json`, `Cargo.toml`, `go.mod`, `pyproject.toml`, or equivalent). If the root has no manifest but its immediate subdirectories do, this is an umbrella repo: detect each sub-project separately and treat the root as the cross-cutting layer"
 2. "Launch Explore agent to discover git workflow — branching, commits, PR process, CI gates"
 3. "Read existing .claude/rules/git-workflow.md if present (merge)"
 4. "Write .claude/rules/git-workflow.md following the exact template"

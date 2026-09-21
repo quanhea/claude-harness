@@ -13,7 +13,7 @@ You are adding a CI job that validates the harness knowledge base on every PR â€
 
 Create these tasks now with TaskCreate:
 
-1. "Detect project info (language, framework, commands) from the project manifest (`package.json`, `Cargo.toml`, `go.mod`, `pyproject.toml`, or equivalent)"
+1. "Detect project info (language, framework, commands) from the project manifest (`package.json`, `Cargo.toml`, `go.mod`, `pyproject.toml`, or equivalent). If the root has no manifest but its immediate subdirectories do, this is an umbrella repo: detect each sub-project separately and treat the root as the cross-cutting layer"
 2. "Detect CI platform (.github/workflows/ = GitHub Actions, .gitlab-ci.yml = GitLab)"
 3. "Check if harness-validate workflow already exists (do not overwrite)"
 4. "Write CI validation workflow following the detected platform format"

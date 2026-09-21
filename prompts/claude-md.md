@@ -14,7 +14,7 @@ You are generating a CLAUDE.md file — the primary entry point for Claude Code 
 
 Create these tasks now with TaskCreate:
 
-1. "Detect project info (language, framework, commands) from the project manifest (`package.json`, `Cargo.toml`, `go.mod`, `pyproject.toml`, or equivalent)"
+1. "Detect project info (language, framework, commands) from the project manifest (`package.json`, `Cargo.toml`, `go.mod`, `pyproject.toml`, or equivalent). If the root has no manifest but its immediate subdirectories do, this is an umbrella repo: detect each sub-project separately and treat the root as the cross-cutting layer"
 2. "Read existing CLAUDE.md if present (merge, do not overwrite)"
 3. "Identify project name, language, framework, package manager, test framework, and all commands from discovery"
 4. "Write CLAUDE.md following the exact template below"
@@ -60,9 +60,17 @@ CLAUDE.md must follow this EXACT format. Fill in `{{...}}` placeholders from the
 - **Format**: `{{discovered format command}}`
 - **Dev**: `{{discovered dev server command}}`
 
-## How to Work in This Repo
+{{if umbrella}}## Sub-projects
 
-Local development is worktree-only — see `docs/WORKTREE.md` and `.claude/rules/git-workflow.md`.
+| Path | Stack | What it is |
+|------|-------|------------|
+| `{{sub-project dir}}/` | {{its stack}} | {{one line; note if it has its own CLAUDE.md}} |
+
+{{end}}## How to Work in This Repo
+
+{{if umbrella}}Always `cd` into the relevant sub-project first. Each sub-project's own CLAUDE.md is authoritative for its conventions — this file only covers what spans them.
+
+{{end}}Local development is worktree-only — see `docs/WORKTREE.md` and `.claude/rules/git-workflow.md`.
 
 ### Rule 1 — Plans are first-class artifacts
 
@@ -124,6 +132,8 @@ These are in `.claude/rules/` and are loaded automatically:
 ## Rules
 
 - **Hard limit: 100 lines.** If it would exceed 100 lines, cut prose. Only pointers — no explanations inline.
+- On an umbrella repo, emit the Sub-projects table and the `cd`-first line, and drop the `{{if umbrella}}` markers. On a single-project repo, omit both sections entirely — do not leave an empty heading.
+- On an umbrella repo, the Quick Reference commands are the ones that work from the root. A command that only works inside one sub-project belongs in that sub-project's own CLAUDE.md, not here.
 - Do NOT include: code snippets (beyond commands), how-to guides, API docs, or architecture details. Those belong in the linked documents.
 - Knowledge Base rows: only include docs that will actually be generated for this project.
 - Rules rows: only include rules that will actually be generated.
