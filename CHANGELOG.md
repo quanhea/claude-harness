@@ -1,10 +1,15 @@
 # Changelog
 
-## Unreleased
+## 1.5.0 — 2026-09-22
 
-A large pass: the AI-native SDLC loop, a rebuilt verification model, umbrella
-repo support, and the retirement of several generators that never produced a
-kept artifact.
+The AI-native SDLC loop, a rebuilt verification model, umbrella repo support,
+and the retirement of several generators that never produced a kept artifact.
+Manifest goes from 28 tasks to 38.
+
+**If you script `--only`:** the `quality-score` and `core-beliefs` task ids no
+longer exist, and unknown ids are dropped silently — a `--only quality-score`
+invocation will now run nothing rather than error. Everything else in the CLI
+surface is unchanged.
 
 ### Added — the AI-native SDLC loop
 
