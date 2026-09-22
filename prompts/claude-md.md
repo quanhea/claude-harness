@@ -14,7 +14,7 @@ You are generating a CLAUDE.md file — the primary entry point for Claude Code 
 
 Create these tasks now with TaskCreate:
 
-1. "Detect project info (language, framework, commands) from the project manifest (`package.json`, `Cargo.toml`, `go.mod`, `pyproject.toml`, or equivalent)"
+1. "Detect project info (language, framework, commands) from the project manifest (`package.json`, `Cargo.toml`, `go.mod`, `pyproject.toml`, or equivalent). If the root has no manifest but its immediate subdirectories do, this is an umbrella repo: detect each sub-project separately and treat the root as the cross-cutting layer"
 2. "Read existing CLAUDE.md if present (merge, do not overwrite)"
 3. "Identify project name, language, framework, package manager, test framework, and all commands from discovery"
 4. "Write CLAUDE.md following the exact template below"
@@ -60,19 +60,56 @@ CLAUDE.md must follow this EXACT format. Fill in `{{...}}` placeholders from the
 - **Format**: `{{discovered format command}}`
 - **Dev**: `{{discovered dev server command}}`
 
-## How to Work in This Repo
+{{if umbrella}}## Sub-projects
 
-Local development is worktree-only — see `docs/WORKTREE.md` and `.claude/rules/git-workflow.md`.
+| Path | Stack | What it is |
+|------|-------|------------|
+| `{{sub-project dir}}/` | {{its stack}} | {{one line; note if it has its own CLAUDE.md}} |
+
+{{end}}## How to Work in This Repo
+
+{{if umbrella}}Always `cd` into the relevant sub-project first. Each sub-project's own CLAUDE.md is authoritative for its conventions — this file only covers what spans them.
+
+{{end}}Local development is worktree-only — see `docs/WORKTREE.md` and `.claude/rules/git-workflow.md`.
 
 ### Rule 1 — Plans are first-class artifacts
 
 Every non-trivial change starts with a plan file committed to `docs/exec-plans/active/<slug>.md` BEFORE any code is written. Plans use checkbox lists (`[ ]` pending, `[x]` done) with nested subtasks — they are how you hand off work to the next session or agent without losing context. Update the plan as you work: check off tasks, append to the decision log when you make a non-obvious choice, record surprises. When the plan is complete, move the file to `docs/exec-plans/completed/` so the history stays visible. Small one-off fixes don't need a plan; anything that spans more than one commit does. See `docs/PLANS.md` for the template and lifecycle.
 
+### Rule 2 — Test-driven development is mandatory
+
+`docs/TDD-RULES.md` is **non-negotiable** and governs every change — it is as load-bearing as Rule 1. Red-green-refactor: **no production code without a failing test driving it.** Tests verify behavior through public interfaces only, inject all non-determinism, and are an executable specification of the unit. Read `docs/TDD-RULES.md` in full before writing any test or production code.
+
 ### Other conventions
 
 - **Before writing code**: skim `ARCHITECTURE.md` for module boundaries.
+- **Before declaring a change done**: verify per `docs/VERIFY.md` — classify the change and run the right checks. An unverified change is not done.
 - **Before committing or opening a PR**: follow `docs/GIT_WORKFLOW.md`.
 - **When making a design decision**: check `docs/design-docs/` for prior choices.
+
+## Verifying your work
+
+{{discovered — one line per check, each a single command that exits non-zero on
+failure, with what healthy output looks like. e.g.:
+- Build: `make build` (must finish with "Build succeeded")
+- Test: `make test` (all green; never skip or delete a failing test)
+- Lint: `make lint` (zero warnings)}}
+
+Run all of these before reporting any task complete, and paste the output. If a
+test fails, fix the code, not the test.
+
+These are the floor, not the whole answer. When a change claims something these
+commands cannot observe — speed, memory, a leak, a race, what a user sees, a
+signal you emitted — the suite passing is not evidence. Derive the right
+instrument from the claim: `docs/VERIFY.md`, or the `/verify-change` skill.
+
+## Things Claude gets wrong
+
+{{discovered — the corrections this project has had to make more than once.
+Start empty if there is no evidence yet; the rule is that the second time
+Claude makes the same mistake, it becomes a line here. e.g.:
+- Do not bump dependency versions; the platform team owns them.
+- The legacy `v1/` package is frozen; changes go in `v2/`.}}
 
 ## Knowledge Base — Read On Demand
 
@@ -82,9 +119,11 @@ Don't load all of these. Read the one relevant to your current task.
 |------|----------------|
 | `ARCHITECTURE.md` | Before adding code — module boundaries, layers, dependency rules |
 | `docs/WORKTREE.md` | Before starting any local work — worktree-first development, service isolation |
+| `docs/SDLC.md` | When starting anything non-trivial — the artifact chain and its gates |
+| `docs/TDD-RULES.md` | **Before writing any test or production code** |
+| `docs/VERIFY.md` | Before declaring any change "done" |
 | `docs/GIT_WORKFLOW.md` | Before branching, committing, or creating PRs |
 | `docs/INFRASTRUCTURE.md` | When working with services, CI/CD, cloud, databases |
-| `docs/QUALITY_SCORE.md` | When assessing or grading code quality per domain |
 | `docs/PLANS.md` | When planning work or checking active/completed plans |
 | `docs/PRODUCT_SENSE.md` | When making UX decisions or using domain terminology |
 | `docs/RELIABILITY.md` | When handling errors, SLAs, or observability |
@@ -92,7 +131,7 @@ Don't load all of these. Read the one relevant to your current task.
 {{if isFrontend}}| `docs/DESIGN.md` | When working on frontend design or component patterns |
 | `docs/FRONTEND.md` | When working on frontend architecture or data fetching |{{end}}
 {{if isApp}}| `docs/OBSERVABILITY.md` | When adding logging, metrics, or tracing |{{end}}
-| `docs/design-docs/core-beliefs.md` | For the team's operating principles |
+| `docs/design-docs/` | For prior architecture decisions |
 | `docs/exec-plans/tech-debt-tracker.md` | For known technical debt items |
 | `docs/references/` | For external API docs and llms.txt files |
 
@@ -111,16 +150,44 @@ These are in `.claude/rules/` and are loaded automatically:
 
 | Skill | When to use |
 |-------|-------------|
-| `/skill-name` | See `.claude/skills/` for project-specific skills generated from usage history |
+{{one row per directory under `.claude/skills/`, using that SKILL.md's frontmatter:
+`| `/<name>` | <description, trimmed to the triggering situations> |`
+— or, if the directory is absent or empty, the single row:
+`| — | No skills yet. See `.claude/skills/`. |`}}
 
 ```
 
 ## Rules
 
-- **Hard limit: 100 lines.** If it would exceed 100 lines, cut prose. Only pointers — no explanations inline.
+- The **Verifying your work** commands must each be a single command that exits
+  non-zero on failure. If the project has no such command, say what running the
+  checks takes instead — an agent cannot self-verify against a paragraph.
+- Keep the sentence naming what those commands cannot observe. Without it the
+  block reads as a complete definition of done, and every claim about
+  performance, memory, or anything visual gets closed with a green test run.
+- **Things Claude gets wrong** starts empty unless the conversation history or
+  the repo shows a repeated correction. Do not invent entries to fill it; an
+  invented warning costs context on every session forever. Note in the file that
+  the rule is: second time Claude makes the same mistake, it becomes a line here.
+- **Hard limit: 100 lines** in the generated file. The `{{...}}` guidance blocks
+  in the template above are instructions to you and collapse to fewer lines —
+  count what you write, not what you read. Claude loads this whole file every
+  session, so every line it does not need is context it does not get back.
+- If you are over the limit, cut in this order: Knowledge Base rows for docs this
+  project does not have, then prose, then Quick Reference entries that duplicate
+  the Commands block. **Verifying your work** and the two Rules are not
+  negotiable — an agent that cannot self-verify is the problem this file exists
+  to prevent.
+- On an umbrella repo, emit the Sub-projects table and the `cd`-first line, and drop the `{{if umbrella}}` markers. On a single-project repo, omit both sections entirely — do not leave an empty heading.
+- On an umbrella repo, the Quick Reference commands are the ones that work from the root. A command that only works inside one sub-project belongs in that sub-project's own CLAUDE.md, not here.
 - Do NOT include: code snippets (beyond commands), how-to guides, API docs, or architecture details. Those belong in the linked documents.
 - Knowledge Base rows: only include docs that will actually be generated for this project.
 - Rules rows: only include rules that will actually be generated.
 - Include the `{{if isFrontend}}` rows only if this is a frontend project; include the `{{if isApp}}` rows only if this is an app. Remove the `{{if ...}}` markers themselves from the output.
 - The "When to read it" column must tell Claude WHEN to load the doc, not just describe its contents.
+- Build the Skills table by listing `.claude/skills/` and reading each SKILL.md's
+  frontmatter. This file owns that table; the skill-generating tasks deliberately
+  do not touch CLAUDE.md, because they run in parallel with this one and the last
+  writer would win. A skill generated in the same run appears here on the next
+  run, or immediately with `--only claude-md`.
 - If CLAUDE.md already exists, read it first and MERGE — preserve user content.

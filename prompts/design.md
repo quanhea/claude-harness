@@ -15,7 +15,7 @@ You are creating docs/DESIGN.md — the design system, component patterns, and U
 
 Create these tasks now with TaskCreate:
 
-1. "Detect project info (language, framework, commands) from the project manifest (`package.json`, `Cargo.toml`, `go.mod`, `pyproject.toml`, or equivalent)"
+1. "Detect project info (language, framework, commands) from the project manifest (`package.json`, `Cargo.toml`, `go.mod`, `pyproject.toml`, or equivalent). If the root has no manifest but its immediate subdirectories do, this is an umbrella repo: detect each sub-project separately and treat the root as the cross-cutting layer"
 2. "Detect design system or UI library (Tailwind, shadcn, MUI, styled-components, etc.)"
 3. "Sample components directory for naming and structure patterns"
 4. "Check for existing design tokens, theme files, or style constants"

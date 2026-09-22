@@ -13,7 +13,7 @@ You are creating docs/SECURITY.md — the threat model, auth mechanisms, and sec
 
 Create these tasks now with TaskCreate:
 
-1. "Detect project info (language, framework, commands) from the project manifest (`package.json`, `Cargo.toml`, `go.mod`, `pyproject.toml`, or equivalent)"
+1. "Detect project info (language, framework, commands) from the project manifest (`package.json`, `Cargo.toml`, `go.mod`, `pyproject.toml`, or equivalent). If the root has no manifest but its immediate subdirectories do, this is an umbrella repo: detect each sub-project separately and treat the root as the cross-cutting layer"
 2. "Check for auth-related files (middleware, auth/, jwt, oauth, session)"
 3. "Check for secrets management (env vars, vault, secrets manager)"
 4. "Check for input validation patterns in source code"

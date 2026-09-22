@@ -7,7 +7,6 @@ import { startClaude } from "./start-claude";
 import { removeCommand } from "./remove";
 import { DEFAULTS } from "./types";
 import { getProjectDir } from "./paths";
-import { suspendWorktreeHook, restoreWorktreeHook } from "./hooks-suspension";
 
 function printHelp(): void {
   console.log(`
@@ -121,16 +120,6 @@ async function main(): Promise<void> {
   // --retry implies --resume (retrying only makes sense on an existing run)
   const retry = !!options.retry;
   const resume = !!options.resume || retry;
-
-  // Temporarily remove the enforce-worktree PreToolUse hook from
-  // process.cwd()/.claude/settings.json so claude subprocesses can write
-  // freely during scaffold. Restore verbatim on any exit (normal or signal).
-  if (!options.dryRun) {
-    const original = suspendWorktreeHook();
-    if (original !== null) {
-      process.on("exit", () => restoreWorktreeHook(original));
-    }
-  }
 
   const exitCode = await setup({
     targetDir: resolvedTarget,

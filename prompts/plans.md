@@ -19,7 +19,7 @@ This task does NOT generate individual plan files (those are written per change,
 
 Create these tasks now with TaskCreate:
 
-1. "Detect project info (language, framework, commands) from the project manifest"
+1. "Detect project info (language, framework, commands) from the project manifest (`package.json`, `Cargo.toml`, `go.mod`, `pyproject.toml`, or equivalent). If the root has no manifest but its immediate subdirectories do, this is an umbrella repo: detect each sub-project separately and treat the root as the cross-cutting layer"
 2. "List any existing files under `docs/exec-plans/active/` and `docs/exec-plans/completed/`"
 3. "Check README for roadmap or near-term milestones"
 4. "Check git log for themes that suggest in-flight work"
@@ -40,6 +40,25 @@ change starts with a plan file committed to `docs/exec-plans/active/<slug>.md`
 The harness-engineering pattern: plans with progress and decision logs are
 checked into the repository alongside the code, so agents can resume work
 without relying on external context.
+
+## Write the plan in plan mode
+
+Start the session in plan mode, where Claude can read the codebase without
+changing anything. Give it the spec (and the intent behind it) and ask for a
+plan that names the files that change, the order of work, and the tests that
+prove correctness.
+
+Then interrogate the plan before accepting it: what could this break, which
+step is riskiest, what alternative did you reject and why. Iterate until
+someone who was not in the conversation could implement from the plan alone.
+
+Plan mode enforces the sequence itself — Claude cannot edit a file until the
+plan is accepted — so design review happens while course correction is still
+document editing.
+
+**If the implementation departs from the plan, update the plan in the same
+commit.** A plan that no longer describes the code is worse than none, because
+the PR review checks the diff against it.
 
 ## Active plans
 

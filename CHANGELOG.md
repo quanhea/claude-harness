@@ -1,5 +1,127 @@
 # Changelog
 
+## 1.5.0 — 2026-09-22
+
+The AI-native SDLC loop, a rebuilt verification model, umbrella repo support,
+and the retirement of several generators that never produced a kept artifact.
+Manifest goes from 28 tasks to 38.
+
+**If you script `--only`:** the `quality-score` and `core-beliefs` task ids no
+longer exist, and unknown ids are dropped silently — a `--only quality-score`
+invocation will now run nothing rather than error. Everything else in the CLI
+surface is unchanged.
+
+### Added — the AI-native SDLC loop
+
+Ten new tasks implementing the six-stage loop from the AI-native SDLC playbook
+(https://academy.claude.com/courses/ai-native-sdlc-playbook). Its organizing
+idea: every stage ends by committing an artifact, so the chain of commits is
+the audit trail. The lib generated reference documentation *about* a project
+but none of the workflow that moves work through it.
+
+- `sdlc-map` → `docs/SDLC.md` — the chain index, with the source of truth
+  (repo / tracker / linkage) detected rather than assumed, and a required
+  honest list of stages not adopted yet.
+- `sdlc-intent` → `intent/` + template + a `write-intent` skill that
+  interviews a non-engineer. Intent states a problem, not a solution.
+- `sdlc-spec` → `docs/specs/` + template + a `write-spec` skill that applies
+  the project's real standards while drafting and *flags* conflicts rather
+  than resolving them.
+- `review-md` → `REVIEW.md` — review passes traceable to real standards, two
+  severities only, a nit budget, and an exclusion list built from what is
+  already mechanically enforced.
+- `approval-gates` → PreToolUse gates (allow / ask / block), split from the
+  build-time linters: an approval prompt inside the build loop puts a person
+  back on the critical path.
+- `policy-skills` → skills encoded from policy that is already written down,
+  as opposed to the history mining `skills` does. Skills are advisory; the
+  task flags which policies also need a blocking hook.
+- `agents` → `.claude/agents/`, built around a verifier that runs the project
+  in a fresh context and reports without fixing.
+- `evals` → `evals/` + grader + CI workflow triggered on changes to
+  `CLAUDE.md` and `.claude/**` — a regression suite for the agent
+  configuration itself. Every case must name what it is grounded in.
+- `metric-bands` → `bands.yaml` + a deterministic, unit-tested detector that
+  contains no AI, whose breaches re-enter the loop as `intent/` files.
+- `telemetry` → `docs/TELEMETRY.md` — where the numbers behind each practice's
+  claims actually come from, with a required "what we deliberately do not
+  track" boundary.
+
+### Changed — verification derives the instrument from the claim
+
+`docs/VERIFY.md` was a change-type → commands matrix, which only covers changes
+someone already anticipated and has no answer for a change claiming something
+the test suite cannot observe. It now teaches a derivation first: state the
+claim as an outside-observable sentence, name what would measurably differ,
+pick the instrument that can **see that claim fail**, take the baseline, and
+run the mutation check — undo the change and confirm the observation reverts.
+
+Behind it is an open-ended instrument catalog spanning behavior, user-perceived
+behavior, CPU and latency, memory, concurrency, network and external calls,
+data and persistence, resource lifecycle, failure injection, security, build and
+supply chain, deployment, emitted telemetry, numerical output, compatibility,
+agent behavior, cost, and docs — each a starting point rather than a menu, with
+the reasoning path stated for anything unlisted. Instrument classes the project
+lacks stay in the generated table marked as gaps, because a deleted row is an
+invisible gap.
+
+New `verify-change` seed skill carries the same method per task. `claude-md`'s
+verification block now says what its commands cannot observe, and the generated
+verifier subagent derives its checks instead of running a fixed list.
+
+`ci-workflow` is un-parked (disabled since 45ceb09 to demonstrate the flag, not
+for a defect) and gains a read-only build-triage step. `claude-md` gains the
+playbook's "Verifying your work" and "Things Claude gets wrong" blocks;
+`plans` now frames the plan as plan-mode output.
+
+Manifest 28 → 38, with a new "SDLC loop" group.
+
+### Added
+
+- **`verify` task → `docs/VERIFY.md`.** Classifies a change by what it touches,
+  then names the exact commands that settle it — because "I ran the tests"
+  means something different for a migration than for a CSS change, and an
+  unguided agent reaches for the cheapest green line. Requires the doc to name
+  its false-green lanes.
+- **`tdd-rules` task → `docs/TDD-RULES.md`.** Thirteen stack-independent test
+  rules, emitted whole; only the illustrations adapt to the detected stack.
+  `.claude/rules/testing.md` now opens by deferring to it, so policy and
+  mechanics stop competing.
+- **Seed skills.** `resolve-conflict`, `pr-authoring`, and `generate-skills`
+  now ship in the package and are copied into `.claude/skills/` before any task
+  runs. A skill the project already has is never overwritten.
+- **Umbrella-repo support.** All 24 prompts that detect project info now
+  recognise a root with no manifest and sub-projects that have their own.
+  CLAUDE.md gains a sub-project routing table, ARCHITECTURE.md documents how
+  sub-projects couple, and settings.json emits per-sub-project permissions.
+- CLAUDE.md gains Rule 2 (TDD is mandatory) and a verify-before-done convention.
+
+### Fixed
+
+- **Hook commands resolve from `"$CLAUDE_PROJECT_DIR"`.** `hooks.md` wired
+  PostToolUse linters as a bare relative path, which only resolves when
+  Claude's cwd is the project root — the exception in a worktree-first setup.
+- Generated linters now carry the `CLAUDE_HARNESS_SETUP` guard, so they no
+  longer fire on the harness's own scaffold writes.
+- `settings-json` emits a `hooks` skeleton for later tasks to merge into.
+- **Two test suites had been red for several releases**, left behind by feature
+  removals: `ensureGitignore` (deleted in 1.4.x) and `debug/*.jsonl` (dropped in
+  1.1.0). 16 of 181 tests were failing at 1.4.3.
+
+### Removed
+
+- `src/hooks-suspension.ts`. It stripped the enforce-worktree hook from the
+  user's `settings.json` and restored it from a `process.on("exit")` handler —
+  which does not run on SIGKILL, leaving the hook permanently removed. It was
+  already redundant: the worker sets `CLAUDE_HARNESS_SETUP=1` and the hook
+  honors it.
+- `quality-score` and `core-beliefs` tasks — 14 months of real use produced
+  neither file. The design-docs skeleton now documents the dated-ADR convention
+  that was actually adopted instead.
+- Three of five linters in `hooks.md` (`lint-filesize`, `lint-boundaries`,
+  `lint-architecture`). They need tree-wide context a PostToolUse hook doesn't
+  have, so they fire on correct code.
+
 ## 1.4.3
 
 ### Worktree

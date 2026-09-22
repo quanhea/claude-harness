@@ -6,11 +6,27 @@ A coding agent harness that generates CLAUDE.md, architecture docs, rules, hooks
 
 ## Background
 
-The [Harness Engineering](https://openai.com/index/harness-engineering/) article describes
-a complete system: CLAUDE.md as a ~100-line table of contents, a `docs/` knowledge base,
-custom linters as hooks, rules enforced mechanically, project-specific skills generated
-from conversation history, and a recurring gardener that scans every tracked doc
-for references that no longer match the live code and commits fix-up edits.
+Two sources, answering two different questions.
+
+**What an agent needs to read.** The [Harness Engineering](https://openai.com/index/harness-engineering/)
+article describes a complete system: CLAUDE.md as a ~100-line table of contents, a `docs/`
+knowledge base, custom linters as hooks, rules enforced mechanically, project-specific
+skills generated from conversation history, and a recurring gardener that scans every
+tracked doc for references that no longer match the live code and commits fix-up edits.
+
+**How work moves once the agent is writing most of the code.** The
+[AI-native SDLC playbook](https://academy.claude.com/courses/ai-native-sdlc-playbook)
+(Claude Academy) makes the point that planning, review, testing and deployment become the
+bottleneck the moment implementation stops being one. Its answer is that every stage ends
+by committing an artifact — `intent.md` → `spec.md` → `plan.md` → a verified diff → a PR
+carrying review findings → an incident that re-enters as the next intent — so the chain of
+commits *is* the audit trail: who asked for what, what the agent produced, who approved it.
+It also supplies the distinctions this tool leans on hardest: skills are advisory controls
+while hooks are deterministic ones, and a hook that asks a human for approval belongs at
+the deploy gate rather than inside the build loop.
+
+Documentation tells an agent what is true. The artifact chain decides what happens next,
+and where a human still signs. This tool generates both.
 
 The original approach was a monolithic skill — one 100-line `SKILL.md` that tried to
 generate 20+ files in a single Claude session. The problem: too much in one prompt gets
@@ -105,17 +121,22 @@ CLAUDE.md                                # Table of contents — the agent's ent
 ARCHITECTURE.md                          # Module map, layers, dependency rules
 docs/
 ├── GIT_WORKFLOW.md                      # Branching, commit, PR conventions
+├── SDLC.md                              # The artifact chain and its gates
+├── VERIFY.md                            # How to derive the right check for a change
+├── TELEMETRY.md                         # What we measure about how work gets built
+├── BANDS.md                             # Metric bands and what a breach triggers
+├── TDD-RULES.md                         # The test doctrine (non-negotiable)
 ├── PLANS.md                             # Execution plan template and lifecycle
 ├── INFRASTRUCTURE.md                    # Services, CI/CD, databases
 ├── PRODUCT_SENSE.md                     # Domain terminology and UX conventions
 ├── RELIABILITY.md                       # Error handling, SLAs, observability
 ├── SECURITY.md                          # Auth, data handling, secrets
-├── QUALITY_SCORE.md                     # Quality grades per domain
 ├── OBSERVABILITY.md                     # Logging, metrics, tracing
 ├── DESIGN.md                            # High-level system design
 ├── FRONTEND.md                          # Frontend conventions (if applicable)
 ├── WORKTREE.md                          # Worktree-first dev, per-worktree service isolation
-├── design-docs/core-beliefs.md          # Team operating principles
+├── specs/                               # Requirements-and-design specs
+├── design-docs/                         # Dated architecture decisions
 └── exec-plans/tech-debt-tracker.md      # Known technical debt backlog
 
 ── Rules & config ──
@@ -128,13 +149,22 @@ docs/
 │   └── git-workflow.md                  # Git naming + worktree enforcement
 ├── git-conventions.sh                   # Machine-readable naming patterns
 
+── SDLC loop ──
+intent/                                  # Proto-specs: problems in the originator's words
+REVIEW.md                                # Review policy: passes, severity, exclusions
+evals/                                   # Regression suite for the agent configuration
+bands.yaml                               # Metric tiers; a breach re-enters at intent/
+
 ── Automation ──
 ├── hooks/
 │   ├── post-checkout.sh                 # Worktree isolation provisioning
 │   ├── worktree-cleanup.sh              # Stale worktree resource cleanup
 │   ├── enforce-worktree.sh              # PreToolUse: block edits outside worktrees
 │   └── enforce-git-naming.sh            # PreToolUse: validate branch/commit naming
-├── skills/                              # Project-specific skills from conversation history
+├── skills/                              # Seeded (verify-change, resolve-conflict,
+│                                        #   pr-authoring, generate-skills), plus
+│                                        #   policy-encoded and history-mined ones
+├── agents/                              # Subagent definitions (verifier, ...)
 └── .mcp.json                            # MCP server recommendations
 ```
 

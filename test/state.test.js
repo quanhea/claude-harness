@@ -51,7 +51,7 @@ describe("computeStats", () => {
       "docs-structure":    { status: "TIMEOUT",     attempts: 1 },
       "git-workflow":      { status: "SKIPPED",     attempts: 3 },
       "infrastructure-md": { status: "PENDING",     attempts: 0 },
-      "quality-score":     { status: "RUNNING",     attempts: 1 },
+      "observability":     { status: "RUNNING",     attempts: 1 },
       "plans":             { status: "INTERRUPTED", attempts: 1 },
     };
     const stats = computeStats(tasks);

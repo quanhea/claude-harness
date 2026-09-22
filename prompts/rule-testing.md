@@ -9,11 +9,13 @@ outputs: [".claude/rules/testing.md"]
 
 You are generating the testing rule file — path-scoped to load only when editing test files. It must describe the actual test conventions found in this codebase.
 
+This file is the *mechanical* half of the project's testing guidance: frameworks, file naming, directory layout, commands. The *policy* half — red-green-refactor, what may be mocked, what coverage must hold — lives in `docs/TDD-RULES.md`, written by the `tdd-rules` task. Keep the split clean: state conventions here, doctrine there, and open this file by deferring to that one so a reader who lands here first still meets the rules that outrank these.
+
 ## Your Tasks
 
 Create these tasks now with TaskCreate:
 
-1. "Detect project info (language, framework, commands) from the project manifest (`package.json`, `Cargo.toml`, `go.mod`, `pyproject.toml`, or equivalent)"
+1. "Detect project info (language, framework, commands) from the project manifest (`package.json`, `Cargo.toml`, `go.mod`, `pyproject.toml`, or equivalent). If the root has no manifest but its immediate subdirectories do, this is an umbrella repo: detect each sub-project separately and treat the root as the cross-cutting layer"
 2. "Launch Explore agent to discover test conventions — framework, file location, naming, structure, mocking"
 3. "Read 3-5 actual test files to extract concrete patterns"
 4. "Read existing .claude/rules/testing.md if present (merge)"
@@ -51,6 +53,13 @@ paths:
 ---
 
 # Testing Rules
+
+> Read `docs/TDD-RULES.md` first — it is non-negotiable and governs everything
+> below. That document defines *how* we test (red-green-refactor, no production
+> code without a failing test, real internal services, assert through public
+> interfaces, inject non-determinism, tests as executable specification). This
+> file documents the mechanical conventions that implement those rules here.
+> If the two ever disagree, `docs/TDD-RULES.md` wins.
 
 ## Framework
 

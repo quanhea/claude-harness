@@ -13,7 +13,7 @@ You are generating the documentation rule file — loaded every Claude session. 
 
 Create these tasks now with TaskCreate:
 
-1. "Detect project info (language, framework, commands) from the project manifest (`package.json`, `Cargo.toml`, `go.mod`, `pyproject.toml`, or equivalent)"
+1. "Detect project info (language, framework, commands) from the project manifest (`package.json`, `Cargo.toml`, `go.mod`, `pyproject.toml`, or equivalent). If the root has no manifest but its immediate subdirectories do, this is an umbrella repo: detect each sub-project separately and treat the root as the cross-cutting layer"
 2. "Check for existing docs/ structure (what directories and files were created)"
 3. "Read existing .claude/rules/documentation.md if present (merge)"
 4. "Write .claude/rules/documentation.md following the exact template"

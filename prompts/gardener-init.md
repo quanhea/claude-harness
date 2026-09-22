@@ -27,7 +27,6 @@ These are the living documents the gardener maintains. Audit each one that exist
 - `ARCHITECTURE.md` — module map, layer rules, important types
 - `docs/GIT_WORKFLOW.md` — branching, commit, PR conventions
 - `docs/INFRASTRUCTURE.md` — services, CI/CD, databases
-- `docs/QUALITY_SCORE.md` — quality grades per domain
 - `docs/PLANS.md` — active / completed plans
 - `docs/PRODUCT_SENSE.md` — domain terminology, UX conventions
 - `docs/RELIABILITY.md` — SLOs, failure modes, on-call
@@ -35,6 +34,9 @@ These are the living documents the gardener maintains. Audit each one that exist
 - `docs/OBSERVABILITY.md` — logging, metrics, tracing (if present)
 - `docs/DESIGN.md`, `docs/FRONTEND.md` (if present)
 - `docs/design-docs/*.md` — architecture decisions
+- `docs/SDLC.md` — the artifact chain and its gates
+- `docs/VERIFY.md` — how each change type is verified
+- `REVIEW.md` — the review policy
 - `docs/exec-plans/tech-debt-tracker.md` — known tech debt
 - `docs/product-specs/*.md` — product specifications
 

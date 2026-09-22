@@ -12,7 +12,7 @@ You are generating structural tests that enforce architecture constraints from A
 
 Create these tasks now with TaskCreate:
 
-1. "Detect project info (language, framework, commands) from the project manifest (`package.json`, `Cargo.toml`, `go.mod`, `pyproject.toml`, or equivalent)"
+1. "Detect project info (language, framework, commands) from the project manifest (`package.json`, `Cargo.toml`, `go.mod`, `pyproject.toml`, or equivalent). If the root has no manifest but its immediate subdirectories do, this is an umbrella repo: detect each sub-project separately and treat the root as the cross-cutting layer"
 2. "Launch Explore agent to discover test framework, file naming, directory structure, and assertion style"
 3. "Read ARCHITECTURE.md for layer structure, dependency direction, and invariants"
 4. "Read 2-3 existing test files to understand the exact test style"

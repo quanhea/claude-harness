@@ -125,7 +125,10 @@ export function spawnClaude(options: ClaudeSpawnOptions): {
   logStream.write(JSON.stringify({ type: "prompt", prompt: fullPrompt }) + "\n");
 
   const childEnv: NodeJS.ProcessEnv = { ...process.env, CLAUDE_HARNESS_SETUP: "1" };
-  // CLAUDE_HARNESS_SETUP=1 signals the worktree-enforcement hook to skip during setup.
+  // CLAUDE_HARNESS_SETUP=1 is the suspension contract for every generated hook:
+  // each one bails early when it sees this, so scaffolding subprocesses can
+  // write freely without the harness editing the user's settings.json to get
+  // out of its own way. Every hook template in prompts/ emits the guard line.
   // CLAUDE_CODE_EFFORT_LEVEL sets the thinking budget for this task's subprocess.
   if (options.effort) childEnv.CLAUDE_CODE_EFFORT_LEVEL = options.effort;
 

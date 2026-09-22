@@ -15,7 +15,7 @@ You are documenting the actual git workflow used in this project — discovered 
 
 Create these tasks now with TaskCreate:
 
-1. "Detect project info (language, framework, commands) from the project manifest (`package.json`, `Cargo.toml`, `go.mod`, `pyproject.toml`, or equivalent)"
+1. "Detect project info (language, framework, commands) from the project manifest (`package.json`, `Cargo.toml`, `go.mod`, `pyproject.toml`, or equivalent). If the root has no manifest but its immediate subdirectories do, this is an umbrella repo: detect each sub-project separately and treat the root as the cross-cutting layer"
 2. "Analyze git log for branching patterns (git log --oneline -50)"
 3. "Check for branch naming patterns in remotes"
 4. "Detect commit message conventions (conventional commits, etc.)"

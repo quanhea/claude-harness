@@ -27,7 +27,10 @@ function walkDelete(rootDir: string, relPath: string, regex: RegExp, depth: numb
   return deleted;
 }
 
-function deleteOutput(targetDir: string, pattern: string): string[] {
+// Exported for tests: this is the function that actually calls rmSync on a
+// user's project, so it needs direct coverage rather than only being reachable
+// through an interactive prompt.
+export function deleteOutput(targetDir: string, pattern: string): string[] {
   if (!/[*?{]/.test(pattern)) {
     const full = path.join(targetDir, pattern);
     if (fs.existsSync(full)) {

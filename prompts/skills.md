@@ -1,6 +1,5 @@
 ---
 description: Generate project-specific skills from conversation history
-outputs: [".claude/skills/*/SKILL.md"]
 max-turns: null
 effort: max
 ---
@@ -16,20 +15,30 @@ The conversation history lives at `~/.claude/projects/<project-slug>/*.jsonl` wh
 **Important:** there is no always-generated set. Skills come from evidence
 in the conversation history. If no pattern qualifies, generate zero skills — do not invent placeholder skills.
 
+**The seed skills are already on disk.** Before this task ran, the harness
+copied its bundled process skills into `.claude/skills/` — the ones worth having
+in any repo regardless of history (resolving a merge, authoring a PR, writing
+another skill). List that directory first. Do not regenerate, rewrite, or
+duplicate a skill that is already there: if history shows a pattern one of them
+already covers, that is a seed working, not a gap. Mine history for what they
+do **not** cover — the project-specific flows — and add the CLAUDE.md Skills
+table rows for the seeds alongside whatever you generate.
+
 ## Your Tasks
 
-Create these tasks now with TaskCreate. Steps 5–7 are where the real work happens — don't collapse or skip. Each produces a disk artifact so you can't shortcut past it.
+Create these tasks now with TaskCreate. Steps 6–8 are where the real work happens — don't collapse or skip. Each produces a disk artifact so you can't shortcut past it.
 
-1. "Detect project info (language, framework, commands)"
-2. "Compute the project slug from {{PROJECT_DIR}} (replace / with -, prefix with -)"
-3. "Write the embedded extraction script to .claude-harness/extract-conversations.cjs"
-4. "Run the script: node .claude-harness/extract-conversations.cjs <slug> .claude-harness/conversations/"
-5. "Phase 1 — grep user-message part files for recurring patterns; write candidates to .claude-harness/skill-candidates.md"
-6. "Phase 2 — for each candidate, grep the matching .jsonl files for success signals, read a small window around them, extract the working flow; write to .claude-harness/skill-classifications.md (drop candidates with no SUCCESS occurrence)"
-7. "Synthesize each surviving skill's steps from the intersection of working flows"
-8. "mkdir -p .claude/skills/<each-surviving-skill-name>/ via Bash"
-9. "Write each SKILL.md following the official Claude Code skills format (see Reference Skill Formats below)"
-10. "Update CLAUDE.md Skills table with the actual skills generated"
+1. "List .claude/skills/ to see which seed skills are already installed"
+2. "Detect project info (language, framework, commands)"
+3. "Compute the project slug from {{PROJECT_DIR}} (replace / with -, prefix with -)"
+4. "Write the embedded extraction script to .claude-harness/extract-conversations.cjs"
+5. "Run the script: node .claude-harness/extract-conversations.cjs <slug> .claude-harness/conversations/"
+6. "Phase 1 — grep user-message part files for recurring patterns; write candidates to .claude-harness/skill-candidates.md"
+7. "Phase 2 — for each candidate, grep the matching .jsonl files for success signals, read a small window around them, extract the working flow; write to .claude-harness/skill-classifications.md (drop candidates with no SUCCESS occurrence)"
+8. "Synthesize each surviving skill's steps from the intersection of working flows"
+9. "mkdir -p .claude/skills/<each-surviving-skill-name>/ via Bash"
+10. "Write each SKILL.md following the official Claude Code skills format (see Reference Skill Formats below)"
+11. "Verify each generated SKILL.md has a name and a description in its frontmatter — claude-md builds the Skills table from those"
 
 Use TaskUpdate to mark each complete. Use TaskList before finishing.
 
@@ -355,15 +364,17 @@ Summarize this pull request...
 | `context: fork` + `agent: Explore` | Skill should run in an isolated subagent (read-only deep dive). |
 | `argument-hint: "[file] [branch]"` | Helps autocomplete when the skill takes arguments. |
 
-## Update CLAUDE.md
+## Do not edit CLAUDE.md
 
-After generating skills, update the Skills table in `CLAUDE.md`. Replace the placeholder `/skill-name` row with one row per generated skill:
+`claude-md` owns that file and enumerates `.claude/skills/` to build its Skills
+table. Several tasks generate skills and they all run in parallel, so a task
+that edits CLAUDE.md is racing the task that rewrites it — last writer wins and
+the others vanish.
 
-```markdown
-| `/<actual-skill-name>` | <description from the skill's frontmatter> |
-```
-
-If CLAUDE.md doesn't exist yet (running this task in isolation before `claude-md`), skip the CLAUDE.md update — the next full run will pick it up. If you generated zero skills, leave the placeholder row as-is.
+Your contract is the frontmatter: every SKILL.md needs a `name` and a
+`description`, because those become the table's two columns. Skills generated in
+this run appear in CLAUDE.md on the next harness run, or immediately via
+`--only claude-md`.
 
 ## Rules
 

@@ -12,7 +12,7 @@ You are generating or documenting the formatter configuration for this project. 
 
 Create these tasks now with TaskCreate:
 
-1. "Detect project info (language, framework, commands) from the project manifest (`package.json`, `Cargo.toml`, `go.mod`, `pyproject.toml`, or equivalent)"
+1. "Detect project info (language, framework, commands) from the project manifest (`package.json`, `Cargo.toml`, `go.mod`, `pyproject.toml`, or equivalent). If the root has no manifest but its immediate subdirectories do, this is an umbrella repo: detect each sub-project separately and treat the root as the cross-cutting layer"
 2. "Launch Explore agent to discover existing formatter and linter config"
 3. "Decide: document existing OR generate new (never overwrite existing)"
 4. "Generate formatter config if none exists (research best practices for the language)"

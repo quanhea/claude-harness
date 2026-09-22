@@ -63,7 +63,6 @@ Then generate the markdown files that make this project agent-legible — writin
 - **`CLAUDE.md`** — the table of contents. ~100 lines. One sentence per concern. Key commands, architecture overview, what to read first, where to find plans, rules, and domain docs. Must be a map, not a manual.
 - **`ARCHITECTURE.md`** — the module map. Top-level domains, data flow, layer boundaries, key invariants. The navigation aid agents use to understand the system without reading all the code.
 - **`PLANS.md`** — the norms and current state of execution plans. What an active plan looks like, how to update it, where to find completed ones. Agents need this to participate in ongoing work without losing thread.
-- **`docs/QUALITY_SCORE.md`** — quality grades by domain. What is solid, what is fragile, what has known gaps. Honest assessment beats optimism.
 - **`docs/CORE_BELIEFS.md`** — the operating principles specific to this project. What the team values in architecture, testing, product decisions, and code style. Opinionated, mechanical, real.
 - **`.claude/rules/`** — rule files that load on every session: architecture invariants, testing requirements, documentation norms, git workflow. Short, specific, enforceable.
 

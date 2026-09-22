@@ -13,7 +13,7 @@ You are generating the Claude Code settings file that controls tool permissions 
 
 Create these tasks now with TaskCreate:
 
-1. "Detect project info (language, framework, commands) from the project manifest (`package.json`, `Cargo.toml`, `go.mod`, `pyproject.toml`, or equivalent)"
+1. "Detect project info (language, framework, commands) from the project manifest (`package.json`, `Cargo.toml`, `go.mod`, `pyproject.toml`, or equivalent). If the root has no manifest but its immediate subdirectories do, this is an umbrella repo: detect each sub-project separately and treat the root as the cross-cutting layer"
 2. "Read existing .claude/settings.json if present (merge)"
 3. "Select the correct permission set for the detected language"
 4. "Write .claude/settings.json following the exact schema below"
@@ -122,9 +122,43 @@ Write a valid JSON file. Choose the permission block based on `language` from th
 
 **For all other languages:** use the TypeScript block as a base but adapt the Write/Edit paths and Bash commands to match the detected language toolchain.
 
+## The `hooks` block
+
+Always emit a `hooks` key alongside `permissions`, even when this task
+generates no hook scripts itself. Three later tasks (`hooks`, `rule-git`, and
+anything a project adds by hand) merge their entries into this file, and they
+merge far more reliably into a scaffold that already exists than into a file
+where they have to invent the shape.
+
+Write the skeleton with empty arrays for the events the harness targets:
+
+```json
+{
+  "permissions": { "...": "as selected above" },
+  "hooks": {
+    "PreToolUse": [],
+    "PostToolUse": []
+  }
+}
+```
+
+If `.claude/settings.json` already has hook entries, keep every one of them
+verbatim — this task never removes a hook.
+
+Each entry a later task appends has the same shape: a `matcher` naming the
+tools it fires on, and a `command` pointing through `"$CLAUDE_PROJECT_DIR"`
+(quoted, because project paths contain spaces) at a script in
+`.claude/hooks/`. `PreToolUse` scripts may block by exiting 2; `PostToolUse`
+linters always exit 0 and warn through stdout.
+
 ## Rules
 
 - Always include `"Read(**)"` — Claude needs to read everything.
+- Always emit the `hooks` skeleton, even if empty — later tasks merge into it.
+- On an umbrella repo, `Write(src/**)` reaches nothing. Emit a Write and Edit
+  entry per sub-project directory (`Write(<sub-project>/**)`), and union the
+  Bash commands across every toolchain the sub-projects use — a Rust engine
+  beside a React frontend needs both `Bash(cargo *)` and `Bash(npm run *)`.
 - Always deny `"Bash(rm -rf *)"` and `"Bash(sudo *)"`.
 - Always include git, ls, find, cat, grep in allow.
 - Create the `.claude/` directory if it doesn't exist.
