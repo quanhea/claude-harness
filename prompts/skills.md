@@ -1,6 +1,5 @@
 ---
 description: Generate project-specific skills from conversation history
-outputs: [".claude/skills/*/SKILL.md"]
 max-turns: null
 effort: max
 ---

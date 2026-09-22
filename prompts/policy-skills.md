@@ -1,6 +1,5 @@
 ---
 description: Encode existing written policies as skills (distinct from history-mined skills)
-outputs: [".claude/skills/*/SKILL.md"]
 effort: high
 ---
 
