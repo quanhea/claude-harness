@@ -24,7 +24,7 @@ Create these tasks now with TaskCreate:
 4. "For each policy found, decide whether it qualifies (see the bar below). Write the shortlist and the rejections to `.claude-harness/policy-candidates.md`"
 5. "For each qualifying policy, find the checkable form: a script, a schema, a linter rule, or a command that produces evidence"
 6. "mkdir -p .claude/skills/<name>/ via Bash for each, then write SKILL.md"
-7. "Verify each skill's description names concrete triggering situations, then update the CLAUDE.md Skills table"
+7. "Verify each skill's description names concrete triggering situations — claude-md builds the Skills table from that frontmatter; do not edit CLAUDE.md here, several tasks generate skills in parallel and would clobber each other"
 
 Use TaskUpdate to mark each complete. Use TaskList before finishing.
 

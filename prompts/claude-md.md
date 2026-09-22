@@ -146,7 +146,10 @@ These are in `.claude/rules/` and are loaded automatically:
 
 | Skill | When to use |
 |-------|-------------|
-| `/skill-name` | See `.claude/skills/` for project-specific skills generated from usage history |
+{{one row per directory under `.claude/skills/`, using that SKILL.md's frontmatter:
+`| `/<name>` | <description, trimmed to the triggering situations> |`
+— or, if the directory is absent or empty, the single row:
+`| — | No skills yet. See `.claude/skills/`. |`}}
 
 ```
 
@@ -175,4 +178,9 @@ These are in `.claude/rules/` and are loaded automatically:
 - Rules rows: only include rules that will actually be generated.
 - Include the `{{if isFrontend}}` rows only if this is a frontend project; include the `{{if isApp}}` rows only if this is an app. Remove the `{{if ...}}` markers themselves from the output.
 - The "When to read it" column must tell Claude WHEN to load the doc, not just describe its contents.
+- Build the Skills table by listing `.claude/skills/` and reading each SKILL.md's
+  frontmatter. This file owns that table; the skill-generating tasks deliberately
+  do not touch CLAUDE.md, because they run in parallel with this one and the last
+  writer would win. A skill generated in the same run appears here on the next
+  run, or immediately with `--only claude-md`.
 - If CLAUDE.md already exists, read it first and MERGE — preserve user content.

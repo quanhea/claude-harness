@@ -39,7 +39,7 @@ Create these tasks now with TaskCreate. Steps 6–8 are where the real work happ
 8. "Synthesize each surviving skill's steps from the intersection of working flows"
 9. "mkdir -p .claude/skills/<each-surviving-skill-name>/ via Bash"
 10. "Write each SKILL.md following the official Claude Code skills format (see Reference Skill Formats below)"
-11. "Update CLAUDE.md Skills table with the actual skills generated"
+11. "Verify each generated SKILL.md has a name and a description in its frontmatter — claude-md builds the Skills table from those"
 
 Use TaskUpdate to mark each complete. Use TaskList before finishing.
 
@@ -365,15 +365,17 @@ Summarize this pull request...
 | `context: fork` + `agent: Explore` | Skill should run in an isolated subagent (read-only deep dive). |
 | `argument-hint: "[file] [branch]"` | Helps autocomplete when the skill takes arguments. |
 
-## Update CLAUDE.md
+## Do not edit CLAUDE.md
 
-After generating skills, update the Skills table in `CLAUDE.md`. Replace the placeholder `/skill-name` row with one row per generated skill:
+`claude-md` owns that file and enumerates `.claude/skills/` to build its Skills
+table. Several tasks generate skills and they all run in parallel, so a task
+that edits CLAUDE.md is racing the task that rewrites it — last writer wins and
+the others vanish.
 
-```markdown
-| `/<actual-skill-name>` | <description from the skill's frontmatter> |
-```
-
-If CLAUDE.md doesn't exist yet (running this task in isolation before `claude-md`), skip the CLAUDE.md update — the next full run will pick it up. If you generated zero skills, leave the placeholder row as-is.
+Your contract is the frontmatter: every SKILL.md needs a `name` and a
+`description`, because those become the table's two columns. Skills generated in
+this run appear in CLAUDE.md on the next harness run, or immediately via
+`--only claude-md`.
 
 ## Rules
 
