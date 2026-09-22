@@ -6,11 +6,27 @@ A coding agent harness that generates CLAUDE.md, architecture docs, rules, hooks
 
 ## Background
 
-The [Harness Engineering](https://openai.com/index/harness-engineering/) article describes
-a complete system: CLAUDE.md as a ~100-line table of contents, a `docs/` knowledge base,
-custom linters as hooks, rules enforced mechanically, project-specific skills generated
-from conversation history, and a recurring gardener that scans every tracked doc
-for references that no longer match the live code and commits fix-up edits.
+Two sources, answering two different questions.
+
+**What an agent needs to read.** The [Harness Engineering](https://openai.com/index/harness-engineering/)
+article describes a complete system: CLAUDE.md as a ~100-line table of contents, a `docs/`
+knowledge base, custom linters as hooks, rules enforced mechanically, project-specific
+skills generated from conversation history, and a recurring gardener that scans every
+tracked doc for references that no longer match the live code and commits fix-up edits.
+
+**How work moves once the agent is writing most of the code.** The
+[AI-native SDLC playbook](https://academy.claude.com/courses/ai-native-sdlc-playbook)
+(Claude Academy) makes the point that planning, review, testing and deployment become the
+bottleneck the moment implementation stops being one. Its answer is that every stage ends
+by committing an artifact — `intent.md` → `spec.md` → `plan.md` → a verified diff → a PR
+carrying review findings → an incident that re-enters as the next intent — so the chain of
+commits *is* the audit trail: who asked for what, what the agent produced, who approved it.
+It also supplies the distinctions this tool leans on hardest: skills are advisory controls
+while hooks are deterministic ones, and a hook that asks a human for approval belongs at
+the deploy gate rather than inside the build loop.
+
+Documentation tells an agent what is true. The artifact chain decides what happens next,
+and where a human still signs. This tool generates both.
 
 The original approach was a monolithic skill — one 100-line `SKILL.md` that tried to
 generate 20+ files in a single Claude session. The problem: too much in one prompt gets

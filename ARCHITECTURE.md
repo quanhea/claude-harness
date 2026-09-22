@@ -16,7 +16,7 @@ The core loop is simple:
 load TASK_MANIFEST → spawn N claude -p processes → collect results
 ```
 
-All 28 tasks run in a single flat parallel pool. There are no phases, no gates, no
+All 38 tasks run in a single flat parallel pool. There are no phases, no gates, no
 prerequisites. Each prompt is self-contained — it reads the project directly and, if
 the task doesn't apply (e.g. frontend docs on a backend project), writes a short
 stub and exits.
@@ -92,7 +92,7 @@ overwrites a directory that already exists — an edited seed belongs to the
 project from then on.
 
 **`types.ts`** — Shared type definitions: `STATUS` enum, `TaskEntry`, `HarnessState`,
-`TaskDefinition`, `TASK_MANIFEST` (the unordered 28-task list), and `DEFAULTS`. This
+`TaskDefinition`, `TASK_MANIFEST` (the unordered 38-task list), and `DEFAULTS`. This
 is the single source of truth for what the harness runs.
 
 ### Gardener Modules
@@ -123,7 +123,7 @@ These are the rules that hold across the codebase. If a change violates one, it'
   each prompt does its own project detection and decides its own applicability.
 
 - **Worker stdout/stderr is never buffered in memory.** It is piped directly to a file
-  write stream. This is how we can run 29 tasks with full Claude context windows without
+  write stream. This is how we can run 38 tasks with full Claude context windows without
   memory pressure.
 
 - **State writes are always atomic.** Write to `.tmp`, fsync, rename. No module writes
