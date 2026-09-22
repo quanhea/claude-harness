@@ -1,7 +1,21 @@
-const { describe, it } = require("node:test");
+const { describe, it, before, after } = require("node:test");
 const assert = require("node:assert/strict");
+const fs = require("fs");
+const path = require("path");
+const os = require("os");
 const { selectTasks } = require("../dist/scanner");
 const { TASK_MANIFEST } = require("../dist/types");
+
+// loadPrompt accepts absolute paths, so a fixture prompt can stand in for a
+// bundled one and let the disabled-flag tests own their own data.
+let fxDir;
+before(() => { fxDir = fs.mkdtempSync(path.join(os.tmpdir(), "harness-select-fx-")); });
+after(() => { fs.rmSync(fxDir, { recursive: true, force: true }); });
+const writeFixturePrompt = (name, body) => {
+  const p = path.join(fxDir, name);
+  fs.writeFileSync(p, body);
+  return p;
+};
 
 describe("selectTasks", () => {
   // Compute how many tasks have disabled: true in their frontmatter.
@@ -22,20 +36,26 @@ describe("selectTasks", () => {
   });
 
   it("excludes tasks flagged disabled: true from normal runs", () => {
-    const disabledIds = TASK_MANIFEST
-      .filter((t) => { try { return !!loadPrompt(t.promptFile).meta.disabled; } catch { return false; } })
-      .map((t) => t.id);
-    const tasks = selectTasks(null);
-    for (const id of disabledIds) {
-      assert.ok(!tasks.some((t) => t.id === id), `disabled task '${id}' should be excluded`);
-    }
+    // Fixture manifest, not the real one: this must keep testing the flag even
+    // when no production task is parked.
+    const enabled = writeFixturePrompt("enabled.md", "---\ndescription: on\n---\nbody");
+    const parked = writeFixturePrompt("parked.md", "---\ndescription: off\ndisabled: true\n---\nbody");
+    const manifest = [
+      { id: "enabled-task", promptFile: enabled },
+      { id: "parked-task", promptFile: parked },
+    ];
+
+    const tasks = selectTasks(null, manifest);
+    assert.deepEqual(tasks.map((t) => t.id), ["enabled-task"]);
   });
 
   it("--only bypasses the disabled flag (explicit override)", () => {
-    // ci-workflow is currently disabled; --only must still include it
-    const tasks = selectTasks(["ci-workflow"]);
-    assert.equal(tasks.length, 1);
-    assert.equal(tasks[0].id, "ci-workflow");
+    const parked = writeFixturePrompt("parked2.md", "---\ndescription: off\ndisabled: true\n---\nbody");
+    const manifest = [{ id: "parked-task", promptFile: parked }];
+
+    const tasks = selectTasks(["parked-task"], manifest);
+    assert.equal(tasks.length, 1, "--only must run a disabled task when named explicitly");
+    assert.equal(tasks[0].id, "parked-task");
   });
 
   it("filters by id", () => {

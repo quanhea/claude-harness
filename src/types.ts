@@ -114,7 +114,7 @@ export const DEFAULTS: HarnessConfig & { outputDir: string } = {
   outputDir: ".claude-harness",
 };
 
-// Unordered task manifest — 31 tasks, all fully independent. Just the
+// Unordered task manifest — 35 tasks, all fully independent. Just the
 // registry of (id, promptFile). Per-task description, outputs, and
 // max-turns live in each prompt's YAML frontmatter. Each prompt
 // self-checks applicability and no-ops if not relevant.
@@ -128,6 +128,7 @@ export const TASK_MANIFEST: TaskDefinition[] = [
   { id: "sdlc-map",           promptFile: "sdlc-map.md" },
   { id: "sdlc-intent",        promptFile: "sdlc-intent.md" },
   { id: "sdlc-spec",          promptFile: "sdlc-spec.md" },
+  { id: "review-md",          promptFile: "review-md.md" },
   { id: "tdd-rules",          promptFile: "tdd-rules.md" },
   { id: "plans",              promptFile: "plans.md" },
   { id: "infrastructure-md",  promptFile: "infrastructure-md.md" },
@@ -147,6 +148,9 @@ export const TASK_MANIFEST: TaskDefinition[] = [
   // ── Automation ──
   { id: "worktree",           promptFile: "worktree.md" },
   { id: "hooks",              promptFile: "hooks.md" },
+  { id: "approval-gates",     promptFile: "approval-gates.md" },
+  { id: "agents",             promptFile: "agents.md" },
+  { id: "policy-skills",      promptFile: "policy-skills.md" },
   { id: "skills",             promptFile: "skills.md" },
   { id: "mcp-config",         promptFile: "mcp-config.md" },
   { id: "formatter",          promptFile: "formatter.md" },
@@ -168,10 +172,11 @@ export const TASK_GROUPS: { label: string; ids: Set<string> }[] = [
     "rule-documentation", "rule-git",
   ])},
   { label: "Automation", ids: new Set([
-    "worktree", "hooks", "skills", "mcp-config",
-    "formatter", "gardener", "arch-tests", "ci-workflow",
+    "worktree", "hooks", "approval-gates", "agents", "skills",
+    "policy-skills", "mcp-config", "formatter", "gardener",
+    "arch-tests", "ci-workflow",
   ])},
   { label: "SDLC loop", ids: new Set([
-    "sdlc-map", "sdlc-intent", "sdlc-spec",
+    "sdlc-map", "sdlc-intent", "sdlc-spec", "review-md",
   ])},
 ];

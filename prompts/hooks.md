@@ -8,6 +8,8 @@ description: Generate .claude/hooks/ custom linters
 
 You are generating PostToolUse hook scripts — custom linters that run after every file edit and inject remediation instructions into Claude's context. Generate ONLY linters for conventions that ACTUALLY EXIST in this project.
 
+**These are build-time guardrails, not approval gates.** They fire on nearly every edit, so they must be fast, narrowly scoped to the changed file, and non-blocking. A hook that stops to ask a human for approval belongs in the `approval-gates` task instead — an approval prompt inside the build loop puts a person back on the critical path, which is the bottleneck this whole setup exists to remove. Likewise, anything needing the whole tree (a full test suite, a coverage gate) belongs at commit or PR time, not here.
+
 ## Your Tasks
 
 Create these tasks now with TaskCreate:

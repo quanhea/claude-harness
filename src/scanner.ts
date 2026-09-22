@@ -28,15 +28,22 @@ import {
   printTTYProgress,
 } from "./progress";
 
-export function selectTasks(only: string[] | null): TaskDefinition[] {
+// `manifest` defaults to the real task list. It is a parameter so the
+// disabled-flag behavior can be tested against a fixture instead of against
+// whichever production task happens to be parked at the time — otherwise
+// un-parking that task silently turns those tests into no-ops.
+export function selectTasks(
+  only: string[] | null,
+  manifest: TaskDefinition[] = TASK_MANIFEST,
+): TaskDefinition[] {
   // --only is an explicit override — always run the named tasks regardless of disabled flag.
   if (only && only.length > 0) {
     const set = new Set(only);
-    return TASK_MANIFEST.filter((t) => set.has(t.id));
+    return manifest.filter((t) => set.has(t.id));
   }
 
   // Normal run: exclude tasks with `disabled: true` in their frontmatter.
-  return TASK_MANIFEST.filter((t) => {
+  return manifest.filter((t) => {
     try { return !loadPrompt(t.promptFile).meta.disabled; } catch { return true; }
   });
 }
