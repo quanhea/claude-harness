@@ -105,7 +105,10 @@ CLAUDE.md                                # Table of contents — the agent's ent
 ARCHITECTURE.md                          # Module map, layers, dependency rules
 docs/
 ├── GIT_WORKFLOW.md                      # Branching, commit, PR conventions
+├── SDLC.md                              # The artifact chain and its gates
 ├── VERIFY.md                            # How to verify, per change type
+├── TELEMETRY.md                         # What we measure about how work gets built
+├── BANDS.md                             # Metric bands and what a breach triggers
 ├── TDD-RULES.md                         # The test doctrine (non-negotiable)
 ├── PLANS.md                             # Execution plan template and lifecycle
 ├── INFRASTRUCTURE.md                    # Services, CI/CD, databases
@@ -116,6 +119,7 @@ docs/
 ├── DESIGN.md                            # High-level system design
 ├── FRONTEND.md                          # Frontend conventions (if applicable)
 ├── WORKTREE.md                          # Worktree-first dev, per-worktree service isolation
+├── specs/                               # Requirements-and-design specs
 ├── design-docs/                         # Dated architecture decisions
 └── exec-plans/tech-debt-tracker.md      # Known technical debt backlog
 
@@ -129,14 +133,21 @@ docs/
 │   └── git-workflow.md                  # Git naming + worktree enforcement
 ├── git-conventions.sh                   # Machine-readable naming patterns
 
+── SDLC loop ──
+intent/                                  # Proto-specs: problems in the originator's words
+REVIEW.md                                # Review policy: passes, severity, exclusions
+evals/                                   # Regression suite for the agent configuration
+bands.yaml                               # Metric tiers; a breach re-enters at intent/
+
 ── Automation ──
 ├── hooks/
 │   ├── post-checkout.sh                 # Worktree isolation provisioning
 │   ├── worktree-cleanup.sh              # Stale worktree resource cleanup
 │   ├── enforce-worktree.sh              # PreToolUse: block edits outside worktrees
 │   └── enforce-git-naming.sh            # PreToolUse: validate branch/commit naming
-├── skills/                              # Seeded process skills + project-specific
-│                                        #   ones mined from conversation history
+├── skills/                              # Seeded process skills, policy-encoded
+│                                        #   skills, and history-mined ones
+├── agents/                              # Subagent definitions (verifier, ...)
 └── .mcp.json                            # MCP server recommendations
 ```
 

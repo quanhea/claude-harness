@@ -114,7 +114,7 @@ export const DEFAULTS: HarnessConfig & { outputDir: string } = {
   outputDir: ".claude-harness",
 };
 
-// Unordered task manifest — 35 tasks, all fully independent. Just the
+// Unordered task manifest — 38 tasks, all fully independent. Just the
 // registry of (id, promptFile). Per-task description, outputs, and
 // max-turns live in each prompt's YAML frontmatter. Each prompt
 // self-checks applicability and no-ops if not relevant.
@@ -129,6 +129,8 @@ export const TASK_MANIFEST: TaskDefinition[] = [
   { id: "sdlc-intent",        promptFile: "sdlc-intent.md" },
   { id: "sdlc-spec",          promptFile: "sdlc-spec.md" },
   { id: "review-md",          promptFile: "review-md.md" },
+  { id: "evals",              promptFile: "evals.md" },
+  { id: "metric-bands",       promptFile: "metric-bands.md" },
   { id: "tdd-rules",          promptFile: "tdd-rules.md" },
   { id: "plans",              promptFile: "plans.md" },
   { id: "infrastructure-md",  promptFile: "infrastructure-md.md" },
@@ -136,6 +138,7 @@ export const TASK_MANIFEST: TaskDefinition[] = [
   { id: "reliability",        promptFile: "reliability.md" },
   { id: "security",           promptFile: "security.md" },
   { id: "observability",      promptFile: "observability.md" },
+  { id: "telemetry",          promptFile: "telemetry.md" },
   { id: "design",             promptFile: "design.md" },
   { id: "frontend",           promptFile: "frontend.md" },
   { id: "tech-debt-tracker",  promptFile: "tech-debt-tracker.md" },
@@ -164,7 +167,7 @@ export const TASK_GROUPS: { label: string; ids: Set<string> }[] = [
     "claude-md", "architecture-md", "docs-structure", "git-workflow",
     "verify", "tdd-rules",
     "plans", "infrastructure-md", "product-sense", "reliability",
-    "security", "observability", "design", "frontend",
+    "security", "observability", "telemetry", "design", "frontend",
     "tech-debt-tracker",
   ])},
   { label: "Rules & config", ids: new Set([
@@ -178,5 +181,6 @@ export const TASK_GROUPS: { label: string; ids: Set<string> }[] = [
   ])},
   { label: "SDLC loop", ids: new Set([
     "sdlc-map", "sdlc-intent", "sdlc-spec", "review-md",
+    "evals", "metric-bands",
   ])},
 ];

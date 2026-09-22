@@ -5,6 +5,49 @@
 Changes from diffing the lib against the production harness it was extracted
 from, which had drifted well ahead of it.
 
+### Added — the AI-native SDLC loop
+
+Ten new tasks implementing the six-stage loop from the AI-native SDLC playbook
+(https://academy.claude.com/courses/ai-native-sdlc-playbook). Its organizing
+idea: every stage ends by committing an artifact, so the chain of commits is
+the audit trail. The lib generated reference documentation *about* a project
+but none of the workflow that moves work through it.
+
+- `sdlc-map` → `docs/SDLC.md` — the chain index, with the source of truth
+  (repo / tracker / linkage) detected rather than assumed, and a required
+  honest list of stages not adopted yet.
+- `sdlc-intent` → `intent/` + template + a `write-intent` skill that
+  interviews a non-engineer. Intent states a problem, not a solution.
+- `sdlc-spec` → `docs/specs/` + template + a `write-spec` skill that applies
+  the project's real standards while drafting and *flags* conflicts rather
+  than resolving them.
+- `review-md` → `REVIEW.md` — review passes traceable to real standards, two
+  severities only, a nit budget, and an exclusion list built from what is
+  already mechanically enforced.
+- `approval-gates` → PreToolUse gates (allow / ask / block), split from the
+  build-time linters: an approval prompt inside the build loop puts a person
+  back on the critical path.
+- `policy-skills` → skills encoded from policy that is already written down,
+  as opposed to the history mining `skills` does. Skills are advisory; the
+  task flags which policies also need a blocking hook.
+- `agents` → `.claude/agents/`, built around a verifier that runs the project
+  in a fresh context and reports without fixing.
+- `evals` → `evals/` + grader + CI workflow triggered on changes to
+  `CLAUDE.md` and `.claude/**` — a regression suite for the agent
+  configuration itself. Every case must name what it is grounded in.
+- `metric-bands` → `bands.yaml` + a deterministic, unit-tested detector that
+  contains no AI, whose breaches re-enter the loop as `intent/` files.
+- `telemetry` → `docs/TELEMETRY.md` — where the numbers behind each practice's
+  claims actually come from, with a required "what we deliberately do not
+  track" boundary.
+
+`ci-workflow` is un-parked (disabled since 45ceb09 to demonstrate the flag, not
+for a defect) and gains a read-only build-triage step. `claude-md` gains the
+playbook's "Verifying your work" and "Things Claude gets wrong" blocks;
+`plans` now frames the plan as plan-mode output.
+
+Manifest 28 → 38, with a new "SDLC loop" group.
+
 ### Added
 
 - **`verify` task → `docs/VERIFY.md`.** Classifies a change by what it touches,
