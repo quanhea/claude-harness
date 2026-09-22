@@ -2,8 +2,9 @@
 
 ## Unreleased
 
-Changes from diffing the lib against the production harness it was extracted
-from, which had drifted well ahead of it.
+A large pass: the AI-native SDLC loop, a rebuilt verification model, umbrella
+repo support, and the retirement of several generators that never produced a
+kept artifact.
 
 ### Added — the AI-native SDLC loop
 
