@@ -68,8 +68,16 @@ looks like, and what to do if it does not start — report that, do not debug it
 Exercise the changed behavior, then the two nearest neighboring flows — the
 regression usually lands next door, not where the work happened.
 
-{{If docs/VERIFY.md exists: "Classify the change per docs/VERIFY.md and run the
-checks for its type." Otherwise name the real test and build commands.}}
+Work out what to check from what the change claims, not from what is cheap to
+run. State the claim in one sentence, name what would be observably different
+if it holds, then use the instrument that can see *that* —
+{{if docs/VERIFY.md exists: "the instrument table in `docs/VERIFY.md` lists what
+this project has, and which classes it lacks"; otherwise: "the real commands
+are " + the discovered test/build commands}}. A green test run is not evidence
+for a claim about speed, memory, a leak, or anything visual.
+
+Where the claim is quantitative, take the baseline too — a number with no
+before is not a result.
 
 Report what you ran, what you saw, and anything that does not match the plan.
 Quote actual output rather than summarizing it as "passed".
@@ -86,3 +94,6 @@ moment you start editing, the independent check is gone.
 - "Report, do not fix" belongs in any read-only agent, stated explicitly — it is the constraint most likely to erode.
 - Tell the reader to commit these: checked into git, the whole team gets them, and changes go through review like any other config.
 - If step 3 found no way to run the project, write no verifier. Say so, and note that `docs/VERIFY.md` covers verification by other means.
+- The verifier derives its checks from the change's claim. A verifier that runs a
+  fixed command list is a slower CI job, and it will report success on every
+  claim that list cannot observe.

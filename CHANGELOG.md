@@ -41,6 +41,28 @@ but none of the workflow that moves work through it.
   claims actually come from, with a required "what we deliberately do not
   track" boundary.
 
+### Changed — verification derives the instrument from the claim
+
+`docs/VERIFY.md` was a change-type → commands matrix, which only covers changes
+someone already anticipated and has no answer for a change claiming something
+the test suite cannot observe. It now teaches a derivation first: state the
+claim as an outside-observable sentence, name what would measurably differ,
+pick the instrument that can **see that claim fail**, take the baseline, and
+run the mutation check — undo the change and confirm the observation reverts.
+
+Behind it is an open-ended instrument catalog spanning behavior, user-perceived
+behavior, CPU and latency, memory, concurrency, network and external calls,
+data and persistence, resource lifecycle, failure injection, security, build and
+supply chain, deployment, emitted telemetry, numerical output, compatibility,
+agent behavior, cost, and docs — each a starting point rather than a menu, with
+the reasoning path stated for anything unlisted. Instrument classes the project
+lacks stay in the generated table marked as gaps, because a deleted row is an
+invisible gap.
+
+New `verify-change` seed skill carries the same method per task. `claude-md`'s
+verification block now says what its commands cannot observe, and the generated
+verifier subagent derives its checks instead of running a fixed list.
+
 `ci-workflow` is un-parked (disabled since 45ceb09 to demonstrate the flag, not
 for a defect) and gains a read-only build-triage step. `claude-md` gains the
 playbook's "Verifying your work" and "Things Claude gets wrong" blocks;

@@ -96,8 +96,12 @@ failure, with what healthy output looks like. e.g.:
 - Lint: `make lint` (zero warnings)}}
 
 Run all of these before reporting any task complete, and paste the output. If a
-test fails, fix the code, not the test. See `docs/VERIFY.md` for which checks a
-given change actually needs.
+test fails, fix the code, not the test.
+
+These are the floor, not the whole answer. When a change claims something these
+commands cannot observe — speed, memory, a leak, a race, what a user sees, a
+signal you emitted — the suite passing is not evidence. Derive the right
+instrument from the claim: `docs/VERIFY.md`, or the `/verify-change` skill.
 
 ## Things Claude gets wrong
 
@@ -158,6 +162,9 @@ These are in `.claude/rules/` and are loaded automatically:
 - The **Verifying your work** commands must each be a single command that exits
   non-zero on failure. If the project has no such command, say what running the
   checks takes instead — an agent cannot self-verify against a paragraph.
+- Keep the sentence naming what those commands cannot observe. Without it the
+  block reads as a complete definition of done, and every claim about
+  performance, memory, or anything visual gets closed with a green test run.
 - **Things Claude gets wrong** starts empty unless the conversation history or
   the repo shows a repeated correction. Do not invent entries to fill it; an
   invented warning costs context on every session forever. Note in the file that

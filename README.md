@@ -106,7 +106,7 @@ ARCHITECTURE.md                          # Module map, layers, dependency rules
 docs/
 ├── GIT_WORKFLOW.md                      # Branching, commit, PR conventions
 ├── SDLC.md                              # The artifact chain and its gates
-├── VERIFY.md                            # How to verify, per change type
+├── VERIFY.md                            # How to derive the right check for a change
 ├── TELEMETRY.md                         # What we measure about how work gets built
 ├── BANDS.md                             # Metric bands and what a breach triggers
 ├── TDD-RULES.md                         # The test doctrine (non-negotiable)
@@ -145,8 +145,9 @@ bands.yaml                               # Metric tiers; a breach re-enters at i
 │   ├── worktree-cleanup.sh              # Stale worktree resource cleanup
 │   ├── enforce-worktree.sh              # PreToolUse: block edits outside worktrees
 │   └── enforce-git-naming.sh            # PreToolUse: validate branch/commit naming
-├── skills/                              # Seeded process skills, policy-encoded
-│                                        #   skills, and history-mined ones
+├── skills/                              # Seeded (verify-change, resolve-conflict,
+│                                        #   pr-authoring, generate-skills), plus
+│                                        #   policy-encoded and history-mined ones
 ├── agents/                              # Subagent definitions (verifier, ...)
 └── .mcp.json                            # MCP server recommendations
 ```
