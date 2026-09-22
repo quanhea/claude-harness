@@ -114,7 +114,7 @@ export const DEFAULTS: HarnessConfig & { outputDir: string } = {
   outputDir: ".claude-harness",
 };
 
-// Unordered task manifest — 28 tasks, all fully independent. Just the
+// Unordered task manifest — 31 tasks, all fully independent. Just the
 // registry of (id, promptFile). Per-task description, outputs, and
 // max-turns live in each prompt's YAML frontmatter. Each prompt
 // self-checks applicability and no-ops if not relevant.
@@ -125,6 +125,9 @@ export const TASK_MANIFEST: TaskDefinition[] = [
   { id: "docs-structure",     promptFile: "docs-structure.md" },
   { id: "git-workflow",       promptFile: "git-workflow.md" },
   { id: "verify",             promptFile: "verify.md" },
+  { id: "sdlc-map",           promptFile: "sdlc-map.md" },
+  { id: "sdlc-intent",        promptFile: "sdlc-intent.md" },
+  { id: "sdlc-spec",          promptFile: "sdlc-spec.md" },
   { id: "tdd-rules",          promptFile: "tdd-rules.md" },
   { id: "plans",              promptFile: "plans.md" },
   { id: "infrastructure-md",  promptFile: "infrastructure-md.md" },
@@ -167,5 +170,8 @@ export const TASK_GROUPS: { label: string; ids: Set<string> }[] = [
   { label: "Automation", ids: new Set([
     "worktree", "hooks", "skills", "mcp-config",
     "formatter", "gardener", "arch-tests", "ci-workflow",
+  ])},
+  { label: "SDLC loop", ids: new Set([
+    "sdlc-map", "sdlc-intent", "sdlc-spec",
   ])},
 ];

@@ -87,6 +87,26 @@ Every non-trivial change starts with a plan file committed to `docs/exec-plans/a
 - **Before committing or opening a PR**: follow `docs/GIT_WORKFLOW.md`.
 - **When making a design decision**: check `docs/design-docs/` for prior choices.
 
+## Verifying your work
+
+{{discovered — one line per check, each a single command that exits non-zero on
+failure, with what healthy output looks like. e.g.:
+- Build: `make build` (must finish with "Build succeeded")
+- Test: `make test` (all green; never skip or delete a failing test)
+- Lint: `make lint` (zero warnings)}}
+
+Run all of these before reporting any task complete, and paste the output. If a
+test fails, fix the code, not the test. See `docs/VERIFY.md` for which checks a
+given change actually needs.
+
+## Things Claude gets wrong
+
+{{discovered — the corrections this project has had to make more than once.
+Start empty if there is no evidence yet; the rule is that the second time
+Claude makes the same mistake, it becomes a line here. e.g.:
+- Do not bump dependency versions; the platform team owns them.
+- The legacy `v1/` package is frozen; changes go in `v2/`.}}
+
 ## Knowledge Base — Read On Demand
 
 Don't load all of these. Read the one relevant to your current task.
@@ -95,6 +115,7 @@ Don't load all of these. Read the one relevant to your current task.
 |------|----------------|
 | `ARCHITECTURE.md` | Before adding code — module boundaries, layers, dependency rules |
 | `docs/WORKTREE.md` | Before starting any local work — worktree-first development, service isolation |
+| `docs/SDLC.md` | When starting anything non-trivial — the artifact chain and its gates |
 | `docs/TDD-RULES.md` | **Before writing any test or production code** |
 | `docs/VERIFY.md` | Before declaring any change "done" |
 | `docs/GIT_WORKFLOW.md` | Before branching, committing, or creating PRs |
@@ -131,7 +152,22 @@ These are in `.claude/rules/` and are loaded automatically:
 
 ## Rules
 
-- **Hard limit: 100 lines.** If it would exceed 100 lines, cut prose. Only pointers — no explanations inline.
+- The **Verifying your work** commands must each be a single command that exits
+  non-zero on failure. If the project has no such command, say what running the
+  checks takes instead — an agent cannot self-verify against a paragraph.
+- **Things Claude gets wrong** starts empty unless the conversation history or
+  the repo shows a repeated correction. Do not invent entries to fill it; an
+  invented warning costs context on every session forever. Note in the file that
+  the rule is: second time Claude makes the same mistake, it becomes a line here.
+- **Hard limit: 100 lines** in the generated file. The `{{...}}` guidance blocks
+  in the template above are instructions to you and collapse to fewer lines —
+  count what you write, not what you read. Claude loads this whole file every
+  session, so every line it does not need is context it does not get back.
+- If you are over the limit, cut in this order: Knowledge Base rows for docs this
+  project does not have, then prose, then Quick Reference entries that duplicate
+  the Commands block. **Verifying your work** and the two Rules are not
+  negotiable — an agent that cannot self-verify is the problem this file exists
+  to prevent.
 - On an umbrella repo, emit the Sub-projects table and the `cd`-first line, and drop the `{{if umbrella}}` markers. On a single-project repo, omit both sections entirely — do not leave an empty heading.
 - On an umbrella repo, the Quick Reference commands are the ones that work from the root. A command that only works inside one sub-project belongs in that sub-project's own CLAUDE.md, not here.
 - Do NOT include: code snippets (beyond commands), how-to guides, API docs, or architecture details. Those belong in the linked documents.

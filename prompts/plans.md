@@ -41,6 +41,25 @@ The harness-engineering pattern: plans with progress and decision logs are
 checked into the repository alongside the code, so agents can resume work
 without relying on external context.
 
+## Write the plan in plan mode
+
+Start the session in plan mode, where Claude can read the codebase without
+changing anything. Give it the spec (and the intent behind it) and ask for a
+plan that names the files that change, the order of work, and the tests that
+prove correctness.
+
+Then interrogate the plan before accepting it: what could this break, which
+step is riskiest, what alternative did you reject and why. Iterate until
+someone who was not in the conversation could implement from the plan alone.
+
+Plan mode enforces the sequence itself — Claude cannot edit a file until the
+plan is accepted — so design review happens while course correction is still
+document editing.
+
+**If the implementation departs from the plan, update the plan in the same
+commit.** A plan that no longer describes the code is worse than none, because
+the PR review checks the diff against it.
+
 ## Active plans
 
 {{list every file under `docs/exec-plans/active/` as `- [slug](exec-plans/active/slug.md) — <one-line summary from the plan's Context>` — or write `_No active plans. Start one by copying the template below into docs/exec-plans/active/<slug>.md._` if none.}}
