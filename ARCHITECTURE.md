@@ -16,7 +16,7 @@ The core loop is simple:
 load TASK_MANIFEST → spawn N claude -p processes → collect results
 ```
 
-All 38 tasks run in a single flat parallel pool. There are no phases, no gates, no
+All 37 tasks run in a single flat parallel pool. There are no phases, no gates, no
 prerequisites. Each prompt is self-contained — it reads the project directly and, if
 the task doesn't apply (e.g. frontend docs on a backend project), writes a short
 stub and exits.
@@ -36,9 +36,9 @@ cli.ts → scanner.ts → preflight.ts → state.ts → worker-pool.ts → repor
                                                  worker.ts
 ```
 
-**`cli.ts`** — Entry point. Parses argv, dispatches to `setup()` (main mode) or
-`gardenerCommand()` (gardener subcommand), sets exit code. The only module that
-calls `process.exit()`.
+**`cli.ts`** — Entry point. Parses argv, dispatches to `setup()` (main mode),
+`removeCommand()` or `startClaude()`, and sets the exit code. The only module
+that calls `process.exit()`.
 
 **`scanner.ts`** — The orchestrator. Largest module; read this first after this file.
 Wires together every other module: runs preflight, filters `TASK_MANIFEST` by `--only`,
@@ -95,21 +95,6 @@ project from then on.
 `TaskDefinition`, `TASK_MANIFEST` (the unordered 38-task list), and `DEFAULTS`. This
 is the single source of truth for what the harness runs.
 
-### Gardener Modules
-
-**`gardener.ts`** — Runs the doc-freshness audit for one project. On first run:
-spawns parallel Explore agents (one per tracked doc) to verify every file path,
-type, command, and reference against the live code.
-On subsequent runs: diffs `LAST_COMMIT..HEAD`, maps changed files to feature areas, and
-only re-audits docs that reference the changed files, and commits fix-up edits
-in place. It never creates a separate encyclopedia directory — the blog uses
-"encyclopedia" as a metaphor for a bloated AGENTS.md, not as a path.
-
-**`gardener-api.ts`** — Manages `~/.claude-harness/projects.json`, the global registry
-of projects the gardener tracks. Provides `add`, `remove`, `list`, `run`, and
-`updateLastRun` operations. All writes are atomic (same write-fsync-rename pattern as
-`state.ts`). Dispatches `gardener run` to `gardener.ts`.
-
 ## Architectural Invariants
 
 These are the rules that hold across the codebase. If a change violates one, it's a bug.
@@ -123,7 +108,7 @@ These are the rules that hold across the codebase. If a change violates one, it'
   each prompt does its own project detection and decides its own applicability.
 
 - **Worker stdout/stderr is never buffered in memory.** It is piped directly to a file
-  write stream. This is how we can run 38 tasks with full Claude context windows without
+  write stream. This is how we can run 37 tasks with full Claude context windows without
   memory pressure.
 
 - **State writes are always atomic.** Write to `.tmp`, fsync, rename. No module writes
@@ -166,12 +151,6 @@ The pool doesn't know about signals — it just exposes controls that the scanne
 **State checkpoints.** `scanner.ts` saves state on three triggers: after each worker
 completes, every 30 seconds via `setInterval`, and on process exit. The 30-second
 checkpoint limits progress loss on SIGKILL to at most 30 seconds of completed work.
-
-**Gardener registry.** The gardener uses a global registry at `~/.claude-harness/projects.json`
-that persists across runs and projects. Same atomic-write guarantees as `state.ts`. The
-registry is intentionally simple: path, cron schedule, last-run timestamp, last worktree
-commit. The cron schedule is set at registration and honored by the CronCreate hook in
-`prompts/gardener.md`.
 
 ## Testing
 

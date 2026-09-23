@@ -35,18 +35,6 @@ describe("loadPrompt", () => {
     assert.throws(() => loadPrompt("nonexistent.md"), /not found/);
   });
 
-  it("loads gardener-init.md", () => {
-    const loaded = loadPrompt("gardener-init.md");
-    assert.ok(loaded.text.includes("{{HEAD_COMMIT}}"));
-    assert.ok(loaded.text.includes("Explore"));
-  });
-
-  it("loads gardener-update.md", () => {
-    const loaded = loadPrompt("gardener-update.md");
-    assert.ok(loaded.text.includes("{{CHANGED_FILES}}"));
-    assert.ok(loaded.text.includes("{{LAST_COMMIT}}"));
-  });
-
   it("parses max-turns: null frontmatter as unlimited", () => {
     const loaded = loadPrompt("skills.md");
     assert.equal(loaded.meta.maxTurns, null, "skills.md declares max-turns: null");

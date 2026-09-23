@@ -59,12 +59,11 @@ If knowledge isn't in the repo, it doesn't exist for agents.
 - `docs/design-docs/` goes deep on specific decisions
 - Don't duplicate — link to the source of truth
 
-## Gardener
+## Keeping docs true
 
-A scheduled "doc-gardening" agent (claude-harness gardener) scans every tracked
-`.md` file for references that no longer match the live code, and commits
-fix-up edits. It updates CLAUDE.md / ARCHITECTURE.md / `docs/**/*.md` in place.
-If you see a `_Last gardener check: <sha>_` footer, that's how it was stamped.
+Nothing sweeps these files for you. A doc that contradicts the code is worse
+than a missing one, because it is believed — so when a change makes a page
+wrong, the fix ships in the same PR as the change.
 ```
 
 ## Rules

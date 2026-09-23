@@ -12,7 +12,9 @@ Two sources, answering two different questions.
 article describes a complete system: CLAUDE.md as a ~100-line table of contents, a `docs/`
 knowledge base, custom linters as hooks, rules enforced mechanically, project-specific
 skills generated from conversation history, and a recurring gardener that scans every
-tracked doc for references that no longer match the live code and commits fix-up edits.
+tracked doc for references that no longer match the live code. This tool implements all
+of that except the gardener — keeping docs true is handled by the rule that a change
+which makes a page wrong fixes the page in the same PR.
 
 **How work moves once the agent is writing most of the code.** The
 [AI-native SDLC playbook](https://academy.claude.com/courses/ai-native-sdlc-playbook)
@@ -231,24 +233,6 @@ claude-harness start-claude /path/to/project
 This uses `claude --append-system-prompt` to inject a harness-engineering primer into the session — repository as system of record, CLAUDE.md as table of contents, plans as first-class artifacts — without replacing Claude Code's built-in tools.
 
 Projects can override the bundled prompt by placing a custom `.claude/start-claude.md` in the project root.
-
-## Gardener
-
-The gardener runs as a background cron job and keeps the project's existing docs
-(CLAUDE.md, ARCHITECTURE.md, `docs/**/*.md`) fresh against the live code. On the
-first run it spawns parallel Explore agents — one per doc — to audit every
-reference. On subsequent runs it diffs the code since the last run and only
-re-audits docs that mention the changed files. It commits the fix-ups in place.
-
-```bash
-claude-harness gardener add .                           # Register current project
-claude-harness gardener add . --schedule "0 9 * * 1-5" # Custom cron schedule
-claude-harness gardener list                            # Show all registered projects
-claude-harness gardener run .                           # Run immediately
-claude-harness gardener remove /path/to/project         # Unregister
-```
-
-The registry lives at `~/.claude-harness/projects.json`.
 
 ## Architecture
 

@@ -84,17 +84,6 @@ export interface HarnessOptions {
   verbose: boolean;
 }
 
-export interface GardenerProject {
-  path: string;
-  schedule: string;
-  lastRunAt: string | null;
-  lastWorktreeCommit: string | null;
-}
-
-export interface GardenerRegistry {
-  projects: GardenerProject[];
-}
-
 // Slim manifest entry: just the registry of "this is a runnable task and
 // here's its prompt file". All other metadata (description, outputs,
 // max-turns) lives in the prompt's YAML frontmatter — see src/prompt.ts.
@@ -114,7 +103,7 @@ export const DEFAULTS: HarnessConfig & { outputDir: string } = {
   outputDir: ".claude-harness",
 };
 
-// Unordered task manifest — 38 tasks, all fully independent. Just the
+// Unordered task manifest — 37 tasks, all fully independent. Just the
 // registry of (id, promptFile). Per-task description, outputs, and
 // max-turns live in each prompt's YAML frontmatter. Each prompt
 // self-checks applicability and no-ops if not relevant.
@@ -157,7 +146,6 @@ export const TASK_MANIFEST: TaskDefinition[] = [
   { id: "skills",             promptFile: "skills.md" },
   { id: "mcp-config",         promptFile: "mcp-config.md" },
   { id: "formatter",          promptFile: "formatter.md" },
-  { id: "gardener",           promptFile: "gardener.md" },
   { id: "arch-tests",         promptFile: "arch-tests.md" },
   { id: "ci-workflow",        promptFile: "ci-workflow.md" },
 ];
@@ -176,7 +164,7 @@ export const TASK_GROUPS: { label: string; ids: Set<string> }[] = [
   ])},
   { label: "Automation", ids: new Set([
     "worktree", "hooks", "approval-gates", "agents", "skills",
-    "policy-skills", "mcp-config", "formatter", "gardener",
+    "policy-skills", "mcp-config", "formatter",
     "arch-tests", "ci-workflow",
   ])},
   { label: "SDLC loop", ids: new Set([
