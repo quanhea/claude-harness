@@ -1,15 +1,34 @@
 # Changelog
 
-## 1.5.0 — 2026-09-22
+## 2.0.0 — 2026-09-23
 
 The AI-native SDLC loop, a rebuilt verification model, umbrella repo support,
-and the retirement of several generators that never produced a kept artifact.
-Manifest goes from 28 tasks to 38.
+the removal of the gardener, and the retirement of several generators that
+never produced a kept artifact. Manifest goes from 28 tasks to 37.
 
-**If you script `--only`:** the `quality-score` and `core-beliefs` task ids no
-longer exist, and unknown ids are dropped silently — a `--only quality-score`
-invocation will now run nothing rather than error. Everything else in the CLI
-surface is unchanged.
+1.5.0 was tagged but never published; everything in it is included here.
+
+### Breaking
+
+- **The `gardener` subcommand is gone.** `claude-harness gardener add|remove|list|run`
+  no longer exists. See *Removed* below for why.
+- **The `gardener`, `quality-score` and `core-beliefs` task ids are gone.**
+  Unknown ids are dropped silently, so `--only gardener` now runs nothing
+  rather than erroring.
+
+Nothing else in the CLI surface changed.
+
+### If you scaffolded a project with 1.4.x
+
+Two leftovers are now wrong, and neither is cleaned up for you:
+
+- `docs/README.md` may contain "kept fresh by the **claude-harness gardener**
+  on a cron schedule". That was never true (see *Removed*); delete the
+  sentence. Re-running `claude-harness --only docs-structure` rewrites it.
+- `.claude/rules/documentation.md` may describe a scheduled doc-gardening
+  agent. Re-run `--only rule-documentation`, or delete the section.
+- `~/.claude-harness/projects.json` is the old gardener registry. Nothing reads
+  it now; delete it whenever.
 
 ### Added — the AI-native SDLC loop
 
@@ -109,6 +128,24 @@ Manifest 28 → 38, with a new "SDLC loop" group.
   1.1.0). 16 of 181 tests were failing at 1.4.3.
 
 ### Removed
+
+- **The gardener.** It promised to keep docs fresh on a cron schedule, and
+  nothing in the package ever installed one — no cron, no launchd, no systemd,
+  no timer. `addProject()` wrote a cron string into a registry and `list`
+  printed it back, but no code path ever read that field to trigger a run; the
+  schedule was delegated to a `CronCreate` hook inside a generated prompt, i.e.
+  to an agent remembering to set one up. Only `gardener run <dir>` ever did
+  anything, and only by hand.
+
+  It was also a false promise propagated into user projects: every generated
+  `docs/README.md` claimed the docs were kept fresh on a schedule, and
+  `.claude/rules/documentation.md` told every project a scheduled agent was
+  sweeping its markdown. Both now say the true thing — nothing sweeps these
+  files, so a change that makes a page wrong fixes the page in the same PR.
+
+  Gone with it: `src/gardener.ts`, `src/gardener-api.ts`, the three gardener
+  prompts, the `GardenerProject`/`GardenerRegistry` types, and the CLI
+  subcommand.
 
 - `src/hooks-suspension.ts`. It stripped the enforce-worktree hook from the
   user's `settings.json` and restored it from a `process.on("exit")` handler —

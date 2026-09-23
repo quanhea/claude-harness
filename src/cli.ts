@@ -2,7 +2,6 @@
 // src/cli.ts — CLI entry point
 import * as path from "path";
 import { setup } from "./scanner";
-import { gardenerCommand } from "./gardener-api";
 import { startClaude } from "./start-claude";
 import { removeCommand } from "./remove";
 import { DEFAULTS } from "./types";
@@ -16,7 +15,6 @@ Usage:
   claude-harness [target-dir] [options]      Set up a project
   claude-harness remove [target-dir]         Selectively remove generated features
   claude-harness start-claude [target-dir]   Start claude with harness context
-  claude-harness gardener <subcommand>       Manage doc-gardening schedules
 
 Setup options:
   -j, --parallel <n>        Parallel workers per phase  (default: ${DEFAULTS.parallel})
@@ -37,20 +35,12 @@ start-claude options:
   [target-dir]              Project directory (default: current directory)
   [-- ...claude-args]       Extra args passed through to the claude binary
 
-Gardener subcommands:
-  claude-harness gardener add <project-dir> [--schedule <cron>]
-  claude-harness gardener remove <project-dir>
-  claude-harness gardener list
-  claude-harness gardener run <project-dir>
-
 Examples:
   claude-harness ./my-project
   claude-harness ./my-project --only claude-md,rule-git
   claude-harness ./my-project --retry
   claude-harness start-claude ./my-project
   claude-harness start-claude ./my-project -- --model claude-opus-4-6
-  claude-harness gardener add ./my-project --schedule "0 9 * * 1-5"
-  claude-harness gardener list
 `);
 }
 
@@ -59,12 +49,6 @@ async function main(): Promise<void> {
 
   if (args[0] === "start-claude") {
     const exitCode = await startClaude(args.slice(1));
-    process.exit(exitCode);
-    return;
-  }
-
-  if (args[0] === "gardener") {
-    const exitCode = await gardenerCommand(args.slice(1));
     process.exit(exitCode);
     return;
   }

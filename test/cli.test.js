@@ -51,16 +51,6 @@ describe("CLI", () => {
     }
   });
 
-  it("gardener subcommand is accepted", () => {
-    const out = execFileSync("node", [CLI, "gardener", "--help"], {
-      encoding: "utf-8",
-      stdio: "pipe",
-    });
-    assert.ok(
-      out.includes("gardener") || out.includes("add") || out.includes("list"),
-    );
-  });
-
   it("exits with error for nonexistent target", () => {
     try {
       execFileSync("node", [CLI, "/tmp/nonexistent-" + Date.now(), "--dry-run"], {
